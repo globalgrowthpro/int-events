@@ -106,7 +106,7 @@
   --warning-foreground: oklch(0.25 0.05 70);
   --shadow-card: 0 1px 2px oklch(0.223 0.052 258 / 0.06), 0 1px 3px oklch(0.223 0.052 258 / 0.05);
   --shadow-elevated: 0 12px 30px -12px oklch(0.223 0.052 258 / 0.28);
-  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-1: oklch(0.474 0.135 251);
   --chart-2: oklch(0.688 0.128 238);
   --chart-3: oklch(0.545 0.146 246);
   --chart-4: oklch(0.594 0.152 149.5);
