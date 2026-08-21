@@ -3,6 +3,7 @@ import { CalendarDays, QrCode, Ticket, Award } from "lucide-react";
 import { PortalShell, PageHeading } from "@/components/int/portal-shell";
 import { EventCard } from "@/components/int/event-card";
 import { PassCard } from "@/components/int/pass-card";
+import { Countdown, parseEventStart } from "@/components/int/countdown";
 import { currentUser, events, getEvent, myRegistrations, notifications } from "@/lib/int-data";
 
 export const Route = createFileRoute("/dashboard")({
