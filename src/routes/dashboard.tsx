@@ -3,6 +3,7 @@ import { CalendarDays, QrCode, Ticket, Award } from "lucide-react";
 import { PortalShell, PageHeading } from "@/components/int/portal-shell";
 import { EventCard } from "@/components/int/event-card";
 import { PassCard } from "@/components/int/pass-card";
+import { Countdown, parseEventStart } from "@/components/int/countdown";
 import { currentUser, events, getEvent, myRegistrations, notifications } from "@/lib/int-data";
 
 export const Route = createFileRoute("/dashboard")({
@@ -69,7 +70,17 @@ function Dashboard() {
         <div>
           <h2 className="mb-4 text-base font-semibold text-foreground">Your next pass</h2>
           {nextReg && nextEvent ? (
-            <PassCard registration={nextReg} event={nextEvent} compact />
+            <>
+              <PassCard registration={nextReg} event={nextEvent} compact />
+              {nextEvent.status !== "completed" && nextEvent.status !== "cancelled" && (
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Starts in
+                  </p>
+                  <Countdown target={parseEventStart(nextEvent.date, nextEvent.startTime)} />
+                </div>
+              )}
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">No upcoming passes.</p>
           )}

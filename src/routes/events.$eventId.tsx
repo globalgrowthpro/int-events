@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
 import { PortalShell } from "@/components/int/portal-shell";
 import { StatusBadge } from "@/components/int/status-badge";
+import { Countdown, parseEventStart } from "@/components/int/countdown";
 import { getEvent } from "@/lib/int-data";
 
 export const Route = createFileRoute("/events/$eventId")({
@@ -33,6 +34,8 @@ function EventDetail() {
   const { event } = Route.useLoaderData();
   const seatsLeft = event.capacity - event.registered;
   const pct = Math.round((event.registered / event.capacity) * 100);
+  const target = parseEventStart(event.date, event.startTime);
+  const isUpcoming = event.status !== "completed" && event.status !== "cancelled";
 
   return (
     <PortalShell>
@@ -66,6 +69,15 @@ function EventDetail() {
               value={`${event.registered}/${event.capacity} registered`}
             />
           </dl>
+
+          {isUpcoming && (
+            <div className="mt-6">
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Starts in
+              </h2>
+              <Countdown target={target} />
+            </div>
+          )}
 
           <div className="mt-6">
             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
