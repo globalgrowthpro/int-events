@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-function diffParts(target: number) {
-  const total = Math.max(0, target - Date.now());
+function diffParts(target: number, now: number) {
+  const total = Math.max(0, target - now);
   const days = Math.floor(total / 86_400_000);
   const hours = Math.floor((total % 86_400_000) / 3_600_000);
   const minutes = Math.floor((total % 3_600_000) / 60_000);
@@ -26,12 +26,56 @@ export function parseEventStart(date: string, startTime?: string): number {
   return base.getTime();
 }
 
+type Size = "sm" | "md";
+
+const sizing: Record<Size, { box: string; digit: string; label: string; gap: string }> = {
+  sm: {
+    box: "h-12 rounded-md",
+    digit: "text-xl",
+    label: "mt-1.5 text-[9px]",
+    gap: "gap-1.5",
+  },
+  md: {
+    box: "h-[68px] rounded-lg",
+    digit: "text-3xl",
+    label: "mt-2 text-[10px]",
+    gap: "gap-2.5",
+  },
+};
+
+function FlipUnit({ value, label, size }: { value: string; label: string; size: Size }) {
+  const s = sizing[size];
+  return (
+    <div className="flex flex-col items-center">
+      <div
+        className={`relative flex w-full items-center justify-center overflow-hidden border border-black/60 bg-gradient-to-b from-[#3c3c3c] to-[#1c1c1c] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_6px_rgba(0,0,0,0.35)] ${s.box}`}
+      >
+        <span
+          className={`font-mono font-bold tabular-nums leading-none tracking-tight text-[#e8e8e8] drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)] ${s.digit}`}
+        >
+          {value}
+        </span>
+        {/* hinge line */}
+        <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-black/70" />
+        <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px translate-y-px bg-white/10" />
+      </div>
+      <span
+        className={`font-semibold uppercase tracking-[0.18em] text-primary ${s.label}`}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export function Countdown({
   target,
   variant = "card",
+  size = "md",
 }: {
   target: number;
   variant?: "card" | "inline";
+  size?: Size;
 }) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
@@ -40,27 +84,26 @@ export function Countdown({
     return () => clearInterval(id);
   }, []);
 
-  if (now === null) {
-    return variant === "inline" ? (
-      <span className="font-mono text-xs font-semibold text-primary">--d --h --m --s</span>
-    ) : (
-      <div className="grid grid-cols-4 gap-2">
-        {["Days", "Hours", "Minutes", "Seconds"].map((label) => (
-          <div
-            key={label}
-            className="rounded-lg border border-border bg-secondary px-2 py-3 text-center"
-          >
-            <div className="font-mono text-2xl font-bold tabular-nums text-primary">--</div>
-            <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              {label}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  const s = sizing[size];
+  const units: Array<[string, string]> =
+    now === null
+      ? [
+          ["--", "Days"],
+          ["--", "Hours"],
+          ["--", "Minutes"],
+          ["--", "Seconds"],
+        ]
+      : (() => {
+          const d = diffParts(target, now);
+          return [
+            [String(d.days).padStart(2, "0"), "Days"],
+            [String(d.hours).padStart(2, "0"), "Hours"],
+            [String(d.minutes).padStart(2, "0"), "Minutes"],
+            [String(d.seconds).padStart(2, "0"), "Seconds"],
+          ];
+        })();
 
-  if (now >= target) {
+  if (now !== null && now >= target) {
     return (
       <div
         className={
@@ -74,36 +117,19 @@ export function Countdown({
     );
   }
 
-  const { days, hours, minutes, seconds } = diffParts(target);
-  const units = [
-    { label: "Days", value: days },
-    { label: "Hours", value: hours },
-    { label: "Minutes", value: minutes },
-    { label: "Seconds", value: seconds },
-  ];
-
   if (variant === "inline") {
+    const [d, h, m, sec] = units;
     return (
       <span className="font-mono text-xs font-semibold text-primary">
-        {days}d {hours}h {minutes}m {seconds}s
+        {d![0]}d {h![0]}h {m![0]}m {sec![0]}s
       </span>
     );
   }
 
   return (
-    <div className="grid grid-cols-4 gap-2">
-      {units.map((u) => (
-        <div
-          key={u.label}
-          className="rounded-lg border border-border bg-secondary px-2 py-3 text-center"
-        >
-          <div className="font-mono text-2xl font-bold tabular-nums text-primary">
-            {String(u.value).padStart(2, "0")}
-          </div>
-          <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            {u.label}
-          </div>
-        </div>
+    <div className={`grid grid-cols-4 rounded-xl bg-[#141414] p-2.5 ${s.gap}`}>
+      {units.map(([value, label]) => (
+        <FlipUnit key={label} value={value} label={label} size={size} />
       ))}
     </div>
   );
