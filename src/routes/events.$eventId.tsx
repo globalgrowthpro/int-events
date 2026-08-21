@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { CalendarDays, MapPin, Users } from "lucide-react";
+import { RegistrationDialog } from "@/components/int/registration-dialog";
 import { PortalShell } from "@/components/int/portal-shell";
 import { StatusBadge } from "@/components/int/status-badge";
 import { Countdown, parseEventStart } from "@/components/int/countdown";
