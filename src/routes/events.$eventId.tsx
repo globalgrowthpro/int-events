@@ -5,6 +5,11 @@ import { StatusBadge } from "@/components/int/status-badge";
 import { Countdown, parseEventStart } from "@/components/int/countdown";
 import { getEvent } from "@/lib/int-data";
 
+function toDdMmYyyy(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${d}-${m}-${y}`;
+}
+
 export const Route = createFileRoute("/events/$eventId")({
   loader: ({ params }) => {
     const event = getEvent(params.eventId);
