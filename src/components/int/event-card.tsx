@@ -2,9 +2,11 @@ import { Link } from "@tanstack/react-router";
 import { CalendarDays, MapPin, Users } from "lucide-react";
 import type { IntEvent } from "@/lib/int-data";
 import { StatusBadge } from "./status-badge";
+import { Countdown, parseEventStart } from "./countdown";
 
 export function EventCard({ event }: { event: IntEvent }) {
   const seatsLeft = event.capacity - event.registered;
+  const isUpcoming = event.status !== "completed" && event.status !== "cancelled";
   return (
     <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card transition-shadow hover:shadow-elevated">
       <div className="relative aspect-16/9 overflow-hidden bg-navy">
@@ -44,10 +46,15 @@ export function EventCard({ event }: { event: IntEvent }) {
             </span>
           </div>
         </dl>
+        {isUpcoming && (
+          <div className="mt-4">
+            <Countdown target={parseEventStart(event.date, event.startTime)} size="sm" />
+          </div>
+        )}
         <Link
           to="/events/$eventId"
           params={{ eventId: event.id }}
-          className="mt-5 inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
+          className="mt-4 inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
         >
           View Event
         </Link>
