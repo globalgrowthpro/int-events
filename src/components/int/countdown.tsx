@@ -60,7 +60,7 @@ function FlipUnit({ value, label, size }: { value: string; label: string; size: 
         <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px translate-y-px bg-white/10" />
       </div>
       <span
-        className={`font-semibold uppercase tracking-[0.18em] text-primary ${s.label}`}
+        className={`font-semibold uppercase tracking-[0.18em] text-warning ${s.label}`}
       >
         {label}
       </span>
