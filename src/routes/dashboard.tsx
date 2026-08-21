@@ -34,7 +34,7 @@ function Dashboard() {
         subtitle={`${currentUser.company} · ${currentUser.role} account`}
       />
 
-      <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-3 gap-3">
         <Stat icon={Ticket} label="Registered" value={String(upcoming.length)} />
         <Stat icon={QrCode} label="Active passes" value={String(myRegistrations.length)} />
         <Stat icon={CalendarDays} label="Attended" value="1" />
