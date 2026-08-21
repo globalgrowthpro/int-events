@@ -33,11 +33,32 @@ export function Countdown({
   target: number;
   variant?: "card" | "inline";
 }) {
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  if (now === null) {
+    return variant === "inline" ? (
+      <span className="font-mono text-xs font-semibold text-primary">--d --h --m --s</span>
+    ) : (
+      <div className="grid grid-cols-4 gap-2">
+        {["Days", "Hours", "Minutes", "Seconds"].map((label) => (
+          <div
+            key={label}
+            className="rounded-lg border border-border bg-secondary px-2 py-3 text-center"
+          >
+            <div className="font-mono text-2xl font-bold tabular-nums text-primary">--</div>
+            <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {label}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   if (now >= target) {
     return (
