@@ -59,9 +59,12 @@ function EventDetail() {
           </h1>
           <p className="mt-3 max-w-3xl text-sm text-muted-foreground">{event.summary}</p>
 
-          <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Fact icon={CalendarDays} label="Date" value={event.dateLabel} />
-            <Fact icon={Clock} label="Time" value={`${event.startTime} – ${event.endTime}`} />
+          <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Fact
+              icon={CalendarDays}
+              label="Date & time"
+              value={`${toDdMmYyyy(event.date)} · ${event.startTime} – ${event.endTime}`}
+            />
             <Fact icon={MapPin} label="Venue" value={`${event.venue}, ${event.city}`} />
             <Fact
               icon={Users}
