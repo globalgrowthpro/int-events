@@ -1,4 +1,4 @@
-import { QRCodeSVG } from "qrcode.react";
+import { QrCode } from "./qr-code";
 import { CheckCircle2 } from "lucide-react";
 import type { IntEvent, Registration } from "@/lib/int-data";
 
