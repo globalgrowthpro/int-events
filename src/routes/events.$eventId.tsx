@@ -181,6 +181,7 @@ function EventDetail() {
           </Panel>
         </div>
       </div>
+      <RegistrationDialog event={event} open={formOpen} onClose={() => setFormOpen(false)} />
     </PortalShell>
   );
 }
