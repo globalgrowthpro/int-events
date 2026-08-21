@@ -4,11 +4,7 @@ import { PortalShell } from "@/components/int/portal-shell";
 import { StatusBadge } from "@/components/int/status-badge";
 import { Countdown, parseEventStart } from "@/components/int/countdown";
 import { getEvent } from "@/lib/int-data";
-
-function toDdMmYyyy(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}-${m}-${y}`;
-}
+import { toDdMmYyyy } from "@/lib/format";
 
 export const Route = createFileRoute("/events/$eventId")({
   loader: ({ params }) => {
