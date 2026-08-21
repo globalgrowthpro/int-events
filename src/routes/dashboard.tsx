@@ -106,9 +106,11 @@ function Stat({
 }) {
   return (
     <div className="rounded-xl border border-border bg-card p-3 shadow-card sm:p-5">
-      <Icon className="h-5 w-5 text-primary" />
-      <p className="mt-2 text-xl font-semibold text-foreground sm:mt-3 sm:text-2xl">{value}</p>
-      <p className="text-[11px] text-muted-foreground sm:text-xs">{label}</p>
+      <div className="flex items-center gap-2">
+        <Icon className="h-5 w-5 shrink-0 text-primary" />
+        <p className="text-xl font-semibold text-foreground sm:text-2xl">{value}</p>
+      </div>
+      <p className="mt-1 text-[11px] text-muted-foreground sm:mt-1.5 sm:text-xs">{label}</p>
     </div>
   );
 }
