@@ -1,6 +1,16 @@
 import { QrCode } from "./qr-code";
 import { CheckCircle2 } from "lucide-react";
+import logoAsset from "@/assets/int-logo.png.asset.json";
 import type { IntEvent, Registration } from "@/lib/int-data";
+
+function partnerInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
 
 export function PassCard({
   registration,
@@ -11,15 +21,37 @@ export function PassCard({
   event: IntEvent;
   compact?: boolean;
 }) {
+  const partner = event.partners[0];
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-elevated">
       <div className="bg-navy px-5 py-4 text-navy-foreground">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-navy-foreground/60">
-          Integrated Technics
-        </p>
-        <p className="mt-1 text-sm font-semibold uppercase tracking-[0.14em]">
-          Event Attendance Pass
-        </p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <img
+              src={logoAsset.url}
+              alt="Integrated Technics"
+              className="h-9 w-9 rounded-md bg-white object-contain p-0.5"
+            />
+            <span className="leading-none">
+              <span className="block text-[10px] font-semibold uppercase tracking-[0.24em] text-navy-foreground/60">
+                Integrated Technics
+              </span>
+              <span className="mt-1 block text-sm font-semibold uppercase tracking-[0.14em]">
+                Event Attendance Pass
+              </span>
+            </span>
+          </div>
+          {partner && (
+            <div className="flex flex-col items-center gap-1 text-center">
+              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white/15 text-[11px] font-bold tracking-wide text-navy-foreground ring-1 ring-white/20">
+                {partnerInitials(partner)}
+              </span>
+              <span className="max-w-[88px] text-[9px] font-medium uppercase tracking-[0.12em] text-navy-foreground/70">
+                {partner}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
       <div className="p-5">
         <h3 className="text-base font-semibold text-foreground">{event.title}</h3>
