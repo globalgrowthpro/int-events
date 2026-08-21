@@ -16,10 +16,12 @@ function diffParts(target: number) {
 export function parseEventStart(date: string, startTime?: string): number {
   const base = new Date(`${date}T00:00:00`);
   const st = startTime ?? "";
-  const m = st.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  const m = st.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i) as
+    | [string, string, string, string]
+    | null;
   if (!m) return base.setHours(9, 0, 0, 0);
   let h = parseInt(m[1], 10) % 12;
-  if (/PM/i.test(m[3] ?? "")) h += 12;
+  if (/PM/i.test(m[3])) h += 12;
   base.setHours(h, parseInt(m[2], 10), 0, 0);
   return base.getTime();
 }
