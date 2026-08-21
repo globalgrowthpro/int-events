@@ -41,7 +41,7 @@ function AdminVendors() {
               <StateBadge state={vendor.state} />
             </div>
             <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-border pt-4 text-center">
-              <Metric label="Contact" value={vendor.contact.split(" ")[0]} />
+              <Metric label="Contact" value={vendor.contact.split(" ")[0] ?? vendor.contact} />
               <Metric label="Reps" value={String(vendor.reps)} />
               <Metric label="Events" value={String(vendor.events)} />
             </dl>
