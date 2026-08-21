@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-function diffParts(target: number, now: number) {
+export function diffParts(target: number, now: number) {
   const total = Math.max(0, target - now);
   const days = Math.floor(total / 86_400_000);
   const hours = Math.floor((total % 86_400_000) / 3_600_000);
@@ -26,9 +26,15 @@ export function parseEventStart(date: string, startTime?: string): number {
   return base.getTime();
 }
 
-type Size = "sm" | "md";
+export type CountdownSize = "xs" | "sm" | "md";
 
-const sizing: Record<Size, { box: string; digit: string; label: string; gap: string }> = {
+export const countdownSizing: Record<CountdownSize, { box: string; digit: string; label: string; gap: string }> = {
+  xs: {
+    box: "h-[22px] min-w-[20px] px-0.5 rounded-[3px] sm:h-7 sm:min-w-[25px] sm:px-1 sm:rounded",
+    digit: "text-[10px] sm:text-xs",
+    label: "mt-0.5 text-[6px] sm:text-[7px]",
+    gap: "gap-0.5 sm:gap-1",
+  },
   sm: {
     box: "h-12 rounded-md",
     digit: "text-xl",
@@ -43,24 +49,21 @@ const sizing: Record<Size, { box: string; digit: string; label: string; gap: str
   },
 };
 
-function FlipUnit({ value, label, size }: { value: string; label: string; size: Size }) {
-  const s = sizing[size];
+export function FlipUnit({ value, label, size }: { value: string; label: string; size: CountdownSize }) {
+  const s = countdownSizing[size];
   return (
     <div className="flex flex-col items-center">
       <div
-        className={`relative flex w-full items-center justify-center overflow-hidden border border-black/60 bg-gradient-to-b from-[#3c3c3c] to-[#1c1c1c] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_6px_rgba(0,0,0,0.35)] ${s.box}`}
+        className={`relative flex w-full items-center justify-center overflow-hidden border border-black/60 bg-gradient-to-b from-[#3c3c3c] to-[#1c1c1c] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_1px_3px_rgba(0,0,0,0.35)] ${s.box}`}
       >
         <span
           className={`font-mono font-bold tabular-nums leading-none tracking-tight text-[#e8e8e8] drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)] ${s.digit}`}
         >
           {value}
         </span>
-        {/* hinge line */}
-        <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-black/70" />
-        <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px translate-y-px bg-white/10" />
       </div>
       <span
-        className={`font-semibold uppercase tracking-[0.18em] text-warning ${s.label}`}
+        className={`font-semibold uppercase tracking-[0.06em] sm:tracking-[0.14em] text-warning ${s.label}`}
       >
         {label}
       </span>
@@ -75,7 +78,7 @@ export function Countdown({
 }: {
   target: number;
   variant?: "card" | "inline";
-  size?: Size;
+  size?: CountdownSize;
 }) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
@@ -84,7 +87,7 @@ export function Countdown({
     return () => clearInterval(id);
   }, []);
 
-  const s = sizing[size];
+  const s = countdownSizing[size];
   const units: Array<[string, string]> =
     now === null
       ? [

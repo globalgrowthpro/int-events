@@ -1,38 +1,92 @@
 import { cn } from "@/lib/utils";
-import logoAsset from "@/assets/int-logo.png.asset.json";
 
 export function IntLogo({
   className,
   tone = "dark",
+  size = "md",
+  subtitle,
+  badge,
+  compactOnMobile = false,
 }: {
   className?: string;
   tone?: "dark" | "light";
+  size?: "sm" | "md" | "lg" | "xl";
+  subtitle?: string;
+  badge?: string;
+  compactOnMobile?: boolean;
 }) {
+  const sizeStyles = {
+    sm: {
+      img: "h-8 w-8 sm:h-9 sm:w-9 p-0.5 rounded-md",
+      title: "text-sm sm:text-[15px] font-bold",
+      sub: "text-[9px] sm:text-[10px] tracking-[0.14em] font-medium",
+      gap: "gap-2.5",
+    },
+    md: {
+      img: "h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 p-1.5 rounded-2xl shadow-md",
+      title: "text-xl sm:text-2xl md:text-3xl font-black",
+      sub: "text-xs sm:text-sm tracking-[0.2em] font-bold",
+      gap: "gap-3.5",
+    },
+    lg: {
+      img: "h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 p-2 rounded-3xl shadow-lg",
+      title: "text-2xl sm:text-3xl md:text-4xl font-black",
+      sub: "text-xs sm:text-sm md:text-base tracking-[0.22em] font-bold",
+      gap: "gap-4",
+    },
+    xl: {
+      img: "h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 p-2.5 rounded-3xl shadow-xl",
+      title: "text-3xl sm:text-4xl md:text-5xl font-black",
+      sub: "text-sm sm:text-base md:text-lg tracking-[0.24em] font-bold",
+      gap: "gap-5",
+    },
+  }[size];
+
+  const displaySubtitle = subtitle || "Integrated Technics";
+
   return (
-    <span className={cn("flex items-center gap-2.5", className)}>
+    <span className={cn("flex shrink-0 items-center", sizeStyles.gap, className)}>
       <img
-        src={logoAsset.url}
+        src="/logo.png"
         alt="Integrated Technics"
-        width={40}
-        height={40}
-        className="h-9 w-9 rounded-md bg-card object-contain p-0.5"
+        className={cn(
+          "shrink-0 bg-white object-contain border border-white/30 transition-transform duration-200 hover:scale-105",
+          sizeStyles.img
+        )}
       />
-      <span className="leading-none">
-        <span
-          className={cn(
-            "block text-[15px] font-semibold tracking-tight",
-            tone === "light" ? "text-navy-foreground" : "text-foreground",
+      <span className="leading-tight">
+        <span className="flex items-center gap-1.5">
+          <span
+            className={cn(
+              "block tracking-tight whitespace-nowrap",
+              sizeStyles.title,
+              tone === "light" ? "text-white" : "text-foreground"
+            )}
+          >
+            INT Events
+          </span>
+          {badge && (
+            <span
+              className={cn(
+                "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider",
+                tone === "light"
+                  ? "bg-sky-500/20 text-sky-300 border border-sky-400/30"
+                  : "bg-primary/10 text-primary border border-primary/20"
+              )}
+            >
+              {badge}
+            </span>
           )}
-        >
-          INT Events
         </span>
         <span
           className={cn(
-            "mt-1 block text-[10px] font-medium uppercase tracking-[0.18em]",
-            tone === "light" ? "text-navy-foreground/60" : "text-muted-foreground",
+            "uppercase whitespace-nowrap block",
+            sizeStyles.sub,
+            compactOnMobile ? "hidden sm:block" : "block",
+            tone === "light" ? "text-sky-400 font-semibold" : "text-muted-foreground"
           )}
         >
-          Integrated Technics
+          {displaySubtitle}
         </span>
       </span>
     </span>

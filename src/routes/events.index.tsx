@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import { PortalShell, PageHeading } from "@/components/int/portal-shell";
 import { EventCard } from "@/components/int/event-card";
-import { events } from "@/lib/int-data";
+import { getEvents } from "@/lib/api";
+import { type IntEvent } from "@/lib/int-data";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/events/")({
   head: () => ({
@@ -12,7 +14,7 @@ export const Route = createFileRoute("/events/")({
       {
         name: "description",
         content:
-          "Browse Integrated Technics summits, forums, partner days and technical workshops open for registration.",
+          "Browse Integrated Technics summits, forums, partner days and technical workshops open for registration with real-time seat availability.",
       },
       { property: "og:title", content: "Discover Events — INT Events" },
       {
@@ -27,10 +29,29 @@ export const Route = createFileRoute("/events/")({
 const categories = ["All", "Summit", "Forum", "Partner Event", "Workshop"];
 
 function EventsPage() {
+  const [eventsList, setEventsList] = useState<IntEvent[]>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
+  const [refreshing, setRefreshing] = useState(false);
 
-  const filtered = events.filter(
+  const loadData = async (showToast = false) => {
+    if (showToast) setRefreshing(true);
+    try {
+      const data = await getEvents();
+      setEventsList(data);
+      if (showToast) toast.success("Live events and seat counts synced!");
+    } catch {
+      /* fallback */
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const filtered = eventsList.filter(
     (event) =>
       (category === "All" || event.category === category) &&
       (event.title.toLowerCase().includes(query.toLowerCase()) ||
@@ -39,10 +60,20 @@ function EventsPage() {
 
   return (
     <PortalShell>
-      <PageHeading
-        title="Discover Events"
-        subtitle="Technology, security and partner experiences hosted by Integrated Technics."
-      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <PageHeading
+          title="Discover Events"
+          subtitle="Technology, security and partner experiences hosted by Integrated Technics with live seat availability."
+        />
+        <button
+          onClick={() => loadData(true)}
+          disabled={refreshing}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 text-primary ${refreshing ? "animate-spin" : ""}`} />
+          Sync
+        </button>
+      </div>
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
@@ -78,7 +109,7 @@ function EventsPage() {
         ))}
       </div>
       {filtered.length === 0 && (
-        <p className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+        <p className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
           No events match your search.
         </p>
       )}

@@ -5,6 +5,7 @@ import { IntLogo } from "@/components/int/logo";
 import { useAuth } from "@/lib/auth";
 import { EventCard } from "@/components/int/event-card";
 import { events } from "@/lib/int-data";
+import { PWAInstallButton } from "@/components/int/pwa-install-prompt";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,46 +38,50 @@ function Landing() {
   const { user, signOut } = useAuth();
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
+      <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur">
+        <div className="mx-auto flex min-h-[5rem] max-w-7xl items-center justify-between px-4 py-2 md:px-6">
           <IntLogo />
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               to="/events"
-              className="hidden rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground sm:block"
+              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               Events
             </Link>
+
+            <PWAInstallButton variant="outline" size="sm" className="hidden sm:inline-flex text-xs gap-1.5" />
+
             {user ? (
-              <>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={signOut}
-                  className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                  className="rounded-md border border-border px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground transition-colors hover:bg-secondary"
                 >
                   Sign out
                 </button>
                 <Link
                   to={user.role === "admin" ? "/admin" : "/dashboard"}
-                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
+                  className="rounded-md bg-primary px-3.5 py-1.5 text-xs sm:text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-tech"
                 >
-                  {user.role === "admin" ? "Admin portal" : "My dashboard"}
+                  {user.role === "admin" ? "Admin Portal" : "My Dashboard"}
                 </Link>
-              </>
+              </div>
             ) : (
-              <>
+              <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                  className="rounded-md border border-border px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground transition-colors hover:bg-secondary"
                 >
                   Sign in
                 </Link>
                 <Link
                   to="/register"
-                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
+                  className="rounded-md bg-primary px-3.5 py-1.5 text-xs sm:text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-tech"
                 >
-                  Create Account
+                  Register
                 </Link>
-              </>
+              </div>
             )}
           </div>
         </div>

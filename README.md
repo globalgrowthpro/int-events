@@ -1390,15 +1390,6 @@ ecosystem.
 
 This is particularly suitable for INT's model because its recent events already bring together clients, government representatives, technology companies and international security/technology partners.
 
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/6ebebdcd-4a50-46db-95a1-25142ac1c614).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 

@@ -43,10 +43,19 @@ const industries = [
   "Education",
 ];
 
+import { PasswordInput } from "@/components/ui/password-input";
+
 function RegisterPage() {
   const [type, setType] = useState<AccountType>("client");
   const [done, setDone] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const { user, ready } = useAuth();
+
+  const handleGeneratePassword = (generated: string) => {
+    setPassword(generated);
+    setConfirmPassword(generated);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -135,8 +144,30 @@ function RegisterPage() {
               {type === "employee" && <EmployeeFields />}
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <Field label="Password" id="pw" type="password" />
-                <Field label="Confirm Password" id="pw2" type="password" />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="pw">Password</Label>
+                  </div>
+                  <PasswordInput
+                    id="pw"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onGenerate={handleGeneratePassword}
+                    showGenerateButton
+                    placeholder="Enter or generate password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pw2">Confirm Password</Label>
+                  <PasswordInput
+                    id="pw2"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter password"
+                  />
+                </div>
               </div>
 
               <Button type="submit" className="mt-6 w-full sm:w-auto">
@@ -206,16 +237,21 @@ function ClientFields() {
   return (
     <>
       <Section title="Personal Information">
-        <Field label="First Name" id="fn" />
-        <Field label="Last Name" id="ln" />
+        <div className="grid gap-4 sm:col-span-2 sm:grid-cols-3">
+          <Field label="First Name" id="fn" />
+          <Field label="Last Name" id="ln" />
+          <SelectField label="Gender" id="gen" options={["Male", "Female"]} />
+        </div>
         <Field label="Company" id="co" />
         <Field label="Job Title" id="jt" />
         <Field label="Email" id="em" type="email" placeholder="you@company.com" />
         <Field label="Mobile Number" id="mb" type="tel" placeholder="+20 1X XXX XXXX" />
-        <Field label="Country" id="cn" />
-        <Field label="City" id="ct" />
-        <SelectField label="Industry" id="ind" options={industries} />
-        <Field label="LinkedIn (optional)" id="li" />
+        <div className="grid gap-4 sm:col-span-2 sm:grid-cols-3">
+          <Field label="Country" id="cn" />
+          <Field label="City" id="ct" />
+          <SelectField label="Industry" id="ind" options={industries} />
+        </div>
+        <Field label="LinkedIn (optional)" id="li" full />
       </Section>
       <Section title="Areas of Interest (optional)">
         <div className="sm:col-span-2">
@@ -242,9 +278,12 @@ function VendorFields() {
       </Section>
       <Section title="Contact Information">
         <Field label="Contact Person" id="vcp" />
-        <Field label="Position" id="vpos" />
-        <Field label="Email" id="vem" type="email" />
-        <Field label="Mobile" id="vmb" type="tel" />
+        <SelectField label="Gender" id="vgen" options={["Male", "Female"]} />
+        <div className="grid gap-4 sm:col-span-2 sm:grid-cols-3">
+          <Field label="Position" id="vpos" />
+          <Field label="Email" id="vem" type="email" />
+          <Field label="Mobile" id="vmb" type="tel" />
+        </div>
       </Section>
       <Section title="Business Information">
         <SelectField
@@ -271,8 +310,11 @@ function EmployeeFields() {
   return (
     <>
       <Section title="Employee Information">
-        <Field label="First Name" id="efn" />
-        <Field label="Last Name" id="eln" />
+        <div className="grid gap-4 sm:col-span-2 sm:grid-cols-3">
+          <Field label="First Name" id="efn" />
+          <Field label="Last Name" id="eln" />
+          <SelectField label="Gender" id="egen" options={["Male", "Female"]} />
+        </div>
         <Field
           label="Corporate Email"
           id="eem"

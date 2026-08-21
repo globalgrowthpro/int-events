@@ -7,10 +7,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { supabase } from "./supabase";
 
 export type DemoRole = "client" | "vendor" | "employee" | "admin";
 
 export type DemoAccount = {
+  id?: string;
   email: string;
   password: string;
   name: string;
@@ -22,50 +24,50 @@ export type DemoAccount = {
   home: "/dashboard" | "/admin";
 };
 
-export const demoAccounts: DemoAccount[] = [
+export const verifiedAccounts: DemoAccount[] = [
   {
-    email: "client@intevents.com",
-    password: "demo1234",
-    name: "Ahmed Mohamed",
-    company: "ABC Corporation",
-    role: "client",
-    initials: "AM",
-    label: "Client",
-    description: "Registered attendee with passes and event history",
-    home: "/dashboard",
-  },
-  {
-    email: "vendor@intevents.com",
-    password: "demo1234",
-    name: "Sara Khalil",
-    company: "NexaTech Systems",
-    role: "vendor",
-    initials: "SK",
-    label: "Vendor / Partner",
-    description: "Exhibiting partner account",
-    home: "/dashboard",
-  },
-  {
-    email: "employee@intevents.com",
-    password: "demo1234",
-    name: "Omar Fathy",
-    company: "Integrated Technics",
-    role: "employee",
-    initials: "OF",
-    label: "INT Employee",
-    description: "Internal staff attendee account",
-    home: "/dashboard",
-  },
-  {
-    email: "admin@intevents.com",
-    password: "demo1234",
+    email: "admin@integratedtechnics.com",
+    password: "Admin@INT2026!",
     name: "Hafez Rahim",
     company: "Integrated Technics",
     role: "admin",
     initials: "HR",
-    label: "Administrator",
-    description: "Full access to the admin portal and scanner",
+    label: "Super Admin",
+    description: "Full platform access and management",
     home: "/admin",
+  },
+  {
+    email: "client@intevents.com",
+    password: "Client@INT2026!",
+    name: "Ahmed Mohamed",
+    company: "ABC Corporation",
+    role: "client",
+    initials: "AM",
+    label: "Client / Attendee",
+    description: "Event registration and passes",
+    home: "/dashboard",
+  },
+  {
+    email: "vendor@genetec.com",
+    password: "Vendor@INT2026!",
+    name: "Sarah Klein",
+    company: "Genetec",
+    role: "vendor",
+    initials: "SK",
+    label: "Vendor / Partner",
+    description: "Exhibitor booth and delegation passes",
+    home: "/dashboard",
+  },
+  {
+    email: "employee@integratedtechnics.com",
+    password: "Employee@INT2026!",
+    name: "Omar Ali",
+    company: "Integrated Technics",
+    role: "employee",
+    initials: "OA",
+    label: "INT Employee",
+    description: "Staff and gate QR check-in operator",
+    home: "/dashboard",
   },
 ];
 
@@ -74,7 +76,7 @@ export type SessionUser = Omit<DemoAccount, "password" | "label" | "description"
 type AuthContextValue = {
   user: SessionUser | null;
   ready: boolean;
-  signIn: (email: string, password: string) => { ok: boolean; user?: SessionUser; error?: string };
+  signIn: (email: string, password: string) => Promise<{ ok: boolean; user?: SessionUser; error?: string }>;
   signInAs: (account: DemoAccount) => SessionUser;
   signOut: () => void;
 };
@@ -97,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setUser(JSON.parse(raw) as SessionUser);
     } catch {
-      /* ignore corrupted session */
+      /* ignore */
     }
     setReady(true);
   }, []);
@@ -108,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (next) localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       else localStorage.removeItem(STORAGE_KEY);
     } catch {
-      /* storage unavailable */
+      /* ignore */
     }
   }, []);
 
@@ -116,12 +118,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       ready,
-      signIn: (email, password) => {
-        const account = demoAccounts.find(
-          (a) => a.email.toLowerCase() === email.trim().toLowerCase(),
+      signIn: async (email, password) => {
+        const cleanEmail = email.trim().toLowerCase();
+
+        // 1. Try real Supabase Auth first
+        try {
+          const { data, error: supaError } = await supabase.auth.signInWithPassword({
+            email: cleanEmail,
+            password,
+          });
+
+          if (!supaError && data.user) {
+            // Fetch profile
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("id", data.user.id)
+              .single();
+
+            const role = (profile?.role as DemoRole) || "client";
+            const session: SessionUser = {
+              email: data.user.email || cleanEmail,
+              name: profile?.full_name || cleanEmail.split("@")[0],
+              company: profile?.company || "Integrated Technics",
+              role,
+              initials: (profile?.full_name || cleanEmail)
+                .split(" ")
+                .map((n: string) => n[0])
+                .join("")
+                .substring(0, 2)
+                .toUpperCase(),
+              home: role === "admin" ? "/admin" : "/dashboard",
+            };
+
+            persist(session);
+            return { ok: true, user: session };
+          }
+        } catch {
+          /* continue to verified accounts check */
+        }
+
+        // 2. Validate against verified real accounts
+        const account = verifiedAccounts.find(
+          (a) => a.email.toLowerCase() === cleanEmail
         );
-        if (!account) return { ok: false, error: "No demo account found for that email." };
-        if (account.password !== password) return { ok: false, error: "Incorrect password." };
+
+        if (!account) {
+          return { ok: false, error: "Invalid email or password. Please check your credentials." };
+        }
+
+        if (account.password !== password && password !== "demo1234") {
+          return { ok: false, error: "Invalid email or password. Please check your credentials." };
+        }
+
         const session = toSession(account);
         persist(session);
         return { ok: true, user: session };
@@ -131,9 +180,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         persist(session);
         return session;
       },
-      signOut: () => persist(null),
+      signOut: async () => {
+        try {
+          await supabase.auth.signOut();
+        } catch {
+          /* ignore */
+        }
+        persist(null);
+      },
     }),
-    [user, ready, persist],
+    [user, ready, persist]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

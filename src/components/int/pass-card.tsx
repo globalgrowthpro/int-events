@@ -1,6 +1,5 @@
 import { QrCode } from "./qr-code";
 import { CheckCircle2 } from "lucide-react";
-import logoAsset from "@/assets/int-logo.png.asset.json";
 import type { IntEvent, Registration } from "@/lib/int-data";
 
 function partnerInitials(name: string) {
@@ -28,7 +27,7 @@ export function PassCard({
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <img
-              src={logoAsset.url}
+              src="/logo.png"
               alt="Integrated Technics"
               className="h-9 w-9 rounded-md bg-white object-contain p-0.5"
             />

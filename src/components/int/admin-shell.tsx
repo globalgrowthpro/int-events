@@ -6,18 +6,31 @@ import {
   CalendarDays,
   ClipboardList,
   LayoutDashboard,
-  QrCode,
   ScanLine,
   LogOut,
   Settings,
   Users,
+  Bell,
+  Ticket,
 } from "lucide-react";
 import { IntLogo } from "./logo";
 import { useAuth } from "@/lib/auth";
+import { PWAInstallButton } from "./pwa-install-prompt";
+import { HeaderUpcomingCountdown } from "./header-countdown";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/events", label: "Events", icon: CalendarDays },
+  { to: "/admin/registrations", label: "Registrations", icon: Ticket },
   { to: "/admin/attendees", label: "Attendees", icon: Users },
   { to: "/admin/vendors", label: "Vendors", icon: Building2 },
   { to: "/admin/attendance", label: "Attendance", icon: ClipboardList },
@@ -39,11 +52,15 @@ export function AdminShell({ children }: { children: ReactNode }) {
     navigate({ to: "/login", replace: true });
   }
 
+  const initials = user?.initials ?? "AD";
+  const name = user?.name ?? "Super Admin";
+  const email = user?.email ?? "admin@integrated-technics.com";
+
   return (
     <div className="min-h-screen bg-background">
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
         <div className="flex h-16 items-center border-b border-sidebar-border px-5">
-          <IntLogo tone="light" />
+          <IntLogo tone="light" size="sm" subtitle="Admin Panel" />
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {nav.map((item) => (
@@ -61,27 +78,111 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
-        <div className="border-t border-sidebar-border p-4">
-          <p className="text-xs font-medium text-sidebar-foreground">{user?.name ?? "Hafez Rahim"}</p>
-          <p className="text-[11px] text-sidebar-foreground/60">
-            {user?.role === "admin" ? "Super Admin" : (user?.company ?? "Super Admin")}
-          </p>
-          <Link
-            to="/dashboard"
-            className="mt-3 inline-flex items-center gap-2 text-[11px] font-medium text-sky hover:underline"
-          >
-            <QrCode className="h-3.5 w-3.5" /> Participant portal
-          </Link>
-          <button
-            onClick={handleSignOut}
-            className="mt-3 flex w-full items-center gap-2 text-[11px] font-medium text-sidebar-foreground/70 transition-colors hover:text-sidebar-accent-foreground"
-          >
-            <LogOut className="h-3.5 w-3.5" /> Sign out
-          </button>
+        {/* Sticky Sidebar Footer */}
+        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-sidebar-border bg-sidebar/95 p-4 backdrop-blur">
+          <div className="mb-3">
+            <PWAInstallButton
+              variant="outline"
+              className="w-full justify-center border-sidebar-border bg-sidebar-accent/40 text-xs text-sidebar-foreground hover:bg-sidebar-accent"
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Avatar className="h-8 w-8 border border-sidebar-border shrink-0">
+                <AvatarFallback className="bg-sidebar-accent text-[11px] font-bold text-sidebar-accent-foreground">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-medium text-sidebar-foreground">{name}</p>
+                <p className="truncate text-[10px] text-sidebar-foreground/60">Super Admin</p>
+              </div>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="rounded-lg p-1.5 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors shrink-0"
+              title="Sign out"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       </aside>
 
       <div className="lg:pl-64">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur">
+          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-1.5 px-3 sm:gap-3 sm:px-6">
+            <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+              <Link to="/admin" className="lg:hidden">
+                <IntLogo size="sm" subtitle="Admin Panel" />
+              </Link>
+              <div className="hidden lg:flex items-center">
+                <HeaderUpcomingCountdown />
+              </div>
+            </div>
+
+            {/* Mobile / Tablet Countdown */}
+            <div className="flex shrink-0 items-center lg:hidden">
+              <HeaderUpcomingCountdown />
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+              {/* Notification Bell */}
+              <Link
+                to="/notifications"
+                aria-label="Notifications"
+                className="relative grid h-8 w-8 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:h-9 sm:w-9"
+              >
+                <Bell className="h-4 w-4" />
+                <span className="absolute right-1 top-1 flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
+                </span>
+              </Link>
+
+              {/* User Avatar Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-border py-0.5 pl-0.5 pr-0.5 sm:pr-2.5 transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                  <Avatar className="h-7 w-7 border border-border">
+                    <AvatarImage src="" alt={name} />
+                    <AvatarFallback className="bg-navy text-[11px] font-bold text-navy-foreground">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden text-xs font-semibold sm:block">{name}</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="p-3">
+                    <div className="flex items-center gap-2.5">
+                      <Avatar className="h-8 w-8 border border-border">
+                        <AvatarFallback className="bg-navy text-xs font-bold text-navy-foreground">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{name}</p>
+                        <p className="truncate text-xs text-muted-foreground">{email}</p>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin/settings" className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" /> Admin Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" /> Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </header>
+
+        {/* Mobile Navigation Scrollbar */}
         <div className="flex gap-2 overflow-x-auto border-b border-border bg-card px-4 py-2 lg:hidden">
           {nav.map((item) => (
             <Link
@@ -95,17 +196,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </div>
-        <div className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2 lg:hidden">
-          <span className="text-xs font-medium text-muted-foreground">
-            {user?.name ?? "Admin"}
-          </span>
-          <button
-            onClick={handleSignOut}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground"
-          >
-            <LogOut className="h-3.5 w-3.5" /> Sign out
-          </button>
-        </div>
+
         <main className="mx-auto max-w-7xl px-4 py-8 md:px-8">{children}</main>
       </div>
     </div>
