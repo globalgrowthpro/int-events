@@ -74,6 +74,15 @@ function MyEvents() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   {event.dateLabel} · {event.venue}
                 </p>
+                {reg.state === "registered" && event.status !== "completed" && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Starts in{" "}
+                    <Countdown
+                      target={parseEventStart(event.date, event.startTime)}
+                      variant="inline"
+                    />
+                  </p>
+                )}
                 <p className="mt-1 font-mono text-[11px] text-muted-foreground">{reg.id}</p>
               </div>
               <div className="flex gap-2">
