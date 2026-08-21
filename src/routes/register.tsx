@@ -55,14 +55,34 @@ function RegisterPage() {
           <Link to="/">
             <IntLogo />
           </Link>
-          <Link to="/login" className="text-sm font-medium text-primary hover:underline">
-            Already have an account?
-          </Link>
+          {!user && (
+            <Link to="/login" className="text-sm font-medium text-primary hover:underline">
+              Already have an account?
+            </Link>
+          )}
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-10">
-        {done ? (
+        {ready && user ? (
+          <div className="mx-auto max-w-md rounded-xl border border-border bg-card p-8 text-center shadow-card">
+            <CheckCircle2 className="mx-auto h-12 w-12 text-success" />
+            <h1 className="mt-4 text-xl font-semibold">You already have an account</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You are signed in as {user.name} ({user.email}). There is no need to register again.
+            </p>
+            <div className="mt-6 grid gap-3">
+              <Button asChild>
+                <Link to={user.role === "admin" ? "/admin" : "/dashboard"}>
+                  {user.role === "admin" ? "Go to admin portal" : "Go to my dashboard"}
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/events">Browse events</Link>
+              </Button>
+            </div>
+          </div>
+        ) : done ? (
           <div className="mx-auto max-w-md rounded-xl border border-border bg-card p-8 text-center shadow-card">
             <CheckCircle2 className="mx-auto h-12 w-12 text-success" />
             <h1 className="mt-4 text-xl font-semibold">Verify your account</h1>
