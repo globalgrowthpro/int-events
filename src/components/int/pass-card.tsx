@@ -36,7 +36,7 @@ export function PassCard({
 
         <div className="mt-5 flex flex-col items-center">
           <div className="rounded-lg border border-border bg-card p-3">
-            <QRCodeSVG value={registration.token} size={compact ? 132 : 184} level="M" />
+            <QrCode value={registration.token} size={compact ? 132 : 184} />
           </div>
           <p className="mt-3 text-xs text-muted-foreground">Scan this QR code at event entrance</p>
           <p className="mt-1 font-mono text-[11px] tracking-wider text-muted-foreground">
