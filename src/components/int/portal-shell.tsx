@@ -10,54 +10,77 @@ const nav = [
   { to: "/my-events", label: "My Events", icon: Ticket },
   { to: "/passes", label: "My Passes", icon: QrCode },
   { to: "/notifications", label: "Notifications", icon: Bell },
+  { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
 export function PortalShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 md:px-6">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-card md:flex">
+        <div className="flex h-16 items-center border-b border-border px-5">
           <Link to="/dashboard">
             <IntLogo />
           </Link>
-          <nav className="hidden items-center gap-1 md:flex">
-            {nav.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                activeProps={{ className: "bg-accent text-accent-foreground" }}
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="ml-auto flex items-center gap-2">
-            <button
-              className="hidden h-9 w-9 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:text-foreground sm:grid"
-              aria-label="Search"
-            >
-              <Search className="h-4 w-4" />
-            </button>
+        </div>
+        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+          {nav.map((item) => (
             <Link
-              to="/notifications"
-              aria-label="Notifications"
-              className="relative grid h-9 w-9 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:text-foreground"
+              key={item.to}
+              to={item.to}
+              activeProps={{ className: "bg-accent text-accent-foreground" }}
+              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
             >
-              <Bell className="h-4 w-4" />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive" />
+              <item.icon className="h-4 w-4" />
+              {item.label}
             </Link>
-            <div className="flex items-center gap-2 rounded-md border border-border py-1 pl-1 pr-3">
-              <span className="grid h-7 w-7 place-items-center rounded bg-navy text-[11px] font-semibold text-navy-foreground">
-                {currentUser.initials}
-              </span>
-              <span className="hidden text-sm font-medium sm:block">{currentUser.name}</span>
+          ))}
+        </nav>
+        <div className="border-t border-border p-4">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-9 w-9 place-items-center rounded bg-navy text-[11px] font-semibold text-navy-foreground">
+              {currentUser.initials}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">{currentUser.name}</p>
+              <p className="truncate text-[11px] text-muted-foreground">{currentUser.company}</p>
             </div>
           </div>
         </div>
-      </header>
+      </aside>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 md:px-6">{children}</main>
+      <div className="md:pl-64">
+        <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur">
+          <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:px-6">
+            <Link to="/dashboard" className="md:hidden">
+              <IntLogo />
+            </Link>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                className="hidden h-9 w-9 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:text-foreground sm:grid"
+                aria-label="Search"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+              <Link
+                to="/notifications"
+                aria-label="Notifications"
+                className="relative grid h-9 w-9 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Bell className="h-4 w-4" />
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive" />
+              </Link>
+              <div className="flex items-center gap-2 rounded-md border border-border py-1 pl-1 pr-3">
+                <span className="grid h-7 w-7 place-items-center rounded bg-navy text-[11px] font-semibold text-navy-foreground">
+                  {currentUser.initials}
+                </span>
+                <span className="hidden text-sm font-medium sm:block">{currentUser.name}</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-7xl px-4 py-8 md:px-6">{children}</main>
+      </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-card md:hidden">
         {[
