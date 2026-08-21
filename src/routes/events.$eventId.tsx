@@ -70,6 +70,15 @@ function EventDetail() {
             />
           </dl>
 
+          {isUpcoming && (
+            <div className="mt-6">
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Starts in
+              </h2>
+              <Countdown target={target} />
+            </div>
+          )}
+
           <div className="mt-6">
             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
               <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
