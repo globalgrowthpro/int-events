@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import logoAsset from "@/assets/int-logo.png.asset.json";
 
 export function IntLogo({
   className,
@@ -9,9 +10,13 @@ export function IntLogo({
 }) {
   return (
     <span className={cn("flex items-center gap-2.5", className)}>
-      <span className="grid h-9 w-9 place-items-center rounded-md bg-primary text-primary-foreground">
-        <span className="text-[13px] font-bold tracking-tight">INT</span>
-      </span>
+      <img
+        src={logoAsset.url}
+        alt="Integrated Technics"
+        width={40}
+        height={40}
+        className="h-9 w-9 rounded-md bg-card object-contain p-0.5"
+      />
       <span className="leading-none">
         <span
           className={cn(
