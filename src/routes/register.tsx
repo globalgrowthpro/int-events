@@ -45,6 +45,7 @@ const industries = [
 function RegisterPage() {
   const [type, setType] = useState<AccountType>("client");
   const [done, setDone] = useState(false);
+  const { user, ready } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
