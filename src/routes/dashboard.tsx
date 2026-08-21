@@ -106,10 +106,10 @@ function Stat({
   value: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <div className="rounded-xl border border-border bg-card p-3 shadow-card sm:p-5">
       <Icon className="h-5 w-5 text-primary" />
-      <p className="mt-3 text-2xl font-semibold text-foreground">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-2 text-xl font-semibold text-foreground sm:mt-3 sm:text-2xl">{value}</p>
+      <p className="text-[11px] text-muted-foreground sm:text-xs">{label}</p>
     </div>
   );
 }
