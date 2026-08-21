@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarDays, QrCode, Ticket, Award } from "lucide-react";
+import { CalendarDays, QrCode, Ticket } from "lucide-react";
 import { PortalShell, PageHeading } from "@/components/int/portal-shell";
 import { EventCard } from "@/components/int/event-card";
 import { PassCard } from "@/components/int/pass-card";
