@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Cpu, Handshake, Lightbulb, Users } from "lucide-react";
 import heroImg from "@/assets/hero-summit.jpg";
 import { IntLogo } from "@/components/int/logo";
+import { useAuth } from "@/lib/auth";
 import { EventCard } from "@/components/int/event-card";
 import { events } from "@/lib/int-data";
 
@@ -33,6 +34,7 @@ const reasons = [
 ];
 
 function Landing() {
+  const { user, signOut } = useAuth();
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
@@ -45,18 +47,37 @@ function Landing() {
             >
               Events
             </Link>
-            <Link
-              to="/login"
-              className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
-            >
-              Login
-            </Link>
-            <Link
-              to="/register"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
-            >
-              Create Account
-            </Link>
+            {user ? (
+              <>
+                <button
+                  onClick={signOut}
+                  className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                >
+                  Sign out
+                </button>
+                <Link
+                  to={user.role === "admin" ? "/admin" : "/dashboard"}
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
+                >
+                  {user.role === "admin" ? "Admin portal" : "My dashboard"}
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/register"
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
+                >
+                  Create Account
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

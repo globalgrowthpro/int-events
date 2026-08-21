@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, type ReactNode } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BarChart3,
   Building2,
@@ -8,10 +8,12 @@ import {
   LayoutDashboard,
   QrCode,
   ScanLine,
+  LogOut,
   Settings,
   Users,
 } from "lucide-react";
 import { IntLogo } from "./logo";
+import { useAuth } from "@/lib/auth";
 
 const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -25,6 +27,18 @@ const nav = [
 ] as const;
 
 export function AdminShell({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const { user, ready, signOut } = useAuth();
+
+  useEffect(() => {
+    if (ready && !user) navigate({ to: "/login", replace: true });
+  }, [ready, user, navigate]);
+
+  function handleSignOut() {
+    signOut();
+    navigate({ to: "/login", replace: true });
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
@@ -48,14 +62,22 @@ export function AdminShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className="border-t border-sidebar-border p-4">
-          <p className="text-xs font-medium text-sidebar-foreground">Hafez Rahim</p>
-          <p className="text-[11px] text-sidebar-foreground/60">Super Admin</p>
+          <p className="text-xs font-medium text-sidebar-foreground">{user?.name ?? "Hafez Rahim"}</p>
+          <p className="text-[11px] text-sidebar-foreground/60">
+            {user?.role === "admin" ? "Super Admin" : (user?.company ?? "Super Admin")}
+          </p>
           <Link
             to="/dashboard"
             className="mt-3 inline-flex items-center gap-2 text-[11px] font-medium text-sky hover:underline"
           >
             <QrCode className="h-3.5 w-3.5" /> Participant portal
           </Link>
+          <button
+            onClick={handleSignOut}
+            className="mt-3 flex w-full items-center gap-2 text-[11px] font-medium text-sidebar-foreground/70 transition-colors hover:text-sidebar-accent-foreground"
+          >
+            <LogOut className="h-3.5 w-3.5" /> Sign out
+          </button>
         </div>
       </aside>
 
@@ -72,6 +94,17 @@ export function AdminShell({ children }: { children: ReactNode }) {
               {item.label}
             </Link>
           ))}
+        </div>
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2 lg:hidden">
+          <span className="text-xs font-medium text-muted-foreground">
+            {user?.name ?? "Admin"}
+          </span>
+          <button
+            onClick={handleSignOut}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground"
+          >
+            <LogOut className="h-3.5 w-3.5" /> Sign out
+          </button>
         </div>
         <main className="mx-auto max-w-7xl px-4 py-8 md:px-8">{children}</main>
       </div>
