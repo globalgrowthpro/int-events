@@ -93,12 +93,13 @@ function EventDetail() {
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              to="/register"
+            <button
+              type="button"
+              onClick={() => setFormOpen(true)}
               className="inline-flex h-11 items-center rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-tech"
             >
               Register for this event
-            </Link>
+            </button>
             <Link
               to="/events"
               className="inline-flex h-11 items-center rounded-md border border-border px-6 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
