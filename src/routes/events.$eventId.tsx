@@ -39,6 +39,7 @@ function EventDetail() {
   const pct = Math.round((event.registered / event.capacity) * 100);
   const target = parseEventStart(event.date, event.startTime);
   const isUpcoming = event.status !== "completed" && event.status !== "cancelled";
+  const [formOpen, setFormOpen] = useState(false);
 
   return (
     <PortalShell>
