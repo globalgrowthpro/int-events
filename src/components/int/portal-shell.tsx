@@ -12,6 +12,7 @@ import {
   User,
 } from "lucide-react";
 import { IntLogo } from "./logo";
+import { NotificationBell } from "./notification-bell";
 import { useAuth } from "@/lib/auth";
 import { currentUser } from "@/lib/int-data";
 import {
@@ -127,18 +128,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
                 <Search className="h-4 w-4" />
               </button>
 
-              {/* Notification Bell Icon */}
-              <Link
-                to="/notifications"
-                aria-label="Notifications"
-                className="relative grid h-8 w-8 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:h-9 sm:w-9"
-              >
-                <Bell className="h-4 w-4" />
-                <span className="absolute right-1 top-1 flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
-                </span>
-              </Link>
+              <NotificationBell />
 
               {/* User Avatar & Dropdown Menu */}
               <DropdownMenu>
