@@ -35,6 +35,7 @@ export function PWAInstallPrompt() {
       return () => clearTimeout(timer);
     }
     setShowBanner(false);
+    return undefined;
   }, [isInstallable, isDismissed, isInstalled]);
 
   if (!showBanner && !showIosModal) {

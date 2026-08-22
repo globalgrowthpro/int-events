@@ -14,6 +14,7 @@ import {
   Ticket,
 } from "lucide-react";
 import { IntLogo } from "./logo";
+import { NotificationBell } from "./notification-bell";
 import { useAuth } from "@/lib/auth";
 import { PWAInstallButton } from "./pwa-install-prompt";
 import { HeaderUpcomingCountdown } from "./header-countdown";
@@ -35,6 +36,7 @@ const nav = [
   { to: "/admin/vendors", label: "Vendors", icon: Building2 },
   { to: "/admin/attendance", label: "Attendance", icon: ClipboardList },
   { to: "/admin/scanner", label: "QR Scanner", icon: ScanLine },
+  { to: "/admin/notifications", label: "Notifications", icon: Bell },
   { to: "/admin/reports", label: "Reports", icon: BarChart3 },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
@@ -128,18 +130,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-              {/* Notification Bell */}
-              <Link
-                to="/notifications"
-                aria-label="Notifications"
-                className="relative grid h-8 w-8 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:h-9 sm:w-9"
-              >
-                <Bell className="h-4 w-4" />
-                <span className="absolute right-1 top-1 flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
-                </span>
-              </Link>
+              <NotificationBell />
 
               {/* User Avatar Dropdown */}
               <DropdownMenu>
