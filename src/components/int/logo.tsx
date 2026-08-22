@@ -17,28 +17,28 @@ export function IntLogo({
 }) {
   const sizeStyles = {
     sm: {
-      img: "h-8 w-8 sm:h-9 sm:w-9 p-0.5 rounded-md",
-      title: "text-sm sm:text-[15px] font-bold",
-      sub: "text-[9px] sm:text-[10px] tracking-[0.14em] font-medium",
-      gap: "gap-2.5",
+      img: "h-7 w-7 sm:h-8 sm:w-8 p-0.5 rounded-md",
+      title: "text-xs sm:text-sm font-bold",
+      sub: "text-[8px] sm:text-[9px] tracking-[0.12em] font-medium",
+      gap: "gap-2",
     },
     md: {
-      img: "h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 p-1.5 rounded-2xl shadow-md",
-      title: "text-xl sm:text-2xl md:text-3xl font-black",
+      img: "h-9 w-9 sm:h-10 sm:w-10 p-1 rounded-xl shadow-2xs border border-border/40",
+      title: "text-sm sm:text-base font-extrabold tracking-tight",
+      sub: "text-[9px] sm:text-[9.5px] tracking-[0.16em] font-semibold",
+      gap: "gap-2.5",
+    },
+    lg: {
+      img: "h-12 w-12 sm:h-14 sm:w-14 p-1.5 rounded-2xl shadow-md border border-border/40",
+      title: "text-xl sm:text-2xl font-black",
       sub: "text-xs sm:text-sm tracking-[0.2em] font-bold",
       gap: "gap-3.5",
     },
-    lg: {
-      img: "h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 p-2 rounded-3xl shadow-lg",
+    xl: {
+      img: "h-16 w-16 sm:h-20 sm:w-20 p-2 rounded-3xl shadow-xl border border-border/40",
       title: "text-2xl sm:text-3xl md:text-4xl font-black",
       sub: "text-xs sm:text-sm md:text-base tracking-[0.22em] font-bold",
       gap: "gap-4",
-    },
-    xl: {
-      img: "h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 p-2.5 rounded-3xl shadow-xl",
-      title: "text-3xl sm:text-4xl md:text-5xl font-black",
-      sub: "text-sm sm:text-base md:text-lg tracking-[0.24em] font-bold",
-      gap: "gap-5",
     },
   }[size];
 
