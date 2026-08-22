@@ -1,13 +1,13 @@
 import { supabase } from "@/lib/supabase";
 
 export interface SmtpTestPayload {
-  host?: string;
-  port?: number;
-  encryption?: "ssl" | "tls" | "none";
-  username?: string;
-  password?: string;
-  from_email?: string;
-  from_name?: string;
+  host?: string | undefined;
+  port?: number | undefined;
+  encryption?: ("ssl" | "tls" | "none") | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  from_email?: string | undefined;
+  from_name?: string | undefined;
   recipient_email: string;
 }
 
@@ -15,12 +15,12 @@ export interface InvitationEmailPayload {
   recipient_name: string;
   recipient_email: string;
   event_title: string;
-  event_date?: string;
-  event_location?: string;
-  company?: string | null;
-  job_title?: string | null;
-  token?: string | null;
-  custom_note?: string;
+  event_date?: string | undefined;
+  event_location?: string | undefined;
+  company?: string | null | undefined;
+  job_title?: string | null | undefined;
+  token?: string | null | undefined;
+  custom_note?: string | undefined;
 }
 
 export async function sendLiveTestEmail(payload: SmtpTestPayload): Promise<{
