@@ -36,6 +36,7 @@ const nav = [
   { to: "/admin/vendors", label: "Vendors", icon: Building2 },
   { to: "/admin/attendance", label: "Attendance", icon: ClipboardList },
   { to: "/admin/scanner", label: "QR Scanner", icon: ScanLine },
+  { to: "/admin/notifications", label: "Notifications", icon: Bell },
   { to: "/admin/reports", label: "Reports", icon: BarChart3 },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
