@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { EventCard } from "@/components/int/event-card";
 import { events } from "@/lib/int-data";
 import { PWAInstallButton } from "@/components/int/pwa-install-prompt";
+import { WhyAttendSlider } from "@/components/int/why-attend-slider";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -149,19 +150,16 @@ function Landing() {
       </section>
 
       <section className="border-y border-border bg-card">
-        <div className="mx-auto max-w-7xl px-4 py-16 md:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight">Why Attend?</h2>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {reasons.map((r) => (
-              <div key={r.title} className="rounded-xl border border-border p-6">
-                <span className="grid h-10 w-10 place-items-center rounded-md bg-accent text-accent-foreground">
-                  <r.icon className="h-5 w-5" />
-                </span>
-                <h3 className="mt-4 text-base font-semibold">{r.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{r.body}</p>
-              </div>
-            ))}
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:py-16 md:px-6">
+          <div className="flex items-center justify-between mb-6 sm:mb-8">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Why Attend?</h2>
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+                Key benefits and opportunities for participants, partners, and exhibitors.
+              </p>
+            </div>
           </div>
+          <WhyAttendSlider items={reasons} />
         </div>
       </section>
 
