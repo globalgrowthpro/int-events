@@ -14,7 +14,6 @@ import {
 import { IntLogo } from "./logo";
 import { NotificationBell } from "./notification-bell";
 import { useAuth } from "@/lib/auth";
-import { useOnlinePresence } from "@/lib/presence";
 import { currentUser } from "@/lib/int-data";
 import {
   DropdownMenu,
@@ -38,7 +37,6 @@ const nav = [
 ] as const;
 
 export function PortalShell({ children }: { children: ReactNode }) {
-  useOnlinePresence();
   const navigate = useNavigate();
   const { user, ready, signOut } = useAuth();
 

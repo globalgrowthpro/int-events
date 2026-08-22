@@ -8,6 +8,7 @@ import {
 import { useEffect } from "react";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/lib/auth";
+import { PresenceProvider } from "@/lib/presence";
 import { NotificationsProvider } from "@/lib/notifications";
 import { Toaster } from "@/components/ui/sonner";
 import { PWAInstallPrompt } from "@/components/int/pwa-install-prompt";
@@ -100,12 +101,14 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <NotificationsProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-          <PWAInstallPrompt />
-          <Toaster position="top-center" richColors />
-        </NotificationsProvider>
+        <PresenceProvider>
+          <NotificationsProvider>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+            <PWAInstallPrompt />
+            <Toaster position="top-center" richColors />
+          </NotificationsProvider>
+        </PresenceProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
