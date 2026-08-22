@@ -22,11 +22,11 @@ import {
   Globe,
   Building2,
   User,
-  Clock,
   Trash,
   Sparkles,
 } from "lucide-react";
 import { StatusBadge } from "@/components/int/status-badge";
+import { RichTextEditor } from "@/components/int/rich-text-editor";
 import { events as initialEvents, type IntEvent, type Speaker, type AgendaItem } from "@/lib/int-data";
 import { getEvents, createEvent, updateEvent, deleteEvent } from "@/lib/api";
 import { toast } from "sonner";
@@ -684,27 +684,27 @@ export function AdminEventsPage() {
 
       {/* CREATE & EDIT MODAL DIALOG WITH MULTI-TAB CONTROLS */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-2xl rounded-2xl border border-border bg-card shadow-elevated overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in">
+          <div className="w-full max-w-4xl lg:max-w-5xl rounded-2xl border border-border bg-card shadow-elevated overflow-hidden flex flex-col max-h-[92vh]">
             {/* Modal Header */}
             <header className="flex items-center justify-between border-b border-border px-6 py-4 bg-muted/20">
               <div className="flex items-center gap-3">
-                <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
                   <Calendar className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-foreground">
+                  <h2 className="text-lg font-bold text-foreground">
                     {editingEvent ? "Edit Summit Parameters" : "Create New Summit / Event"}
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    {editingEvent ? `Configuring ${editingEvent.code}` : "Set up title, location map, partner logos, and agenda"}
+                    {editingEvent ? `Configuring ${editingEvent.code}` : "Set up title, rich summary, location map, partner logos, and agenda"}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsCreateOpen(false)}
-                className="rounded-lg p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -716,16 +716,16 @@ export function AdminEventsPage() {
                 { id: "details", label: "1. Overview & Capacity" },
                 { id: "location", label: "2. Date, Venue & Map" },
                 { id: "media", label: "3. Banner Image" },
-                { id: "partners", label: `4. Partners (${formData.partnerList.length})` },
+                { id: "partners", label: `4. Partners & Logos (${formData.partnerList.length})` },
                 { id: "agenda", label: "5. Speakers & Agenda" },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveFormTab(tab.id as any)}
-                  className={`py-3 px-3 border-b-2 font-medium transition-all whitespace-nowrap ${
+                  className={`py-3 px-4 border-b-2 font-medium transition-all whitespace-nowrap text-xs ${
                     activeFormTab === tab.id
-                      ? "border-primary text-primary font-bold"
+                      ? "border-primary text-primary font-bold bg-background/50"
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -735,11 +735,11 @@ export function AdminEventsPage() {
             </div>
 
             {/* Form Content */}
-            <form onSubmit={handleSaveEvent} className="flex-1 overflow-y-auto p-6 space-y-4">
+            <form onSubmit={handleSaveEvent} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
               {/* TAB 1: DETAILS */}
               {activeFormTab === "details" && (
-                <div className="space-y-4">
-                  <div className="space-y-1">
+                <div className="space-y-5">
+                  <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-foreground">
                       Event Title <span className="text-destructive">*</span>
                     </label>
@@ -753,7 +753,7 @@ export function AdminEventsPage() {
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground">Event Category</label>
                       <select
                         value={formData.category}
@@ -768,7 +768,7 @@ export function AdminEventsPage() {
                       </select>
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground">Status</label>
                       <select
                         value={formData.status}
@@ -787,7 +787,7 @@ export function AdminEventsPage() {
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground">
                         Total Capacity Seats <span className="text-destructive">*</span>
                       </label>
@@ -801,7 +801,7 @@ export function AdminEventsPage() {
                       />
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground">Current Registered</label>
                       <input
                         type="number"
@@ -813,14 +813,21 @@ export function AdminEventsPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-foreground">Summary & Objectives</label>
-                    <textarea
-                      rows={3}
+                  {/* Rich Text Editor for Summary & Objectives */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-foreground">
+                        Summary & Objectives (Rich Text Editor)
+                      </label>
+                      <span className="text-[11px] text-muted-foreground">
+                        Supports bold, headings, bullet lists, blockquotes & hyperlinks
+                      </span>
+                    </div>
+                    <RichTextEditor
                       value={formData.summary}
-                      onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                      placeholder="Overview of the event, key themes, and attendee value..."
-                      className={textareaClass}
+                      onChange={(val) => setFormData({ ...formData, summary: val })}
+                      placeholder="Write rich formatted event summary, key topics, agenda highlights, and attendee value..."
+                      minHeight="200px"
                     />
                   </div>
                 </div>
