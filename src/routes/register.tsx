@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Briefcase, Building2, CheckCircle2, IdCard } from "lucide-react";
+import { ArrowLeft, Briefcase, Building2, CheckCircle2, IdCard } from "lucide-react";
 import { IntLogo } from "@/components/int/logo";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/register")({
         content: "Register as a client, vendor or Integrated Technics employee to attend INT events.",
       },
       { property: "og:title", content: "Create Account — INT Events" },
-      { property: "og:description", content: "Register as a client, vendor or INT employee." },
+      { property: "og:description", content: "Create your INT Events account." },
     ],
   }),
   component: RegisterPage,
@@ -61,9 +61,18 @@ function RegisterPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-          <Link to="/">
-            <IntLogo />
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-muted-foreground shadow-2xs hover:bg-secondary hover:text-foreground transition-colors group"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5 text-primary" />
+              <span className="hidden sm:inline">Home</span>
+            </Link>
+            <Link to="/">
+              <IntLogo />
+            </Link>
+          </div>
           {!user && (
             <Link to="/login" className="text-sm font-medium text-primary hover:underline">
               Already have an account?

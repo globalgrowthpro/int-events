@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import heroImg from "@/assets/hero-summit.jpg";
 import { PasswordInput } from "@/components/ui/password-input";
-import { AlertCircle, Clock, ShieldAlert, Loader2 } from "lucide-react";
+import { AlertCircle, Clock, ShieldAlert, Loader2, ArrowLeft } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -139,9 +139,18 @@ export function LoginPage() {
           className="absolute inset-0 h-full w-full object-cover opacity-40"
         />
         <div className="relative flex h-full flex-col justify-between p-10">
-          <Link to="/">
-            <IntLogo tone="light" size="lg" />
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link to="/">
+              <IntLogo tone="light" size="lg" />
+            </Link>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur hover:bg-white/20 transition-all hover:-translate-x-0.5"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Return to Home</span>
+            </Link>
+          </div>
           <div>
             <h2 className="text-3xl font-semibold text-navy-foreground">
               Connect. Discover. Innovate.
@@ -154,14 +163,25 @@ export function LoginPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center px-4 py-16">
+      <div className="flex items-center justify-center px-4 py-12 sm:py-16">
         <div className="w-full max-w-sm">
-          <div className="lg:hidden">
+          {/* Return Button for Mobile & Form Header */}
+          <div className="mb-6 flex items-center justify-between">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground shadow-2xs hover:bg-secondary hover:text-foreground transition-all hover:-translate-x-0.5 group"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5 text-primary" />
+              <span>Return to Home</span>
+            </Link>
+          </div>
+          
+          <div className="lg:hidden mb-6">
             <Link to="/">
               <IntLogo size="md" />
             </Link>
           </div>
-          <h1 className="mt-8 text-2xl font-semibold tracking-tight lg:mt-0">Welcome back</h1>
+          <h1 className="text-2xl font-semibold tracking-tight lg:mt-0">Welcome back</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Sign in with your verified INT Events credentials.
           </p>
