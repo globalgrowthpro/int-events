@@ -238,7 +238,15 @@ export async function createRegistrationWithDelegates({
  * QR Check-In Verification (Stored Procedure / Edge Function)
  */
 export async function verifyCheckIn(ticketToken: string, gate = "Main Entrance Gate A", scannedBy?: string) {
-  const cleanToken = ticketToken.trim();
+  let cleanToken = ticketToken.trim();
+
+  // Handle JSON encoded QR code payloads
+  if (cleanToken.startsWith("{") && cleanToken.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(cleanToken);
+      cleanToken = parsed.t || parsed.token || parsed.id || cleanToken;
+    } catch {}
+  }
 
   try {
     // 1. Query registration record in database
@@ -265,10 +273,15 @@ export async function verifyCheckIn(ticketToken: string, gate = "Main Entrance G
         success: false,
         status: "invalid" as const,
         message: "Pass token was not recognized in database",
+        token: cleanToken,
       };
     }
 
-    // 2. Check for duplicate scan
+    const eventDateTime = reg.events
+      ? `${reg.events.date_label || reg.events.date || "Event Date"} · ${reg.events.start_time || "09:00 AM"}`
+      : "Upcoming Session";
+
+    // 2. Check for duplicate scan (BLOCK duplicate registration updates)
     if (reg.state === "checked-in") {
       try {
         await supabase.from("attendance_logs").insert({
@@ -280,18 +293,25 @@ export async function verifyCheckIn(ticketToken: string, gate = "Main Entrance G
         });
       } catch {}
 
-      const scannedTime = reg.check_in_time
-        ? new Date(reg.check_in_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      const initialCheckIn = reg.check_in_time
+        ? new Date(reg.check_in_time).toLocaleString([], {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })
         : "earlier today";
 
       return {
         success: false,
         status: "duplicate" as const,
-        message: `Pass was already scanned at ${scannedTime}`,
+        message: `Duplicate Scan Prevented: Badge was already scanned and checked in at ${initialCheckIn}`,
         attendee_name: reg.attendee_name,
         company: reg.company || "Enterprise Client",
         job_title: reg.job_title || "Participant",
         event_title: reg.events?.title || "INT Event",
+        event_date_time: eventDateTime,
+        check_in_time: reg.check_in_time || new Date().toISOString(),
+        token: cleanToken,
+        gate,
       };
     }
 
@@ -316,12 +336,15 @@ export async function verifyCheckIn(ticketToken: string, gate = "Main Entrance G
     return {
       success: true,
       status: "valid" as const,
-      message: "Check-in verified and gate badge active",
+      message: "Check-in verified and gate access granted",
       attendee_name: reg.attendee_name,
       company: reg.company || "Enterprise Client",
       job_title: reg.job_title || "Participant",
       event_title: reg.events?.title || "INT Event",
+      event_date_time: eventDateTime,
       check_in_time: nowIso,
+      token: cleanToken,
+      gate,
     };
   } catch (err) {
     console.error("verifyCheckIn error:", err);
@@ -329,6 +352,7 @@ export async function verifyCheckIn(ticketToken: string, gate = "Main Entrance G
       success: false,
       status: "invalid" as const,
       message: "Check-in verification failed",
+      token: cleanToken,
     };
   }
 }

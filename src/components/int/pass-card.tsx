@@ -21,6 +21,16 @@ export function PassCard({
   compact?: boolean;
 }) {
   const partner = event.partners[0];
+
+  const qrPayload = JSON.stringify({
+    t: registration.token,
+    a: registration.attendee,
+    e: event.title,
+    d: event.dateLabel,
+    tm: event.startTime,
+    c: registration.company,
+  });
+
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-elevated">
       <div className="bg-navy px-5 py-4 text-navy-foreground">
@@ -65,18 +75,20 @@ export function PassCard({
           <Field label="Registration ID" value={registration.id} />
         </dl>
 
+        {/* Structured QR Payload containing Account Name, Event Name, Date and Time */}
         <div className="mt-5 flex flex-col items-center">
-          <div className="rounded-lg border border-border bg-card p-3">
-            <QrCode value={registration.token} size={compact ? 132 : 184} />
+          <div className="rounded-lg border border-border bg-card p-3 shadow-inner">
+            <QrCode value={qrPayload} size={compact ? 132 : 184} />
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">Scan this QR code at event entrance</p>
+          <p className="mt-3 text-xs font-semibold text-muted-foreground">Scan at gate for instant check-in</p>
           <p className="mt-1 font-mono text-[11px] tracking-wider text-muted-foreground">
             {registration.token}
           </p>
+
           <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
             <CheckCircle2 className="h-3.5 w-3.5" />
             {registration.state === "checked-in"
-              ? `Checked in · ${registration.checkInTime}`
+              ? `Checked in · ${registration.checkInTime || "Verified"}`
               : "Registered"}
           </div>
         </div>
