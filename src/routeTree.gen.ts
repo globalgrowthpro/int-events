@@ -23,6 +23,7 @@ import { Route as AdminAccountsRouteImport } from './routes/admin.accounts'
 import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AdminAttendeesRouteImport } from './routes/admin.attendees'
 import { Route as AdminEventsRouteImport } from './routes/admin.events'
+import { Route as AdminInvitationsRouteImport } from './routes/admin.invitations'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminRegistrationsRouteImport } from './routes/admin.registrations'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -102,6 +103,11 @@ const AdminEventsRoute = AdminEventsRouteImport.update({
   path: '/events',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminInvitationsRoute = AdminInvitationsRouteImport.update({
+  id: '/invitations',
+  path: '/invitations',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/attendees': typeof AdminAttendeesRoute
   '/admin/events': typeof AdminEventsRoute
+  '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/attendees': typeof AdminAttendeesRoute
   '/admin/events': typeof AdminEventsRoute
+  '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/attendees': typeof AdminAttendeesRoute
   '/admin/events': typeof AdminEventsRoute
+  '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
     | '/admin/attendance'
     | '/admin/attendees'
     | '/admin/events'
+    | '/admin/invitations'
     | '/admin/notifications'
     | '/admin/registrations'
     | '/admin/reports'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/admin/attendance'
     | '/admin/attendees'
     | '/admin/events'
+    | '/admin/invitations'
     | '/admin/notifications'
     | '/admin/registrations'
     | '/admin/reports'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/admin/attendance'
     | '/admin/attendees'
     | '/admin/events'
+    | '/admin/invitations'
     | '/admin/notifications'
     | '/admin/registrations'
     | '/admin/reports'
@@ -403,6 +415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/invitations': {
+      id: '/admin/invitations'
+      path: '/invitations'
+      fullPath: '/admin/invitations'
+      preLoaderRoute: typeof AdminInvitationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/notifications': {
       id: '/admin/notifications'
       path: '/notifications'
@@ -467,6 +486,7 @@ interface AdminRouteChildren {
   AdminAttendanceRoute: typeof AdminAttendanceRoute
   AdminAttendeesRoute: typeof AdminAttendeesRoute
   AdminEventsRoute: typeof AdminEventsRoute
+  AdminInvitationsRoute: typeof AdminInvitationsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminRegistrationsRoute: typeof AdminRegistrationsRoute
   AdminReportsRoute: typeof AdminReportsRoute
@@ -481,6 +501,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAttendanceRoute: AdminAttendanceRoute,
   AdminAttendeesRoute: AdminAttendeesRoute,
   AdminEventsRoute: AdminEventsRoute,
+  AdminInvitationsRoute: AdminInvitationsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminRegistrationsRoute: AdminRegistrationsRoute,
   AdminReportsRoute: AdminReportsRoute,
