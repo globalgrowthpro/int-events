@@ -40,12 +40,12 @@ type ScanResult = {
   message: string;
   token: string;
   time: string;
-  attendee?: string;
-  company?: string;
-  job_title?: string;
-  event_title?: string;
-  event_date_time?: string;
-  check_in_time?: string;
+  attendee?: string | undefined;
+  company?: string | undefined;
+  job_title?: string | undefined;
+  event_title?: string | undefined;
+  event_date_time?: string | undefined;
+  check_in_time?: string | undefined;
   gate: string;
 };
 
