@@ -29,6 +29,8 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUserPresence[]>(DEFAULT_USERS);
 
   useEffect(() => {
+    let channel: any = null;
+
     try {
       const activeUser: OnlineUserPresence = user
         ? {
@@ -44,7 +46,7 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
       // Check if channel already exists to prevent duplicate subscriptions
       const existingChannels = supabase.getChannels();
       const existing = existingChannels.find((c) => c.topic === "realtime:int-online-presence");
-      const channel = existing || supabase.channel("int-online-presence", {
+      channel = existing || supabase.channel("int-online-presence", {
         config: {
           presence: {
             key: user?.email || "admin-session",
@@ -100,22 +102,24 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
           } catch {}
         });
 
-      channel.subscribe(async (status) => {
+      channel.subscribe(async (status: string) => {
         if (status === "SUBSCRIBED") {
           try {
             await channel.track(activeUser);
           } catch {}
         }
       });
-
-      return () => {
-        try {
-          supabase.removeChannel(channel);
-        } catch {}
-      };
     } catch {
       // Fallback
     }
+
+    return () => {
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {}
+      }
+    };
   }, [user]);
 
   return (
