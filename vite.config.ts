@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import path from "path";
 import nodemailer from "nodemailer";
+import QRCode from "qrcode";
 
 function smtpServerPlugin(): Plugin {
   return {
@@ -85,14 +86,41 @@ function smtpServerPlugin(): Plugin {
               const fromName = "Integrated Technics Events";
               const recipientName = data.recipient_name || "Valued Guest";
               const recipientEmail = data.recipient_email;
+              const eventId = data.event_id || "security-summit-2026";
               const eventTitle = data.event_title || "INT Security Technology Summit 2026";
+              const eventDate = data.event_date || "November 14, 2026 • 09:00 AM";
+              const eventLocation = data.event_location || "Royal Maxim Palace Kempinski, Cairo";
               const token = data.token || `EVT-INV-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+              const baseDomain = data.domain || "https://events.integratedtechnics.com";
 
               if (!recipientEmail) {
                 res.statusCode = 400;
                 res.end(JSON.stringify({ error: "Missing recipient email" }));
                 return;
               }
+
+              // Build high-converting direct redirect / registration URL
+              const registerUrl = `${baseDomain.replace(/\/+$/, "")}/events/${encodeURIComponent(eventId)}?token=${encodeURIComponent(token)}&email=${encodeURIComponent(recipientEmail)}&name=${encodeURIComponent(recipientName)}#register`;
+
+              // Generate scannable QR Code Data URI for the digital pass card
+              const qrPayload = JSON.stringify({
+                pass_id: token,
+                attendee: recipientName,
+                company: data.company || "",
+                event_id: eventId,
+                event_title: eventTitle,
+                auth: "INT_OFFICIAL_VERIFIED",
+                checkin_url: registerUrl,
+              });
+
+              const qrDataUrl = await QRCode.toDataURL(qrPayload, {
+                width: 260,
+                margin: 1,
+                color: {
+                  dark: "#0F172A",
+                  light: "#FFFFFF",
+                },
+              });
 
               const transporter = nodemailer.createTransport({
                 host,
@@ -105,42 +133,173 @@ function smtpServerPlugin(): Plugin {
               const info = await transporter.sendMail({
                 from: `"${fromName}" <${fromEmail}>`,
                 to: recipientEmail,
-                subject: `Official Invitation: ${eventTitle}`,
-                text: `Dear ${recipientName},\n\nYou are cordially invited to attend ${eventTitle} hosted by Integrated Technics.\n\nYour Pass Token: ${token}\n\nWe look forward to welcoming you.\n\nIntegrated Technics Events Team`,
+                subject: `Official VIP Invitation & Digital Pass: ${eventTitle}`,
+                text: `Dear ${recipientName},\n\nYou are cordially invited to attend ${eventTitle}.\n\nDate: ${eventDate}\nVenue: ${eventLocation}\nPass Token: ${token}\n\nRegister & Claim Pass: ${registerUrl}\n\nWarm regards,\nIntegrated Technics Events Team`,
                 html: `
-                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b;">
-                    <div style="margin-bottom: 24px; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px;">
-                      <h2 style="margin: 0; color: #0f172a; font-size: 22px;">Integrated Technics</h2>
-                      <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Official Event Invitation</p>
-                    </div>
+                  <!DOCTYPE html>
+                  <html lang="en">
+                  <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Official VIP Invitation — ${eventTitle}</title>
+                  </head>
+                  <body style="margin: 0; padding: 0; background-color: #0b1120; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f8fafc;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0b1120; padding: 32px 12px;">
+                      <tr>
+                        <td align="center">
+                          <table role="presentation" width="100%" style="max-width: 620px; background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+                            
+                            <!-- Header Banner -->
+                            <tr>
+                              <td style="padding: 32px 32px 24px 32px; background: linear-gradient(135deg, #0a192f 0%, #172a46 60%, #0284c7 100%); border-bottom: 1px solid #334155;">
+                                <table width="100%" cellspacing="0" cellpadding="0">
+                                  <tr>
+                                    <td>
+                                      <div style="display: inline-block; padding: 5px 14px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 100px; color: #38bdf8; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+                                        ✦ VIP DELEGATION PASS
+                                      </div>
+                                      <h1 style="margin: 16px 0 4px 0; color: #ffffff; font-size: 24px; font-weight: 800; line-height: 1.2; letter-spacing: -0.5px;">
+                                        Integrated Technics
+                                      </h1>
+                                      <p style="margin: 0; color: #94a3b8; font-size: 13px; font-weight: 500;">
+                                        Official Event Invitation & VIP Passholder Registration
+                                      </p>
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
 
-                    <p style="font-size: 15px; line-height: 1.6; margin-top: 0;">
-                      Dear <strong>${recipientName}</strong>,
-                    </p>
-                    <p style="font-size: 14px; line-height: 1.6; color: #334155;">
-                      You are cordially invited to participate in <strong>${eventTitle}</strong> hosted by Integrated Technics.
-                    </p>
+                            <!-- Salutation -->
+                            <tr>
+                              <td style="padding: 28px 32px 16px 32px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
+                                <p style="margin: 0 0 10px 0; font-size: 16px;">Dear <strong style="color: #ffffff;">${recipientName}</strong>,</p>
+                                <p style="margin: 0; color: #cbd5e1;">
+                                  We have the pleasure of cordially inviting you as an honored delegate to attend <strong style="color: #38bdf8;">${eventTitle}</strong>.
+                                </p>
+                              </td>
+                            </tr>
 
-                    <div style="margin: 24px 0; padding: 20px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 12px; border: 1px solid #bbf7d0;">
-                      <p style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #15803d; font-weight: bold;">
-                        Digital Attendance Pass
-                      </p>
-                      <p style="margin: 8px 0 0 0; font-family: monospace; font-size: 20px; font-weight: bold; color: #166534; letter-spacing: 2px;">
-                        ${token}
-                      </p>
-                      ${data.company ? `<p style="margin: 6px 0 0 0; font-size: 12px; color: #166534;">Organization: <strong>${data.company}</strong></p>` : ""}
-                    </div>
+                            <!-- DIGITAL PASS CARD -->
+                            <tr>
+                              <td style="padding: 8px 32px 24px 32px;">
+                                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%); border: 2px solid #38bdf8; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);">
+                                  
+                                  <!-- Card Top Bar -->
+                                  <tr>
+                                    <td style="padding: 16px 20px; background: rgba(56, 189, 248, 0.08); border-bottom: 1px dashed #334155;">
+                                      <table width="100%" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                          <td>
+                                            <span style="font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #38bdf8;">DIGITAL PASS HOLDER</span>
+                                            <h2 style="margin: 2px 0 0 0; color: #ffffff; font-size: 16px; font-weight: 700;">${eventTitle}</h2>
+                                          </td>
+                                          <td align="right" style="vertical-align: middle;">
+                                            <span style="display: inline-block; padding: 4px 10px; background: #059669; border-radius: 6px; color: #ffffff; font-size: 10px; font-weight: 800; letter-spacing: 1px;">
+                                              CONFIRMED VIP
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      </table>
+                                    </td>
+                                  </tr>
 
-                    <p style="font-size: 14px; line-height: 1.6; color: #334155;">
-                      Please present this pass token upon arrival at the reception desk to claim your official badge.
-                    </p>
+                                  <!-- Card Body: QR + Info -->
+                                  <tr>
+                                    <td style="padding: 24px;">
+                                      <table width="100%" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                          <!-- QR Column -->
+                                          <td width="150" align="center" style="vertical-align: middle; padding-right: 18px;">
+                                            <div style="background: #ffffff; padding: 8px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); display: inline-block;">
+                                              <img src="${qrDataUrl}" alt="Pass QR Code" width="130" height="130" style="display: block; border-radius: 6px;" />
+                                            </div>
+                                            <span style="display: block; margin-top: 8px; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #94a3b8; text-transform: uppercase;">
+                                              Scan at Gate
+                                            </span>
+                                          </td>
 
-                    <div style="margin-top: 32px; border-top: 1px solid #f1f5f9; padding-top: 20px; font-size: 12px; color: #64748b;">
-                      <p style="margin: 0;">Warm regards,</p>
-                      <p style="margin: 4px 0 0 0; font-weight: bold; color: #0f172a;">Integrated Technics Event Management</p>
-                      <p style="margin: 4px 0 0 0;"><a href="https://integratedtechnics.com" style="color: #2563eb; text-decoration: none;">integratedtechnics.com</a> &bull; events@integratedtechnics.com</p>
-                    </div>
-                  </div>
+                                          <!-- Metadata Column -->
+                                          <td style="vertical-align: middle;">
+                                            <div style="margin-bottom: 10px;">
+                                              <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600;">Attendee Name</span>
+                                              <div style="color: #ffffff; font-size: 16px; font-weight: 700; margin-top: 2px;">${recipientName}</div>
+                                              ${data.job_title ? `<div style="color: #38bdf8; font-size: 12px; font-weight: 500;">${data.job_title}</div>` : ""}
+                                            </div>
+
+                                            ${data.company ? `
+                                              <div style="margin-bottom: 10px;">
+                                                <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600;">Organization</span>
+                                                <div style="color: #f1f5f9; font-size: 13px; font-weight: 600; margin-top: 1px;">${data.company}</div>
+                                              </div>
+                                            ` : ""}
+
+                                            <div>
+                                              <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600;">Pass ID / Token</span>
+                                              <div style="font-family: 'Courier New', Courier, monospace; color: #38bdf8; font-size: 14px; font-weight: 800; letter-spacing: 1.5px; margin-top: 2px;">
+                                                ${token}
+                                              </div>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      </table>
+                                    </td>
+                                  </tr>
+
+                                  <!-- Card Location & Date Footer -->
+                                  <tr>
+                                    <td style="padding: 12px 20px; background: rgba(15, 23, 42, 0.85); border-top: 1px solid #1e293b; color: #94a3b8; font-size: 11px;">
+                                      <table width="100%" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                          <td>📅 ${eventDate}</td>
+                                          <td align="right">📍 ${eventLocation}</td>
+                                        </tr>
+                                      </table>
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+
+                            <!-- MAIN CALL TO ACTION: DIRECT REGISTRATION LINK -->
+                            <tr>
+                              <td style="padding: 12px 32px 28px 32px;" align="center">
+                                <table cellspacing="0" cellpadding="0">
+                                  <tr>
+                                    <td align="center" style="border-radius: 12px; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); box-shadow: 0 10px 20px -3px rgba(37, 99, 235, 0.5);">
+                                      <a href="${registerUrl}" target="_blank" style="display: inline-block; padding: 16px 36px; font-size: 15px; font-weight: 700; color: #ffffff; text-decoration: none; border-radius: 12px; letter-spacing: 0.5px;">
+                                        Claim Pass & Confirm Registration &rarr;
+                                      </a>
+                                    </td>
+                                  </tr>
+                                </table>
+                                <p style="margin: 12px 0 0 0; color: #64748b; font-size: 11px; word-break: break-all;">
+                                  Direct Link: <a href="${registerUrl}" style="color: #38bdf8; text-decoration: underline;">${registerUrl}</a>
+                                </p>
+                              </td>
+                            </tr>
+
+                            <!-- Footer -->
+                            <tr>
+                              <td style="padding: 24px 32px; background-color: #090e1a; border-top: 1px solid #1e293b; color: #64748b; font-size: 12px; line-height: 1.6; text-align: center;">
+                                <p style="margin: 0 0 4px 0; color: #94a3b8; font-weight: 600;">
+                                  Integrated Technics Event Management
+                                </p>
+                                <p style="margin: 0 0 10px 0;">
+                                  Support & Inquiries: <a href="mailto:events@integratedtechnics.com" style="color: #38bdf8; text-decoration: none;">events@integratedtechnics.com</a>
+                                </p>
+                                <p style="margin: 0; font-size: 10px; color: #475569;">
+                                  &copy; 2026 Integrated Technics. All rights reserved. &bull; <a href="https://odooteams.com" style="color: #475569; text-decoration: none;">Developer: Mr. Hafez Rahim</a>
+                                </p>
+                              </td>
+                            </tr>
+
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </body>
+                  </html>
                 `,
               });
 

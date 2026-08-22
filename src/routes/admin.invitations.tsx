@@ -37,6 +37,7 @@ import { supabase } from "@/lib/supabase";
 import { events as defaultEvents } from "@/lib/int-data";
 import { toast } from "sonner";
 import { sendLiveInvitationEmail } from "@/lib/email-service";
+import { QrCode as RealQrCode } from "@/components/int/qr-code";
 
 export const Route = createFileRoute("/admin/invitations")({
   head: () => ({
@@ -551,13 +552,18 @@ export function AdminInvitationsPage() {
 
       try {
         // Dispatch real email via Bluehost SMTP backend
+        const evObj = eventsList.find((e) => e.id === eventId);
         await sendLiveInvitationEmail({
           recipient_name: recipient.fullName,
           recipient_email: recipient.email,
+          event_id: eventId,
           event_title: eventTitle,
+          event_date: evObj?.dateLabel || "November 14, 2026 • 09:00 AM",
+          event_location: evObj?.location || "Royal Maxim Palace Kempinski, Cairo",
           company: recipient.company,
           job_title: recipient.jobTitle,
           token: invToken,
+          domain: typeof window !== "undefined" ? window.location.origin : "https://events.integratedtechnics.com",
         });
 
         // Record in invitations table
@@ -700,13 +706,18 @@ export function AdminInvitationsPage() {
 
     try {
       if (singleFormData.send_immediately) {
+        const evObj = eventsList.find((e) => e.id === eventId);
         await sendLiveInvitationEmail({
           recipient_name: newInv.recipient_name,
           recipient_email: newInv.recipient_email,
+          event_id: eventId,
           event_title: eventTitle,
+          event_date: evObj?.dateLabel || "November 14, 2026 • 09:00 AM",
+          event_location: evObj?.location || "Royal Maxim Palace Kempinski, Cairo",
           company: newInv.company,
           job_title: newInv.job_title,
           token: invToken,
+          domain: typeof window !== "undefined" ? window.location.origin : "https://events.integratedtechnics.com",
         });
 
         await supabase.from("email_logs").insert({
@@ -773,14 +784,19 @@ export function AdminInvitationsPage() {
   const handleResendSingle = async (inv: InvitationRow) => {
     try {
       const now = new Date().toISOString();
+      const evObj = eventsList.find((e) => e.id === inv.event_id);
 
       await sendLiveInvitationEmail({
         recipient_name: inv.recipient_name,
         recipient_email: inv.recipient_email,
-        event_title: inv.event_title || "INT Security Technology Summit 2026",
+        event_id: inv.event_id,
+        event_title: inv.event_title || evObj?.title || "INT Security Technology Summit 2026",
+        event_date: evObj?.dateLabel || "November 14, 2026 • 09:00 AM",
+        event_location: evObj?.location || "Royal Maxim Palace Kempinski, Cairo",
         company: inv.company,
         job_title: inv.job_title,
         token: inv.token,
+        domain: typeof window !== "undefined" ? window.location.origin : "https://events.integratedtechnics.com",
       });
 
       await supabase
@@ -1523,69 +1539,165 @@ export function AdminInvitationsPage() {
       )}
 
       {/* EMAIL PREVIEW MODAL */}
-      {previewInvitation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <header className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4">
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">Invitation Email Template</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPreviewInvitation(null)}
-                className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </header>
+      {previewInvitation && (() => {
+        const previewEvent = eventsList.find((e) => e.id === previewInvitation.event_id);
+        const eventTitle = previewInvitation.event_title || previewEvent?.title || "INT Security Technology Summit 2026";
+        const eventDate = previewEvent?.dateLabel || "November 14, 2026 • 09:00 AM";
+        const eventLocation = previewEvent?.location || "Royal Maxim Palace Kempinski, Cairo";
+        const token = previewInvitation.token || "EVT-INV-8K92X";
+        const origin = typeof window !== "undefined" ? window.location.origin : "https://events.integratedtechnics.com";
+        const registerUrl = `${origin}/events/${previewInvitation.event_id}?token=${encodeURIComponent(token)}&email=${encodeURIComponent(previewInvitation.recipient_email)}&name=${encodeURIComponent(previewInvitation.recipient_name)}#register`;
+        const qrJson = JSON.stringify({
+          pass_id: token,
+          attendee: previewInvitation.recipient_name,
+          company: previewInvitation.company || "",
+          event: eventTitle,
+          auth: "INT_OFFICIAL_VERIFIED",
+          url: registerUrl,
+        });
 
-            <div className="p-6 space-y-4 text-sm">
-              <div className="rounded-xl border border-border bg-secondary/30 p-3 space-y-1 text-xs">
-                <p>
-                  <strong>From:</strong> {smtpSender.from_name} &lt;{smtpSender.from_email}&gt;
-                </p>
-                <p>
-                  <strong>To:</strong> {previewInvitation.recipient_name} &lt;{previewInvitation.recipient_email}&gt;
-                </p>
-                <p>
-                  <strong>Subject:</strong> Official Invitation: {previewInvitation.event_title || "INT Security Technology Summit"}
-                </p>
-              </div>
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/70 p-4 backdrop-blur-md overflow-y-auto">
+            <div className="w-full max-w-xl overflow-hidden rounded-3xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-200 my-8">
+              <header className="flex items-center justify-between border-b border-border bg-muted/40 px-6 py-4">
+                <div className="flex items-center gap-2">
+                  <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">VIP Invitation & Digital Pass Preview</h3>
+                    <p className="text-[11px] text-muted-foreground">Exact template dispatched to recipient</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewInvitation(null)}
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </header>
 
-              <div className="rounded-xl border border-border bg-background p-5 space-y-3 shadow-inner text-foreground text-xs leading-relaxed">
-                <div className="flex items-center gap-2 border-b border-border pb-3">
-                  <img src="/logo.png" alt="INT" className="h-7 w-7 object-contain" />
-                  <span className="font-bold text-sm">Integrated Technics</span>
+              <div className="p-6 space-y-5 text-sm max-h-[75vh] overflow-y-auto">
+                {/* Meta Header */}
+                <div className="rounded-xl border border-border bg-secondary/30 p-3.5 space-y-1 text-xs font-mono">
+                  <p className="text-muted-foreground">
+                    <strong className="text-foreground">From:</strong> {smtpSender.from_name} &lt;{smtpSender.from_email}&gt;
+                  </p>
+                  <p className="text-muted-foreground">
+                    <strong className="text-foreground">To:</strong> {previewInvitation.recipient_name} &lt;{previewInvitation.recipient_email}&gt;
+                  </p>
+                  <p className="text-muted-foreground">
+                    <strong className="text-foreground">Subject:</strong> Official VIP Invitation & Digital Pass: {eventTitle}
+                  </p>
                 </div>
 
-                <p>Dear <strong>{previewInvitation.recipient_name}</strong>,</p>
-                <p>
-                  You are cordially invited to attend <strong>{previewInvitation.event_title || "INT Security Technology Summit 2026"}</strong> hosted by Integrated Technics.
-                </p>
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                  <p className="font-semibold text-primary">Registration Pass Token: {previewInvitation.token || "EVT-2026-X8K19"}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Assigned to: {previewInvitation.company || "Enterprise Partner"}</p>
+                {/* Simulated Email Body */}
+                <div className="rounded-2xl border border-slate-800 bg-[#0B1120] p-6 text-slate-200 shadow-2xl space-y-5">
+                  {/* Top Branding */}
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div className="flex items-center gap-3">
+                      <img src="/logo.png" alt="INT" className="h-8 w-8 object-contain" />
+                      <div>
+                        <h4 className="font-extrabold text-white text-base tracking-tight">Integrated Technics</h4>
+                        <p className="text-[11px] text-slate-400">Enterprise Technology Summits</p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-sky-500/10 px-3 py-1 text-[10px] font-bold text-sky-400 border border-sky-500/20 uppercase tracking-wider">
+                      ✦ VIP Invitation
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-slate-300 leading-relaxed">
+                    Dear <strong className="text-white">{previewInvitation.recipient_name}</strong>,
+                    <br />
+                    You are cordially invited as a distinguished guest to attend <strong className="text-sky-400">{eventTitle}</strong>.
+                  </p>
+
+                  {/* VIP DIGITAL PASS CARD */}
+                  <div className="rounded-2xl border-2 border-sky-400/60 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-5 shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 h-32 w-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                    <div className="flex items-center justify-between border-b border-dashed border-slate-700 pb-3 mb-4">
+                      <div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-sky-400">
+                          Delegation Access Pass
+                        </span>
+                        <h5 className="font-bold text-white text-sm">{eventTitle}</h5>
+                      </div>
+                      <span className="rounded bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white tracking-wider">
+                        VIP
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+                      <div className="sm:col-span-5 flex flex-col items-center justify-center p-3 bg-white rounded-xl shadow-md">
+                        <RealQrCode value={qrJson} size={130} />
+                        <span className="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-600">
+                          Fast Gate Scan
+                        </span>
+                      </div>
+
+                      <div className="sm:col-span-7 space-y-2.5 text-left">
+                        <div>
+                          <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Guest Name</span>
+                          <p className="text-base font-bold text-white">{previewInvitation.recipient_name}</p>
+                          {previewInvitation.job_title && (
+                            <p className="text-xs text-sky-400 font-medium">{previewInvitation.job_title}</p>
+                          )}
+                        </div>
+
+                        {previewInvitation.company && (
+                          <div>
+                            <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Organization</span>
+                            <p className="text-xs font-semibold text-slate-200">{previewInvitation.company}</p>
+                          </div>
+                        )}
+
+                        <div>
+                          <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Pass Token ID</span>
+                          <p className="font-mono text-sm font-extrabold text-sky-400 tracking-wider">{token}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                      <span>📅 {eventDate}</span>
+                      <span>📍 {eventLocation}</span>
+                    </div>
+                  </div>
+
+                  {/* DIRECT REGISTRATION CTA BUTTON */}
+                  <div className="text-center pt-2 space-y-2">
+                    <a
+                      href={registerUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg hover:from-sky-400 hover:to-blue-500 transition-all hover:scale-[1.02]"
+                    >
+                      <span>Claim Pass & Confirm Registration</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </a>
+                    <p className="text-[10px] text-slate-400 break-all">
+                      Redirect Link: <span className="text-sky-400 underline">{registerUrl}</span>
+                    </p>
+                  </div>
                 </div>
-                <p>We look forward to welcoming you.</p>
-                <p className="pt-2 text-muted-foreground">
-                  Warm regards,<br />
-                  <strong>Integrated Technics Event Team</strong>
-                </p>
               </div>
+
+              <footer className="border-t border-border bg-muted/20 p-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreviewInvitation(null)}
+                  className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary"
+                >
+                  Close Preview
+                </button>
+              </footer>
             </div>
-
-            <footer className="border-t border-border bg-muted/20 p-4">
-              <button
-                onClick={() => setPreviewInvitation(null)}
-                className="w-full rounded-lg bg-primary py-2 text-xs font-semibold text-primary-foreground hover:bg-tech"
-              >
-                Close Preview
-              </button>
-            </footer>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* SINGLE INVITATION CREATE MODAL */}
       {isSingleCreateOpen && (

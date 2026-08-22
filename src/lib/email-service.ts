@@ -14,12 +14,14 @@ export interface SmtpTestPayload {
 export interface InvitationEmailPayload {
   recipient_name: string;
   recipient_email: string;
+  event_id?: string | undefined;
   event_title: string;
   event_date?: string | undefined;
   event_location?: string | undefined;
   company?: string | null | undefined;
   job_title?: string | null | undefined;
   token?: string | null | undefined;
+  domain?: string | undefined;
   custom_note?: string | undefined;
 }
 
