@@ -179,14 +179,6 @@ function Landing() {
               &lt;/&gt; Mr. Hafez Rahim
             </a>
           </p>
-          <div className="flex items-center justify-center gap-4 md:justify-end">
-            <Link
-              to="/admin"
-              className="text-xs font-semibold text-sky-400 hover:text-white transition-colors bg-white/5 border border-white/10 rounded-lg px-3.5 py-1.5 hover:bg-white/10"
-            >
-              Admin Portal &rarr;
-            </Link>
-          </div>
         </div>
       </footer>
     </div>
