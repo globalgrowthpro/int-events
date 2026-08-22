@@ -6,7 +6,7 @@ export function IntLogo({
   size = "md",
   subtitle,
   badge,
-  compactOnMobile = false,
+  compactOnMobile = true,
 }: {
   className?: string;
   tone?: "dark" | "light";

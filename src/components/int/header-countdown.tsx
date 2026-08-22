@@ -54,14 +54,14 @@ export function HeaderUpcomingCountdown({ className = "" }: { className?: string
       title={`Upcoming: ${nextEvent.event.title} (${nextEvent.event.dateLabel})`}
     >
       {/* Expanded Title & Status indicator */}
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="hidden sm:flex items-center gap-2 min-w-0">
         <span className="relative flex h-2.5 w-2.5 shrink-0">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75" />
           <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" />
         </span>
         <div className="leading-tight min-w-0">
           <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Next Event</p>
-          <p className="max-w-[180px] sm:max-w-[280px] md:max-w-[340px] truncate text-xs font-bold text-foreground">
+          <p className="max-w-[140px] md:max-w-[260px] lg:max-w-[340px] truncate text-xs font-bold text-foreground">
             {nextEvent.event.title}
           </p>
         </div>

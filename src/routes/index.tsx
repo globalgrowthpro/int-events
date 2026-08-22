@@ -37,47 +37,47 @@ const reasons = [
 function Landing() {
   const { user, signOut } = useAuth();
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto flex min-h-[5rem] max-w-7xl items-center justify-between px-4 py-2 md:px-6">
-          <IntLogo />
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background">
+      <header className="sticky top-0 z-30 w-full border-b border-border bg-card/95 backdrop-blur">
+        <div className="mx-auto flex min-h-[4.25rem] max-w-7xl items-center justify-between px-3 sm:px-6 py-2">
+          <IntLogo size="sm" compactOnMobile={true} />
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <Link
               to="/events"
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="hidden xs:inline-flex rounded-md px-2.5 py-1.5 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Events
             </Link>
 
-            <PWAInstallButton variant="outline" size="sm" className="hidden sm:inline-flex text-xs gap-1.5" />
+            <PWAInstallButton variant="outline" size="sm" className="hidden md:inline-flex text-xs gap-1.5" />
 
             {user ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   onClick={signOut}
-                  className="rounded-md border border-border px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                  className="rounded-lg border border-border px-2.5 sm:px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground transition-colors hover:bg-secondary"
                 >
                   Sign out
                 </button>
                 <Link
                   to={user.role === "admin" ? "/admin" : "/dashboard"}
-                  className="rounded-md bg-primary px-3.5 py-1.5 text-xs sm:text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-tech"
+                  className="rounded-lg bg-primary px-2.5 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-tech whitespace-nowrap"
                 >
-                  {user.role === "admin" ? "Admin Portal" : "My Dashboard"}
+                  {user.role === "admin" ? "Admin" : "Dashboard"}
                 </Link>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <Link
                   to="/login"
-                  className="rounded-md border border-border px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                  className="rounded-lg border border-border px-2.5 sm:px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground transition-colors hover:bg-secondary"
                 >
                   Sign in
                 </Link>
                 <Link
                   to="/register"
-                  className="rounded-md bg-primary px-3.5 py-1.5 text-xs sm:text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-tech"
+                  className="rounded-lg bg-primary px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-tech whitespace-nowrap"
                 >
                   Register
                 </Link>
@@ -87,7 +87,7 @@ function Landing() {
         </div>
       </header>
 
-      <section className="relative isolate overflow-hidden bg-navy">
+      <section className="relative isolate w-full overflow-hidden bg-navy">
         <img
           src={heroImg}
           alt="Integrated Technics technology summit main stage"
@@ -95,31 +95,31 @@ function Landing() {
           height={1080}
           className="absolute inset-0 h-full w-full object-cover opacity-45"
         />
-        <div className="relative mx-auto max-w-7xl px-4 py-24 md:px-6 md:py-32">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-sky">
+        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:py-24 md:px-6 md:py-32">
+          <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] text-sky">
             Integrated Technics
           </p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-navy-foreground md:text-6xl">
+          <h1 className="mt-3 sm:mt-4 max-w-3xl text-3xl font-extrabold leading-tight tracking-tight text-navy-foreground sm:text-5xl md:text-6xl">
             Discover INT Events
           </h1>
-          <p className="mt-3 text-lg font-medium tracking-wide text-sky">
+          <p className="mt-2.5 sm:mt-3 text-base sm:text-lg font-medium tracking-wide text-sky">
             Connect. Discover. Innovate.
           </p>
-          <p className="mt-5 max-w-2xl text-base text-navy-foreground/75">
+          <p className="mt-4 sm:mt-5 max-w-2xl text-sm sm:text-base text-navy-foreground/75 leading-relaxed">
             Join Integrated Technics summits, technology forums, partner sessions and industry
             experiences — register online, receive a digital QR pass and check in at the door in
             seconds.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-6 sm:mt-8 flex flex-wrap gap-2.5 sm:gap-3">
             <Link
               to="/events"
-              className="inline-flex h-11 items-center rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-tech"
+              className="inline-flex h-10 sm:h-11 items-center rounded-xl bg-primary px-5 sm:px-6 text-xs sm:text-sm font-bold text-primary-foreground transition-colors hover:bg-tech shadow-md"
             >
               Explore Events
             </Link>
             <Link
               to="/register"
-              className="inline-flex h-11 items-center rounded-md border border-navy-foreground/25 px-6 text-sm font-semibold text-navy-foreground transition-colors hover:bg-navy-foreground/10"
+              className="inline-flex h-10 sm:h-11 items-center rounded-xl border border-navy-foreground/25 px-5 sm:px-6 text-xs sm:text-sm font-bold text-navy-foreground transition-colors hover:bg-navy-foreground/10"
             >
               Create Account
             </Link>
