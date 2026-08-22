@@ -599,15 +599,6 @@ export function AdminDashboard() {
             >
               Mr. Hafez Rahim <ExternalLink className="h-3 w-3" />
             </a>
-            <span className="mx-1.5 text-muted-foreground/50">·</span>
-            <a
-              href="https://odooteams.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] text-muted-foreground hover:text-foreground font-mono"
-            >
-              odooteams.com
-            </a>
           </div>
         </div>
 
