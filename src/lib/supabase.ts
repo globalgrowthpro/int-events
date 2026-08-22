@@ -164,6 +164,34 @@ export type Database = {
           updated_at: string;
         };
       };
+      smtp_settings: {
+        Row: {
+          id: string;
+          host: string;
+          port: number;
+          encryption: "tls" | "ssl" | "none";
+          username: string;
+          password_encrypted: string;
+          from_email: string;
+          from_name: string;
+          reply_to: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+      };
+      email_logs: {
+        Row: {
+          id: string;
+          recipient_email: string;
+          template_name: string;
+          subject: string;
+          status: "sent" | "pending" | "failed";
+          error_message: string | null;
+          sent_at: string;
+          created_at: string;
+        };
+      };
     };
   };
 };

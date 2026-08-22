@@ -204,6 +204,42 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 );
 
 -- ==============================================================================
+-- Table: SMTP_SETTINGS (Outgoing Mail Gateway configuration)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.smtp_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  host TEXT NOT NULL DEFAULT 'box5517.bluehost.com',
+  port INTEGER NOT NULL DEFAULT 465,
+  encryption TEXT NOT NULL DEFAULT 'ssl' CHECK (encryption IN ('tls', 'ssl', 'none')),
+  username TEXT NOT NULL DEFAULT 'event@integratedtechnics.com',
+  password_encrypted TEXT NOT NULL DEFAULT 'event786@hafez',
+  from_email TEXT NOT NULL DEFAULT 'event@integratedtechnics.com',
+  from_name TEXT NOT NULL DEFAULT 'Integrated Technics Events',
+  reply_to TEXT DEFAULT 'support@integratedtechnics.com',
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TRIGGER set_smtp_settings_updated_at
+  BEFORE UPDATE ON public.smtp_settings
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- ==============================================================================
+-- Table: EMAIL_LOGS (SMTP Dispatch audit trail)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.email_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipient_email TEXT NOT NULL,
+  template_name TEXT NOT NULL DEFAULT 'event_invitation',
+  subject TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'sent' CHECK (status IN ('sent', 'pending', 'failed')),
+  error_message TEXT,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ==============================================================================
 -- TRIGGER 1: Auto-create profile on auth.users signup
 -- ==============================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
