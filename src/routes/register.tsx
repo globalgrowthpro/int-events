@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
-import { MobileBottomNav } from "@/components/int/mobile-bottom-nav";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -59,7 +58,7 @@ function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
+    <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur">
         <div className="mx-auto flex h-14 sm:h-16 max-w-5xl items-center justify-between px-3 sm:px-4">
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -190,9 +189,6 @@ function RegisterPage() {
           </>
         )}
       </main>
-
-      {/* Native Mobile Bottom Navigation Bar */}
-      <MobileBottomNav variant="public" />
     </div>
   );
 }
