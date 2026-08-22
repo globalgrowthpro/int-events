@@ -193,6 +193,11 @@ export function AdminDashboard() {
 
   useEffect(() => {
     fetchRealData();
+    // Auto-sync with live Supabase database every 10 seconds
+    const interval = setInterval(() => {
+      fetchRealData(false);
+    }, 10_000);
+    return () => clearInterval(interval);
   }, []);
 
   const totalEventRegistered = eventsList.reduce((s, e) => s + e.registered_count, 0);

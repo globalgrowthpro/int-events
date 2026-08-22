@@ -177,6 +177,11 @@ export function AccountsPage() {
 
   useEffect(() => {
     loadAccounts();
+    // Auto-sync accounts from Supabase every 10 seconds
+    const interval = setInterval(() => {
+      loadAccounts(false);
+    }, 10_000);
+    return () => clearInterval(interval);
   }, []);
 
   // Filtered list

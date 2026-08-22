@@ -97,6 +97,11 @@ function AdminAttendance() {
 
   useEffect(() => {
     loadAttendance();
+    // Auto-sync attendance every 10 seconds
+    const interval = setInterval(() => {
+      loadAttendance(false);
+    }, 10_000);
+    return () => clearInterval(interval);
   }, []);
 
   const checkedIn = attendeesList.filter((a) => a.state === "checked-in");

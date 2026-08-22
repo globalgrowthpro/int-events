@@ -163,6 +163,11 @@ export function AdminRegistrationsPage() {
 
   useEffect(() => {
     loadRegistrations();
+    // Auto-sync registrations every 10 seconds
+    const interval = setInterval(() => {
+      loadRegistrations(false);
+    }, 10_000);
+    return () => clearInterval(interval);
   }, []);
 
   const filtered = useMemo(() => {
