@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { MobileBottomNav } from "@/components/int/mobile-bottom-nav";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -58,10 +59,10 @@ function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
+      <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur">
+        <div className="mx-auto flex h-14 sm:h-16 max-w-5xl items-center justify-between px-3 sm:px-4">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Link
               to="/"
               className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-muted-foreground shadow-2xs hover:bg-secondary hover:text-foreground transition-colors group"
@@ -70,12 +71,15 @@ function RegisterPage() {
               <span className="hidden sm:inline">Home</span>
             </Link>
             <Link to="/">
-              <IntLogo />
+              <IntLogo size="sm" compactOnMobile />
             </Link>
           </div>
           {!user && (
-            <Link to="/login" className="text-sm font-medium text-primary hover:underline">
-              Already have an account?
+            <Link
+              to="/login"
+              className="rounded-lg border border-border bg-secondary/80 px-3 py-1.5 text-xs sm:text-sm font-semibold text-primary hover:bg-secondary transition-colors whitespace-nowrap"
+            >
+              <span className="hidden sm:inline">Already have an account? </span>Sign In
             </Link>
           )}
         </div>
@@ -186,6 +190,9 @@ function RegisterPage() {
           </>
         )}
       </main>
+
+      {/* Native Mobile Bottom Navigation Bar */}
+      <MobileBottomNav variant="public" />
     </div>
   );
 }

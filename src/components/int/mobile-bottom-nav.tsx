@@ -40,7 +40,7 @@ export function MobileBottomNav({ variant }: { variant?: "public" | "portal" | "
       { to: "/admin", label: "Overview", icon: Home, exact: true },
       { to: "/admin/events", label: "Events", icon: CalendarDays },
       {
-        to: "/admin/scan",
+        to: "/admin/scanner",
         label: "Gate Scan",
         icon: ScanLine,
         isCenterAction: true,

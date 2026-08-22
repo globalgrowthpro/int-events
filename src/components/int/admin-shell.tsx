@@ -38,9 +38,9 @@ const nav = [
   { to: "/admin/registrations", label: "Registrations", icon: ClipboardList },
   { to: "/admin/invitations", label: "Invitations", icon: Mail },
   { to: "/admin/attendees", label: "Attendees", icon: Users },
-  { to: "/admin/scan", label: "Gate Scanner", icon: ScanLine },
+  { to: "/admin/scanner", label: "Gate Scanner", icon: ScanLine },
   { to: "/admin/vendors", label: "Vendors & Partners", icon: Building2 },
-  { to: "/admin/users", label: "Users & Roles", icon: UserCog },
+  { to: "/admin/accounts", label: "Accounts & Roles", icon: UserCog },
   { to: "/admin/reports", label: "Analytics & Reports", icon: BarChart3 },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
