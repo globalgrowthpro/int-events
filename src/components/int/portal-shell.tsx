@@ -27,6 +27,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HeaderUpcomingCountdown } from "./header-countdown";
 import { PWAInstallButton } from "./pwa-install-prompt";
+import { MobileBottomNav } from "./mobile-bottom-nav";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: Home },
@@ -59,7 +60,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-card text-foreground md:flex">
         <div className="flex h-16 items-center border-b border-border px-6">
           <IntLogo subtitle="Participant Portal" />
@@ -88,18 +89,18 @@ export function PortalShell({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-2.5 min-w-0">
               <Avatar className="h-8 w-8 border border-border shrink-0">
                 <AvatarImage src="" alt={profile.name} />
-                <AvatarFallback className="bg-navy text-[11px] font-bold text-navy-foreground">
+                <AvatarFallback className="bg-navy text-xs font-bold text-navy-foreground">
                   {profile.initials}
                 </AvatarFallback>
               </Avatar>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-medium text-foreground">{profile.name}</p>
-                <p className="truncate text-[10px] text-muted-foreground">{profile.company}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold">{profile.name}</p>
+                <p className="truncate text-[10px] text-muted-foreground capitalize">{profile.role}</p>
               </div>
             </div>
             <button
               onClick={handleSignOut}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
+              className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
               title="Sign out"
             >
               <LogOut className="h-3.5 w-3.5" />
@@ -113,7 +114,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
           <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-1.5 px-3 sm:gap-3 sm:px-6">
             <div className="flex shrink-0 items-center gap-2 sm:gap-4">
               <Link to="/dashboard" className="md:hidden">
-                <IntLogo size="sm" subtitle="Participant Portal" />
+                <IntLogo size="sm" compactOnMobile />
               </Link>
               <div className="hidden md:flex items-center">
                 <HeaderUpcomingCountdown />
@@ -165,18 +166,13 @@ export function PortalShell({ children }: { children: ReactNode }) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" /> Profile & QR Pass
+                      <User className="mr-2 h-4 w-4" /> Profile & Pass
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/my-events" className="cursor-pointer">
-                      <Ticket className="mr-2 h-4 w-4" /> My Registrations
-                    </Link>
-                  </DropdownMenuItem>
-                  {user?.role === "admin" && (
+                  {profile.role === "admin" && (
                     <DropdownMenuItem asChild>
-                      <Link to="/admin" className="cursor-pointer">
-                        <Shield className="mr-2 h-4 w-4" /> Admin Portal
+                      <Link to="/admin" className="cursor-pointer text-primary">
+                        <Shield className="mr-2 h-4 w-4" /> Switch to Admin
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -190,7 +186,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 py-8 md:px-6">
+        <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8 md:px-6">
           {children}
           <div className="mt-12 flex justify-center border-t border-border/40 pt-6 md:hidden">
             <DeveloperCredit />
@@ -198,25 +194,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-card md:hidden">
-        {[
-          { to: "/dashboard", label: "Home", icon: Home },
-          { to: "/events", label: "Events", icon: CalendarDays },
-          { to: "/passes", label: "Passes", icon: QrCode },
-          { to: "/notifications", label: "Alerts", icon: Bell },
-          { to: "/profile", label: "Profile", icon: User },
-        ].map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            activeProps={{ className: "text-primary" }}
-            className="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-muted-foreground"
-          >
-            <item.icon className="h-5 w-5" />
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+      <MobileBottomNav variant="portal" />
     </div>
   );
 }

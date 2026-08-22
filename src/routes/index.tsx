@@ -7,6 +7,7 @@ import { EventCard } from "@/components/int/event-card";
 import { events } from "@/lib/int-data";
 import { PWAInstallButton } from "@/components/int/pwa-install-prompt";
 import { WhyAttendSlider } from "@/components/int/why-attend-slider";
+import { MobileBottomNav } from "@/components/int/mobile-bottom-nav";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,7 +39,7 @@ const reasons = [
 function Landing() {
   const { user, signOut } = useAuth();
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background pb-20 md:pb-0">
       <header className="sticky top-0 z-30 w-full border-b border-border bg-card/95 backdrop-blur">
         <div className="mx-auto flex min-h-[4.25rem] max-w-7xl items-center justify-between px-3 sm:px-6 py-2">
           <IntLogo size="sm" compactOnMobile={true} />
@@ -181,6 +182,9 @@ function Landing() {
           </p>
         </div>
       </footer>
+
+      {/* Native Mobile Bottom Navigation Bar */}
+      <MobileBottomNav />
     </div>
   );
 }
