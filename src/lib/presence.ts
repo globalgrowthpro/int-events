@@ -69,12 +69,15 @@ export function useOnlinePresence() {
       })
       .on("presence", { event: "join" }, ({ newPresences }) => {
         setOnlineUsers((prev) => {
-          const combined = [...prev, ...(newPresences as OnlineUserPresence[])];
+          const incoming = (newPresences as unknown as OnlineUserPresence[]).filter((p) => p && p.name);
+          const combined = [...prev, ...incoming];
           return Array.from(new Map(combined.map((u) => [u.id || u.email, u])).values());
         });
       })
       .on("presence", { event: "leave" }, ({ leftPresences }) => {
-        const leftIds = new Set((leftPresences as OnlineUserPresence[]).map((u) => u.id || u.email));
+        const leftIds = new Set(
+          (leftPresences as unknown as OnlineUserPresence[]).map((u) => u.id || u.email)
+        );
         setOnlineUsers((prev) => prev.filter((u) => !leftIds.has(u.id || u.email)));
       })
       .subscribe(async (status) => {
