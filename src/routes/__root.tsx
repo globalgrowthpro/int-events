@@ -14,21 +14,49 @@ import { Toaster } from "@/components/ui/sonner";
 import { PWAInstallPrompt } from "@/components/int/pwa-install-prompt";
 
 function NotFoundComponent() {
+  const router = useRouter();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
+      <div className="w-full max-w-md text-center rounded-3xl border border-border bg-card p-8 shadow-2xl space-y-6">
+        <div className="flex justify-center">
+          <img src="/logo.png" alt="INT" className="h-14 w-14 object-contain bg-white rounded-2xl p-1.5 shadow-md border border-border" />
+        </div>
+        <div>
+          <span className="rounded-full bg-primary/10 px-3.5 py-1 text-xs font-extrabold text-primary border border-primary/20 tracking-wider uppercase">
+            Navigation Fallback
+          </span>
+          <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-foreground">Page Not Found</h1>
+          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+            The requested page is unavailable or the link may have been updated.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 text-xs font-semibold">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="flex items-center justify-center rounded-xl bg-primary py-2.5 px-4 text-primary-foreground shadow-sm hover:bg-tech transition-colors"
           >
-            Go home
+            Home Portal
           </Link>
+          <Link
+            to="/events"
+            className="flex items-center justify-center rounded-xl border border-border bg-secondary py-2.5 px-4 text-foreground hover:bg-accent transition-colors"
+          >
+            All Events
+          </Link>
+          <Link
+            to="/admin"
+            className="flex items-center justify-center rounded-xl border border-border bg-secondary py-2.5 px-4 text-foreground hover:bg-accent transition-colors"
+          >
+            Admin Panel
+          </Link>
+          <button
+            onClick={() => window.history.back()}
+            className="flex items-center justify-center rounded-xl border border-border bg-muted/60 py-2.5 px-4 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Go Back &larr;
+          </button>
         </div>
       </div>
     </div>

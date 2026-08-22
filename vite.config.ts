@@ -407,6 +407,7 @@ function smtpServerPlugin(): Plugin {
 }
 
 export default defineConfig({
+  appType: "spa",
   plugins: [
     TanStackRouterVite({
       target: "react",
@@ -426,6 +427,9 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    port: 8080,
+  },
+  preview: {
     port: 8080,
   },
 });
