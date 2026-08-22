@@ -48,6 +48,10 @@ export interface IntEvent {
   speakers: Speaker[];
   agenda: AgendaItem[];
   partners: string[];
+  mapUrl?: string;
+  partnerList?: Array<{ name: string; logo?: string; category?: string }>;
+  maxDelegatesPerCompany?: number;
+  registrationDeadline?: string;
 }
 
 export const events: IntEvent[] = [

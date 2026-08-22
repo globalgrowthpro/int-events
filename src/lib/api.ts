@@ -46,6 +46,7 @@ export async function getEvents(): Promise<IntEvent[]> {
         endTime: ev.end_time || "05:00 PM",
         city: ev.city,
         venue: ev.venue,
+        mapUrl: ev.map_url || "",
         image: ev.image_url || defaultEv?.image || defaultEvents[0]?.image || "",
         capacity: ev.capacity || 250,
         registered: liveReg,
@@ -57,6 +58,7 @@ export async function getEvents(): Promise<IntEvent[]> {
         speakers: ev.speakers || defaultEv?.speakers || [],
         agenda: ev.agenda || defaultEv?.agenda || [],
         partners: ev.partners || defaultEv?.partners || [],
+        partnerList: ev.partner_list || [],
       };
     });
   } catch {
@@ -84,6 +86,8 @@ export async function createEvent(eventData: Partial<IntEvent>): Promise<IntEven
         end_time: eventData.endTime,
         city: eventData.city,
         venue: eventData.venue,
+        map_url: eventData.mapUrl,
+        image_url: eventData.image,
         capacity: eventData.capacity,
         registered_count: eventData.registered || 0,
         checked_in_count: eventData.checkedIn || 0,
@@ -91,6 +95,7 @@ export async function createEvent(eventData: Partial<IntEvent>): Promise<IntEven
         summary: eventData.summary,
         description: eventData.description,
         partners: eventData.partners,
+        partner_list: eventData.partnerList,
         speakers: eventData.speakers,
         agenda: eventData.agenda,
       })
@@ -118,11 +123,16 @@ export async function updateEvent(eventId: string, updates: Partial<IntEvent>): 
         end_time: updates.endTime,
         city: updates.city,
         venue: updates.venue,
+        map_url: updates.mapUrl,
+        image_url: updates.image,
         capacity: updates.capacity,
         registered_count: updates.registered,
         status: updates.status === "registration-open" ? "open" : (updates.status as any),
         summary: updates.summary,
         partners: updates.partners,
+        partner_list: updates.partnerList,
+        speakers: updates.speakers,
+        agenda: updates.agenda,
       })
       .eq("id", eventId);
 
