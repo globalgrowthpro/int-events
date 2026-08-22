@@ -113,7 +113,11 @@ function EventDetail() {
             </div>
           )}
 
-          <div className="absolute left-4 top-4 flex items-center gap-2">
+          {/* Bottom Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 pointer-events-none" />
+
+          {/* Top Badges */}
+          <div className="absolute left-4 top-4 flex items-center gap-2 z-10">
             <StatusBadge status={event.status} />
             <span className="rounded-full bg-black/40 backdrop-blur-md px-3 py-1 text-[11px] font-semibold text-white">
               {event.code}
@@ -122,10 +126,20 @@ function EventDetail() {
 
           <button
             onClick={handleShare}
-            className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/40 backdrop-blur-md px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-black/60 transition-colors"
+            className="absolute right-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/40 backdrop-blur-md px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-black/60 transition-colors"
           >
             <Share2 className="h-3.5 w-3.5" /> Share
           </button>
+
+          {/* Countdown Timer on Image Bottom Center */}
+          {isUpcoming && (
+            <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center rounded-2xl bg-black/75 backdrop-blur-md border border-white/20 px-4 sm:px-6 py-2 shadow-2xl">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.16em] text-white/90 mb-1 flex items-center gap-1.5">
+                <Clock className="h-3 w-3 text-primary animate-pulse" /> Summit Starts In
+              </span>
+              <Countdown target={target} size="sm" />
+            </div>
+          )}
         </div>
 
         {/* Title & Key Quick Facts (Clean Hero Layout) */}
@@ -163,16 +177,6 @@ function EventDetail() {
               subValue={seatsLeft > 0 ? `${seatsLeft} seats remaining` : "Fully Booked"}
             />
           </dl>
-
-          {/* Countdown timer */}
-          {isUpcoming && (
-            <div className="mt-6 rounded-xl border border-border bg-muted/20 p-4">
-              <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 text-primary" /> Summit Starts In
-              </h2>
-              <Countdown target={target} />
-            </div>
-          )}
 
           {/* Registration Capacity Progress Bar */}
           <div className="mt-6">
