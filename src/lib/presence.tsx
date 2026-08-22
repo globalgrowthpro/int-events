@@ -82,9 +82,9 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
             setOnlineUsers([activeUser]);
           }
         })
-        .on("presence", { event: "join" }, ({ newPresences }) => {
+        .on("presence", { event: "join" }, ({ newPresences }: { newPresences?: any[] }) => {
           try {
-            const incoming = (newPresences as unknown as OnlineUserPresence[]).filter(
+            const incoming = ((newPresences || []) as unknown as OnlineUserPresence[]).filter(
               (p) => p && p.name
             );
             setOnlineUsers((prev) => {
@@ -93,10 +93,10 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
             });
           } catch {}
         })
-        .on("presence", { event: "leave" }, ({ leftPresences }) => {
+        .on("presence", { event: "leave" }, ({ leftPresences }: { leftPresences?: any[] }) => {
           try {
             const leftIds = new Set(
-              (leftPresences as unknown as OnlineUserPresence[]).map((u) => u.id || u.email)
+              ((leftPresences || []) as unknown as OnlineUserPresence[]).map((u) => u.id || u.email)
             );
             setOnlineUsers((prev) => prev.filter((u) => !leftIds.has(u.id || u.email)));
           } catch {}
