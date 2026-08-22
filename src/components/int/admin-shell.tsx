@@ -17,6 +17,7 @@ import {
 import { IntLogo } from "./logo";
 import { NotificationBell } from "./notification-bell";
 import { useAuth } from "@/lib/auth";
+import { useOnlinePresence } from "@/lib/presence";
 import { PWAInstallButton } from "./pwa-install-prompt";
 import { HeaderUpcomingCountdown } from "./header-countdown";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -44,6 +45,7 @@ const nav = [
 ] as const;
 
 export function AdminShell({ children }: { children: ReactNode }) {
+  useOnlinePresence();
   const navigate = useNavigate();
   const { user, ready, signOut } = useAuth();
 

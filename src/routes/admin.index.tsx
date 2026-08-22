@@ -34,6 +34,7 @@ import {
 } from "recharts";
 import { StateBadge, StatusBadge } from "@/components/int/status-badge";
 import { supabase } from "@/lib/supabase";
+import { useOnlinePresence } from "@/lib/presence";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/")({
@@ -79,6 +80,7 @@ interface LiveAttendee {
 }
 
 export function AdminDashboard() {
+  const onlineUsers = useOnlinePresence();
   const [chartType, setChartType] = useState<"area" | "bar">("area");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -602,37 +604,45 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Live Online Now Presence & Avatars */}
+        {/* Live Real-Time Online Presence & Avatars */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
-            <span>4 Online Now</span>
+            <span>
+              {onlineUsers.length} {onlineUsers.length === 1 ? "User" : "Users"} Online Now
+            </span>
           </div>
 
-          {/* Stacked Avatars with online badges */}
+          {/* Stacked Avatars of Real-Time Online Users */}
           <div className="flex items-center -space-x-2">
-            {[
-              { name: "Hafez Rahim", role: "Admin", initials: "HR", bg: "bg-purple-600 text-white ring-2 ring-card" },
-              { name: "Ahmed Mohamed", role: "Client", initials: "AM", bg: "bg-sky-600 text-white ring-2 ring-card" },
-              { name: "Sarah Klein", role: "Vendor", initials: "SK", bg: "bg-amber-600 text-white ring-2 ring-card" },
-              { name: "Omar Ali", role: "Employee", initials: "OA", bg: "bg-emerald-600 text-white ring-2 ring-card" },
-            ].map((usr) => (
-              <div
-                key={usr.name}
-                className="relative group cursor-pointer"
-                title={`${usr.name} (${usr.role}) — Online Now`}
-              >
+            {onlineUsers.map((usr) => {
+              const bgClass =
+                usr.role === "admin"
+                  ? "bg-purple-600 text-white"
+                  : usr.role === "vendor"
+                    ? "bg-amber-600 text-white"
+                    : usr.role === "employee"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-sky-600 text-white";
+
+              return (
                 <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold shadow-xs transition-transform group-hover:scale-110 group-hover:z-10 ${usr.bg}`}
+                  key={usr.id || usr.email}
+                  className="relative group cursor-pointer"
+                  title={`${usr.name} (${usr.role}) — Connected & Active Now`}
                 >
-                  {usr.initials}
+                  <div
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold shadow-xs ring-2 ring-card transition-transform group-hover:scale-110 group-hover:z-10 ${bgClass}`}
+                  >
+                    {usr.initials || usr.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-1 ring-card" />
                 </div>
-                <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-1 ring-card" />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
