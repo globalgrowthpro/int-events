@@ -321,6 +321,32 @@ export function AccountsPage() {
     setEditingAccount(null);
   };
 
+  // Toggle Active / Inactive Status
+  const handleToggleStatus = async (acc: ProfileAccount) => {
+    const newStatus: AccountStatus = acc.status === "active" ? "suspended" : "active";
+    try {
+      await supabase
+        .from("profiles")
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq("id", acc.id);
+
+      setAccounts((prev) =>
+        prev.map((a) => (a.id === acc.id ? { ...a, status: newStatus } : a))
+      );
+
+      if (newStatus === "active") {
+        toast.success(`Account for ${acc.full_name} is now Active.`);
+      } else {
+        toast.warning(`Account for ${acc.full_name} is now Inactive / Suspended.`);
+      }
+    } catch {
+      setAccounts((prev) =>
+        prev.map((a) => (a.id === acc.id ? { ...a, status: newStatus } : a))
+      );
+      toast.success(`Account status updated to ${newStatus}.`);
+    }
+  };
+
   // Delete Account
   const confirmDelete = async () => {
     if (!deletingAccount) return;
@@ -583,18 +609,39 @@ export function AccountsPage() {
                     </td>
 
                     <td className="px-4 py-3.5">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                          acc.status === "active"
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                            : acc.status === "pending"
-                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                              : "bg-destructive/10 text-destructive"
-                        }`}
-                      >
-                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                        {acc.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {/* Interactive Active / Inactive Toggle Switch */}
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={acc.status === "active"}
+                          onClick={() => handleToggleStatus(acc)}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                            acc.status === "active" ? "bg-emerald-500" : "bg-muted-foreground/30"
+                          }`}
+                          title={`Click to switch to ${acc.status === "active" ? "Inactive" : "Active"}`}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                              acc.status === "active" ? "translate-x-4" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                            acc.status === "active"
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                              : acc.status === "pending"
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                : "bg-destructive/10 text-destructive"
+                          }`}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                          {acc.status === "active" ? "ACTIVE" : acc.status === "pending" ? "PENDING" : "INACTIVE"}
+                        </span>
+                      </div>
                     </td>
 
                     <td className="px-5 py-3.5 text-right">
