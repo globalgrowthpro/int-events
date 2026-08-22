@@ -13,6 +13,9 @@ import {
   ScanLine,
   RefreshCw,
   Loader2,
+  ExternalLink,
+  Code2,
+  Globe,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -577,6 +580,70 @@ export function AdminDashboard() {
             ))}
           </ul>
         </section>
+      </div>
+
+      {/* Sticky Bottom Developer & Live Online Presence Section */}
+      <div className="sticky bottom-3 z-30 mt-6 rounded-2xl border border-border/80 bg-card/95 backdrop-blur-md px-5 py-3 shadow-elevated transition-all flex flex-col sm:flex-row items-center justify-between gap-3">
+        {/* Developer Credit Linked to odooteams.com */}
+        <div className="flex items-center gap-2.5 text-xs text-foreground">
+          <div className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 text-primary">
+            <Code2 className="h-4 w-4" />
+          </div>
+          <div>
+            <span className="text-muted-foreground font-medium">Developer: </span>
+            <a
+              href="https://odooteams.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-primary hover:underline inline-flex items-center gap-1 transition-colors"
+            >
+              Mr. Hafez Rahim <ExternalLink className="h-3 w-3" />
+            </a>
+            <span className="mx-1.5 text-muted-foreground/50">·</span>
+            <a
+              href="https://odooteams.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-muted-foreground hover:text-foreground font-mono"
+            >
+              odooteams.com
+            </a>
+          </div>
+        </div>
+
+        {/* Live Online Now Presence & Avatars */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span>4 Online Now</span>
+          </div>
+
+          {/* Stacked Avatars with online badges */}
+          <div className="flex items-center -space-x-2">
+            {[
+              { name: "Hafez Rahim", role: "Admin", initials: "HR", bg: "bg-purple-600 text-white ring-2 ring-card" },
+              { name: "Ahmed Mohamed", role: "Client", initials: "AM", bg: "bg-sky-600 text-white ring-2 ring-card" },
+              { name: "Sarah Klein", role: "Vendor", initials: "SK", bg: "bg-amber-600 text-white ring-2 ring-card" },
+              { name: "Omar Ali", role: "Employee", initials: "OA", bg: "bg-emerald-600 text-white ring-2 ring-card" },
+            ].map((usr) => (
+              <div
+                key={usr.name}
+                className="relative group cursor-pointer"
+                title={`${usr.name} (${usr.role}) — Online Now`}
+              >
+                <div
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold shadow-xs transition-transform group-hover:scale-110 group-hover:z-10 ${usr.bg}`}
+                >
+                  {usr.initials}
+                </div>
+                <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-1 ring-card" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
