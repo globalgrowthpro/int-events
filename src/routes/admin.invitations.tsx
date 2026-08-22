@@ -78,7 +78,7 @@ interface RecipientItem {
   phone: string;
   source: "accounts" | "excel";
   valid: boolean;
-  errorReason?: string;
+  errorReason?: string | undefined;
 }
 
 interface EventItem {
@@ -186,7 +186,7 @@ export function AdminInvitationsPage() {
             registered_count: e.registered_count || 0,
           }))
         );
-        if (!targetEventId) setTargetEventId(evData[0].id);
+        if (!targetEventId && evData[0]?.id) setTargetEventId(evData[0].id);
       } else {
         setEventsList(
           defaultEvents.map((e) => ({
@@ -199,7 +199,7 @@ export function AdminInvitationsPage() {
             registered_count: e.registered,
           }))
         );
-        if (!targetEventId) setTargetEventId(defaultEvents[0].id);
+        if (!targetEventId && defaultEvents[0]?.id) setTargetEventId(defaultEvents[0].id);
       }
 
       // 2. Accounts
@@ -352,8 +352,13 @@ export function AdminInvitationsPage() {
       try {
         const data = new Uint8Array(evt.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: "array" });
-        const firstSheetName = workbook.SheetNames[0];
+        const firstSheetName = workbook.SheetNames[0] || "Sheet1";
         const worksheet = workbook.Sheets[firstSheetName];
+        if (!worksheet) {
+          toast.error("Spreadsheet sheet could not be read.");
+          setIsParsingExcel(false);
+          return;
+        }
         const rawRows = XLSX.utils.sheet_to_json<any>(worksheet, { defval: "" });
 
         if (!rawRows || rawRows.length === 0) {
@@ -535,6 +540,7 @@ export function AdminInvitationsPage() {
       if (abortRef.current) break;
 
       const recipient = finalRecipientsList[i];
+      if (!recipient) continue;
       setCurrentIndex(i + 1);
       setCurrentRecipient(recipient);
 
