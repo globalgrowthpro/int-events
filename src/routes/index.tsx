@@ -163,15 +163,30 @@ function Landing() {
         </div>
       </section>
 
-      <footer className="bg-navy py-10 text-navy-foreground">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 md:flex-row md:items-center md:justify-between md:px-6">
-          <IntLogo tone="light" />
-          <p className="text-xs text-navy-foreground/60">
-            INT Events — an Integrated Technics platform. Prototype by Hafez Rahim.
+      <footer className="bg-navy py-12 text-navy-foreground border-t border-navy-foreground/10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center text-center gap-6 px-4 md:flex-row md:items-center md:justify-between md:text-left md:px-6">
+          <div className="flex justify-center md:justify-start">
+            <IntLogo tone="light" size="md" />
+          </div>
+          <p className="text-xs text-navy-foreground/70 max-w-md md:max-w-none leading-relaxed">
+            INT Events — an Integrated Technics platform. Developed by{" "}
+            <a
+              href="https://odooteams.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white hover:text-primary font-semibold transition-colors underline decoration-white/30 underline-offset-4"
+            >
+              &lt;/&gt; Mr. Hafez Rahim
+            </a>
           </p>
-          <Link to="/admin" className="text-xs font-medium text-sky hover:underline">
-            Admin Portal
-          </Link>
+          <div className="flex items-center justify-center gap-4 md:justify-end">
+            <Link
+              to="/admin"
+              className="text-xs font-semibold text-sky-400 hover:text-white transition-colors bg-white/5 border border-white/10 rounded-lg px-3.5 py-1.5 hover:bg-white/10"
+            >
+              Admin Portal &rarr;
+            </Link>
+          </div>
         </div>
       </footer>
     </div>
