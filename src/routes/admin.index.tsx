@@ -203,7 +203,7 @@ export function AdminDashboard() {
   const audienceTotal = audienceData.reduce((s, a) => s + a.count, 0);
 
   return (
-    <div className="min-h-[calc(100vh-10rem)] flex flex-col justify-between space-y-8 pb-2">
+    <div className="min-h-[calc(100vh-8rem)] flex flex-col justify-between space-y-8 pb-0">
       {/* Top Content Area */}
       <div className="space-y-8">
         {/* Welcome Banner & Quick Actions */}
@@ -588,7 +588,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Slim Compact Sticky Bottom Developer & Live Online Presence Bar */}
-      <div className="sticky bottom-2.5 z-30 mt-auto rounded-xl border border-border/80 bg-card/95 backdrop-blur-md px-3.5 py-1.5 shadow-md transition-all flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+      <div className="sticky bottom-1.5 z-30 mt-auto -mb-4 rounded-xl border border-border/80 bg-card/95 backdrop-blur-md px-3.5 py-1.5 shadow-md transition-all flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
         {/* Developer Credit Linked to odooteams.com */}
         <div className="flex items-center gap-2 text-[11px] text-foreground">
           <div className="grid h-5 w-5 place-items-center rounded-md bg-primary/10 text-primary">
