@@ -16,6 +16,11 @@ import {
   Trash2,
   Pencil,
   AlertTriangle,
+  UserPlus,
+  Mail,
+  Phone,
+  ChevronRight,
+  UserCheck,
 } from "lucide-react";
 import { StateBadge } from "@/components/int/status-badge";
 import { supabase } from "@/lib/supabase";
@@ -91,6 +96,15 @@ export function AdminRegistrationsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPass, setEditingPass] = useState<RegistrationRow | null>(null);
   const [deletingPass, setDeletingPass] = useState<RegistrationRow | null>(null);
+  const [delegationTarget, setDelegationTarget] = useState<RegistrationRow | null>(null);
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [newMemberData, setNewMemberData] = useState({
+    attendee_name: "",
+    attendee_email: "",
+    phone: "",
+    gender: "Male",
+    job_title: "Representative",
+  });
   const [formData, setFormData] = useState<RegistrationFormData>(initialRegFormData);
 
   const loadRegistrations = async (showToast = false) => {
@@ -317,6 +331,49 @@ export function AdminRegistrationsPage() {
     }
   };
 
+  const handleAddDelegationMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!delegationTarget || !newMemberData.attendee_name.trim()) return;
+
+    const newId = `INT-EVT-${Math.floor(100000 + Math.random() * 900000)}`;
+    const newToken = `EVT-2026-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+    const rowToInsert: RegistrationRow = {
+      id: newId,
+      event_id: delegationTarget.event_id,
+      attendee_name: newMemberData.attendee_name.trim(),
+      attendee_email: newMemberData.attendee_email.trim(),
+      phone: newMemberData.phone.trim() || null,
+      gender: newMemberData.gender,
+      company: delegationTarget.company,
+      job_title: newMemberData.job_title.trim() || "Representative",
+      role: delegationTarget.role,
+      ticket_token: newToken,
+      state: "registered",
+      is_primary: false,
+      delegation_leader_id: delegationTarget.id,
+      created_at: new Date().toISOString(),
+    };
+
+    try {
+      await supabase.from("registrations").insert(rowToInsert);
+      setRegistrations((prev) => [rowToInsert, ...prev]);
+      toast.success(`Accompanying attendee "${newMemberData.attendee_name}" added to delegation!`);
+      setNewMemberData({
+        attendee_name: "",
+        attendee_email: "",
+        phone: "",
+        gender: "Male",
+        job_title: "Representative",
+      });
+      setIsAddingMember(false);
+    } catch {
+      setRegistrations((prev) => [rowToInsert, ...prev]);
+      toast.success(`Attendee added to delegation!`);
+      setIsAddingMember(false);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!deletingPass) return;
     try {
@@ -505,22 +562,71 @@ export function AdminRegistrationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.map((r) => (
-                <tr key={r.id} className="transition-colors hover:bg-secondary/40">
-                  <td className="px-5 py-4 font-mono text-xs font-semibold text-foreground">
-                    {r.id}
-                  </td>
-                  <td className="px-4 py-4">
-                    <p className="font-semibold text-foreground">{r.attendee_name}</p>
-                    <p className="text-xs text-muted-foreground">{r.attendee_email}</p>
-                  </td>
-                  <td className="px-4 py-4 text-xs">
-                    <p className="font-medium text-foreground">{r.company || "—"}</p>
-                    <p className="text-muted-foreground">{r.job_title || "Participant"}</p>
-                  </td>
-                  <td className="px-4 py-4 font-mono text-xs text-primary">
-                    {r.ticket_token}
-                  </td>
+              {filtered.map((r) => {
+                const accompanying = registrations.filter(
+                  (x) =>
+                    x.id !== r.id &&
+                    (x.delegation_leader_id === r.id ||
+                      (r.is_primary && !x.is_primary && x.company && x.company === r.company && x.event_id === r.event_id))
+                );
+
+                return (
+                  <tr key={r.id} className="transition-colors hover:bg-secondary/40">
+                    <td className="px-5 py-4">
+                      <button
+                        type="button"
+                        onClick={() => setDelegationTarget(r)}
+                        className="font-mono text-xs font-semibold text-primary hover:underline flex items-center gap-1.5 transition-colors"
+                        title="Click to view delegation and accompanying attendees"
+                      >
+                        {r.id}
+                        {accompanying.length > 0 && (
+                          <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
+                            +{accompanying.length}
+                          </span>
+                        )}
+                      </button>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setDelegationTarget(r)}
+                          className="font-semibold text-foreground hover:text-primary transition-colors text-left"
+                          title="Click to view delegation and accompanying attendees"
+                        >
+                          {r.attendee_name}
+                        </button>
+                        {accompanying.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => setDelegationTarget(r)}
+                            className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-colors"
+                            title="Click to view accompanying attendees"
+                          >
+                            <Users className="h-3 w-3" />
+                            {accompanying.length} Going to Join
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setDelegationTarget(r)}
+                            className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                            title="Click to check or add accompanying attendees"
+                          >
+                            <UserPlus className="h-2.5 w-2.5" /> Delegation
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{r.attendee_email}</p>
+                    </td>
+                    <td className="px-4 py-4 text-xs">
+                      <p className="font-medium text-foreground">{r.company || "—"}</p>
+                      <p className="text-muted-foreground">{r.job_title || "Participant"}</p>
+                    </td>
+                    <td className="px-4 py-4 font-mono text-xs text-primary">
+                      {r.ticket_token}
+                    </td>
                   <td className="px-4 py-4 text-xs">
                     <span
                       className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${
@@ -568,7 +674,8 @@ export function AdminRegistrationsPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              );
+            })}
             </tbody>
           </table>
         </div>
@@ -805,6 +912,249 @@ export function AdminRegistrationsPage() {
           </div>
         </div>
       )}
+
+      {/* DELEGATION & ACCOMPANYING ATTENDEES MODAL */}
+      {delegationTarget && (() => {
+        const accompanying = registrations.filter(
+          (x) =>
+            x.id !== delegationTarget.id &&
+            (x.delegation_leader_id === delegationTarget.id ||
+              (delegationTarget.is_primary && !x.is_primary && x.company && x.company === delegationTarget.company && x.event_id === delegationTarget.event_id))
+        );
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+              <header className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="grid h-8 w-8 place-items-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">
+                      Delegation & Accompanying Attendees
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      {delegationTarget.company || "Enterprise Group"} · Pass {delegationTarget.id}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDelegationTarget(null);
+                    setIsAddingMember(false);
+                  }}
+                  className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </header>
+
+              <div className="max-h-[75vh] space-y-5 overflow-y-auto p-6 text-sm">
+                {/* Primary Pass Holder Card */}
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                      Primary Attendee / Delegation Leader
+                    </span>
+                    <StateBadge state={delegationTarget.state} />
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-base font-bold text-foreground">{delegationTarget.attendee_name}</h4>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 font-mono">
+                        <Mail className="h-3 w-3 text-primary" /> {delegationTarget.attendee_email}
+                      </p>
+                      {delegationTarget.phone && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 font-mono mt-0.5">
+                          <Phone className="h-3 w-3 text-muted-foreground" /> {delegationTarget.phone}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono text-xs font-bold text-primary">{delegationTarget.ticket_token}</p>
+                      <p className="text-xs text-muted-foreground">{delegationTarget.job_title || "Lead Representative"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Accompanying Members List */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5 text-sky-500" />
+                      Accompanying Attendees ({accompanying.length})
+                    </h4>
+                    {!isAddingMember && (
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingMember(true)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        <UserPlus className="h-3.5 w-3.5" /> + Add Attendee to Delegation
+                      </button>
+                    )}
+                  </div>
+
+                  {accompanying.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center">
+                      <Users className="mx-auto h-8 w-8 text-muted-foreground/50" />
+                      <p className="mt-2 text-xs font-semibold text-foreground">No additional attendees registered yet</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        Colleagues or delegation members who join with {delegationTarget.attendee_name} will show up here.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingMember(true)}
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-tech"
+                      >
+                        <UserPlus className="h-3.5 w-3.5" /> Add First Colleague
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border rounded-xl border border-border bg-background">
+                      {accompanying.map((acc) => (
+                        <div key={acc.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 transition-colors hover:bg-secondary/30">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-foreground text-xs sm:text-sm truncate">{acc.attendee_name}</p>
+                              <span className="rounded-md bg-secondary px-1.5 py-0.2 text-[10px] text-muted-foreground font-mono">
+                                {acc.id}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground font-mono truncate">{acc.attendee_email}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              {acc.job_title || "Representative"} · {acc.gender || "Male"} {acc.phone ? `· ${acc.phone}` : ""}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-center">
+                            <StateBadge state={acc.state} />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDelegationTarget(null);
+                                setPreviewPass(acc);
+                              }}
+                              className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                              title="View Badge QR"
+                            >
+                              <QrCode className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleState(acc.id, acc.state)}
+                              className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-emerald-600 transition-colors"
+                              title={acc.state === "checked-in" ? "Undo Check-in" : "Mark Checked-in"}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Inline Form to Add New Colleague / Delegate */}
+                {isAddingMember && (
+                  <form onSubmit={handleAddDelegationMember} className="rounded-xl border border-border bg-secondary/30 p-4 space-y-3 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center justify-between">
+                      <h5 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <UserPlus className="h-3.5 w-3.5 text-primary" />
+                        Add Accompanying Attendee
+                      </h5>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingMember(false)}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-foreground">Full Name *</label>
+                        <input
+                          required
+                          value={newMemberData.attendee_name}
+                          onChange={(e) => setNewMemberData({ ...newMemberData, attendee_name: e.target.value })}
+                          placeholder="e.g. Youssef Nabil"
+                          className={inputClass}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-foreground">Email *</label>
+                        <input
+                          required
+                          type="email"
+                          value={newMemberData.attendee_email}
+                          onChange={(e) => setNewMemberData({ ...newMemberData, attendee_email: e.target.value })}
+                          placeholder="youssef@abccorp.com"
+                          className={inputClass}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-foreground">Phone Number</label>
+                        <input
+                          value={newMemberData.phone}
+                          onChange={(e) => setNewMemberData({ ...newMemberData, phone: e.target.value })}
+                          placeholder="+20 100 000 0000"
+                          className={inputClass}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-foreground">Job Title</label>
+                        <input
+                          value={newMemberData.job_title}
+                          onChange={(e) => setNewMemberData({ ...newMemberData, job_title: e.target.value })}
+                          placeholder="Representative"
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingMember(false)}
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-tech"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Save & Issue Badge
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              <footer className="flex items-center justify-between border-t border-border bg-muted/20 px-6 py-4">
+                <span className="text-xs text-muted-foreground">
+                  Total in Delegation: <strong>{accompanying.length + 1}</strong> Attendees
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDelegationTarget(null);
+                    setIsAddingMember(false);
+                  }}
+                  className="rounded-lg bg-secondary px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary/80"
+                >
+                  Close
+                </button>
+              </footer>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
