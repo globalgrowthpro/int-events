@@ -36,6 +36,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { events as defaultEvents } from "@/lib/int-data";
 import { toast } from "sonner";
+import { sendLiveInvitationEmail } from "@/lib/email-service";
 
 export const Route = createFileRoute("/admin/invitations")({
   head: () => ({
@@ -549,6 +550,16 @@ export function AdminInvitationsPage() {
       const invToken = `EVT-INV-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
 
       try {
+        // Dispatch real email via Bluehost SMTP backend
+        await sendLiveInvitationEmail({
+          recipient_name: recipient.fullName,
+          recipient_email: recipient.email,
+          event_title: eventTitle,
+          company: recipient.company,
+          job_title: recipient.jobTitle,
+          token: invToken,
+        });
+
         // Record in invitations table
         const invRow: InvitationRow = {
           id: invId,
@@ -688,8 +699,16 @@ export function AdminInvitationsPage() {
     };
 
     try {
-      await supabase.from("invitations").insert(newInv);
       if (singleFormData.send_immediately) {
+        await sendLiveInvitationEmail({
+          recipient_name: newInv.recipient_name,
+          recipient_email: newInv.recipient_email,
+          event_title: eventTitle,
+          company: newInv.company,
+          job_title: newInv.job_title,
+          token: invToken,
+        });
+
         await supabase.from("email_logs").insert({
           recipient_email: newInv.recipient_email,
           template_name: "event_invitation",
@@ -697,8 +716,10 @@ export function AdminInvitationsPage() {
           status: "sent",
         });
       }
+
+      await supabase.from("invitations").insert(newInv);
       setInvitations((prev) => [newInv, ...prev]);
-      toast.success(`Invitation created and dispatched to ${newInv.recipient_name}!`);
+      toast.success(`Invitation created and dispatched via SMTP to ${newInv.recipient_name}!`);
       setIsSingleCreateOpen(false);
       setSingleFormData({
         event_id: "",
@@ -752,6 +773,16 @@ export function AdminInvitationsPage() {
   const handleResendSingle = async (inv: InvitationRow) => {
     try {
       const now = new Date().toISOString();
+
+      await sendLiveInvitationEmail({
+        recipient_name: inv.recipient_name,
+        recipient_email: inv.recipient_email,
+        event_title: inv.event_title || "INT Security Technology Summit 2026",
+        company: inv.company,
+        job_title: inv.job_title,
+        token: inv.token,
+      });
+
       await supabase
         .from("invitations")
         .update({
@@ -771,7 +802,7 @@ export function AdminInvitationsPage() {
       setInvitations((prev) =>
         prev.map((i) => (i.id === inv.id ? { ...i, sent_at: now, status: "sent" } : i))
       );
-      toast.success(`Resent invitation email via SMTP to ${inv.recipient_name} (${inv.recipient_email})`);
+      toast.success(`Live invitation email delivered to ${inv.recipient_name} (${inv.recipient_email}) via SMTP!`);
     } catch {
       toast.success(`Resent invitation email to ${inv.recipient_name}`);
     }

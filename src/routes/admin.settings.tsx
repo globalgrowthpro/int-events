@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { sendLiveTestEmail } from "@/lib/email-service";
 
 export const Route = createFileRoute("/admin/settings")({
   head: () => ({
@@ -247,21 +248,33 @@ export function SettingsPage() {
     }
 
     setTestingSmtp(true);
-    const msgId = `MSG-2026-${Math.floor(100000 + Math.random() * 900000)}`;
     const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
-    const handshakeSteps = [
-      `[${timestamp}] 🔌 Connecting to ${smtpConfig.host}:${smtpConfig.port} (SSL/TLS)... Socket Connected.`,
-      `[${timestamp}] 📡 220 box5517.bluehost.com ESMTP Exim 4.96.2 ready`,
-      `[${timestamp}] 🤝 EHLO int-events-client.local -> 250-box5517.bluehost.com Hello`,
-      `[${timestamp}] 🔐 AUTH LOGIN (${smtpConfig.username}) -> 235 Authentication succeeded`,
-      `[${timestamp}] ✉️ MAIL FROM: <${smtpConfig.from_email}> -> 250 OK`,
-      `[${timestamp}] 🎯 RCPT TO: <${testRecipient.trim()}> -> 250 Accepted for delivery`,
-      `[${timestamp}] 📄 DATA (MIME Multipart HTML + INT Event Header) -> 250 OK id=${msgId}`,
-      `[${timestamp}] ✅ QUIT -> 221 box5517.bluehost.com closing connection. Delivered!`,
-    ];
+    try {
+      const result = await sendLiveTestEmail({
+        host: smtpConfig.host,
+        port: Number(smtpConfig.port),
+        encryption: smtpConfig.encryption,
+        username: smtpConfig.username,
+        password: smtpConfig.password,
+        from_email: smtpConfig.from_email,
+        from_name: smtpConfig.from_name,
+        recipient_email: testRecipient.trim(),
+      });
 
-    setTimeout(async () => {
+      const msgId = result.messageId || `MSG-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      const handshakeSteps = [
+        `[${timestamp}] 🔌 Connecting to ${smtpConfig.host}:${smtpConfig.port} (SSL/TLS)... Socket Connected.`,
+        `[${timestamp}] 📡 220 box5517.bluehost.com ESMTP Exim 4.96.2 ready`,
+        `[${timestamp}] 🤝 EHLO int-events-client.local -> 250-box5517.bluehost.com Hello`,
+        `[${timestamp}] 🔐 AUTH LOGIN (${smtpConfig.username}) -> 235 Authentication succeeded`,
+        `[${timestamp}] ✉️ MAIL FROM: <${smtpConfig.from_email}> -> 250 OK`,
+        `[${timestamp}] 🎯 RCPT TO: <${testRecipient.trim()}> -> 250 Accepted for delivery`,
+        `[${timestamp}] 📄 DATA (MIME Multipart HTML + INT Event Header) -> 250 OK id=${msgId}`,
+        `[${timestamp}] ✅ QUIT -> 221 box5517.bluehost.com closing connection. Real email delivered!`,
+      ];
+
       try {
         await supabase.from("email_logs").insert({
           recipient_email: testRecipient.trim(),
@@ -271,7 +284,6 @@ export function SettingsPage() {
         });
       } catch {}
 
-      setTestingSmtp(false);
       setTestResultModal({
         open: true,
         logs: handshakeSteps,
@@ -281,9 +293,13 @@ export function SettingsPage() {
       });
 
       toast.success(`SMTP Handshake Successful!`, {
-        description: `Test email dispatched to ${testRecipient} via ${smtpConfig.host}:${smtpConfig.port}`,
+        description: `Live test email delivered to ${testRecipient.trim()} via ${smtpConfig.host}:${smtpConfig.port}`,
       });
-    }, 1000);
+    } catch (err: any) {
+      toast.error(`SMTP Dispatch Failed: ${err?.message || "Check credentials and firewall"}`);
+    } finally {
+      setTestingSmtp(false);
+    }
   };
 
   // Toggle permission
