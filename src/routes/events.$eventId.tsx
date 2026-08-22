@@ -12,6 +12,7 @@ import {
   Globe,
   Share2,
   CheckCircle2,
+  FileText,
 } from "lucide-react";
 import { RegistrationDialog } from "@/components/int/registration-dialog";
 import { PortalShell } from "@/components/int/portal-shell";
@@ -43,9 +44,9 @@ export const Route = createFileRoute("/events/$eventId")({
     return {
       meta: [
         { title: `${event.title} — INT Events` },
-        { name: "description", content: event.summary.replace(/<[^>]*>?/gm, "") },
+        { name: "description", content: event.summary ? event.summary.replace(/<[^>]*>?/gm, "").slice(0, 160) : "" },
         { property: "og:title", content: event.title },
-        { property: "og:description", content: event.summary.replace(/<[^>]*>?/gm, "") },
+        { property: "og:description", content: event.summary ? event.summary.replace(/<[^>]*>?/gm, "").slice(0, 160) : "" },
       ],
     };
   },
@@ -84,7 +85,7 @@ function EventDetail() {
       navigator
         .share({
           title: event.title,
-          text: event.summary.replace(/<[^>]*>?/gm, ""),
+          text: event.summary ? event.summary.replace(/<[^>]*>?/gm, "") : "",
           url: window.location.href,
         })
         .catch(() => {});
@@ -96,8 +97,9 @@ function EventDetail() {
 
   return (
     <PortalShell>
+      {/* Top Header Card */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
-        {/* Banner Hero */}
+        {/* Banner Hero Image */}
         <div className="relative aspect-21/9 bg-navy overflow-hidden">
           {event.image ? (
             <img
@@ -126,7 +128,7 @@ function EventDetail() {
           </button>
         </div>
 
-        {/* Header Information */}
+        {/* Title & Key Quick Facts (Clean Hero Layout) */}
         <div className="p-6 md:p-8">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-primary">
@@ -139,15 +141,7 @@ function EventDetail() {
             {event.title}
           </h1>
 
-          {/* Rich HTML Summary / Description */}
-          {event.summary && (
-            <div
-              className="prose prose-sm dark:prose-invert mt-3 max-w-4xl text-muted-foreground leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: event.summary }}
-            />
-          )}
-
-          {/* Quick Fact Cards */}
+          {/* Quick Fact Cards (Immediate Top Placement) */}
           <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Fact
               icon={CalendarDays}
@@ -196,7 +190,7 @@ function EventDetail() {
             </div>
           </div>
 
-          {/* Call to action buttons */}
+          {/* Call to Action Actions */}
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               type="button"
@@ -230,29 +224,39 @@ function EventDetail() {
         </div>
       </div>
 
-      {/* Main Grid: Details, Agenda, Speakers, Partners */}
+      {/* Main Content Grid: Summary & Objectives (Moved down), Agenda, Speakers, Partners */}
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          {/* About description */}
-          {event.description && event.description.length > 0 && (
-            <Panel title="About this Summit">
-              <div className="space-y-3">
+          {/* Summary & Objectives Panel (Rich Text Formatted) */}
+          <Panel title="Summary & Objectives" icon={FileText}>
+            {event.summary ? (
+              <div
+                className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed space-y-3"
+                dangerouslySetInnerHTML={{ __html: event.summary }}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">Detailed event objectives will be published shortly.</p>
+            )}
+
+            {/* Additional description paragraphs if any */}
+            {event.description && event.description.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-border space-y-3">
                 {event.description.map((paragraph, i) => (
                   <p key={i} className="text-sm leading-relaxed text-muted-foreground">
                     {paragraph}
                   </p>
                 ))}
               </div>
-            </Panel>
-          )}
+            )}
+          </Panel>
 
-          {/* Agenda schedule */}
+          {/* Agenda & Schedule Timeline */}
           {event.agenda && event.agenda.length > 0 && (
-            <Panel title="Agenda & Schedule">
+            <Panel title="Agenda & Schedule Timeline" icon={Clock}>
               <ol className="space-y-4 divide-y divide-border">
                 {event.agenda.map((item, idx) => (
-                  <li key={idx} className="flex gap-4 pt-3 first:pt-0">
-                    <span className="w-20 shrink-0 font-mono text-xs font-bold text-primary bg-primary/10 py-1 px-2 rounded text-center h-fit">
+                  <li key={idx} className="flex gap-4 pt-3.5 first:pt-0">
+                    <span className="w-24 shrink-0 font-mono text-xs font-bold text-primary bg-primary/10 py-1 px-2.5 rounded-lg text-center h-fit">
                       {item.time}
                     </span>
                     <div className="flex-1">
@@ -271,7 +275,7 @@ function EventDetail() {
 
           {/* Keynote Speakers */}
           {event.speakers && event.speakers.length > 0 && (
-            <Panel title="Featured Keynote Speakers">
+            <Panel title="Featured Keynote Speakers" icon={Award}>
               <div className="grid gap-4 sm:grid-cols-2">
                 {event.speakers.map((speaker, idx) => (
                   <div key={idx} className="rounded-xl border border-border bg-card p-4 shadow-2xs space-y-1.5">
@@ -280,7 +284,7 @@ function EventDetail() {
                       {speaker.position} · {speaker.company}
                     </p>
                     {speaker.bio && (
-                      <p className="text-xs leading-relaxed text-muted-foreground pt-1 border-t border-border/60">
+                      <p className="text-xs leading-relaxed text-muted-foreground pt-1.5 border-t border-border/60">
                         {speaker.bio}
                       </p>
                     )}
@@ -291,10 +295,10 @@ function EventDetail() {
           )}
         </div>
 
-        {/* Right Sidebar: Partners with Logos, Location, Organizer */}
+        {/* Right Sidebar: Partners & Exhibitors with Logos, Venue, Organizer */}
         <div className="space-y-6">
           {/* Partners & Exhibitors with Logos */}
-          <Panel title="Partners & Exhibitors">
+          <Panel title="Partners & Exhibitors" icon={Building}>
             {event.partnerList && event.partnerList.length > 0 ? (
               <div className="grid grid-cols-2 gap-2.5">
                 {event.partnerList.map((p, idx) => (
@@ -337,7 +341,7 @@ function EventDetail() {
           </Panel>
 
           {/* Venue & Map Link Card */}
-          <Panel title="Event Location">
+          <Panel title="Event Location & Venue" icon={MapPin}>
             <div className="space-y-2">
               <p className="text-sm font-bold text-foreground">{event.venue}</p>
               <p className="text-xs text-muted-foreground">{event.city}</p>
@@ -348,17 +352,17 @@ function EventDetail() {
                   rel="noreferrer"
                   className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
                 >
-                  <MapPin className="h-3.5 w-3.5" /> Open in Google Maps <ExternalLink className="h-3 w-3" />
+                  <MapPin className="h-3.5 w-3.5" /> Open on Google Maps <ExternalLink className="h-3 w-3" />
                 </a>
               )}
             </div>
           </Panel>
 
           {/* Organizer Info */}
-          <Panel title="Organizer & Contact">
+          <Panel title="Organizer & Inquiries" icon={Globe}>
             <p className="text-sm font-bold text-foreground">{event.organizer}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Questions or delegation inquiries? Contact{" "}
+              Questions or corporate delegation requests? Contact{" "}
               <a
                 href="mailto:events@integratedtechnics.com"
                 className="font-medium text-primary hover:underline"
@@ -385,8 +389,8 @@ function Fact({
   icon: typeof CalendarDays;
   label: string;
   value: string;
-  subValue?: string;
-  link?: string;
+  subValue?: string | undefined;
+  link?: string | undefined;
 }) {
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-2xs">
@@ -411,10 +415,21 @@ function Fact({
   );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon?: typeof CalendarDays;
+  children: React.ReactNode;
+}) {
   return (
     <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
-      <h2 className="mb-4 text-base font-bold text-foreground border-b border-border pb-2.5">{title}</h2>
+      <h2 className="mb-4 text-base font-bold text-foreground border-b border-border pb-2.5 flex items-center gap-2">
+        {Icon && <Icon className="h-4 w-4 text-primary" />}
+        {title}
+      </h2>
       <div className="space-y-3">{children}</div>
     </section>
   );
