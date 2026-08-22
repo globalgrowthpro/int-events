@@ -17,6 +17,7 @@ import {
 import { IntLogo } from "./logo";
 import { NotificationBell } from "./notification-bell";
 import { useAuth } from "@/lib/auth";
+import { DeveloperCredit } from "./developer-credit";
 import { PWAInstallButton } from "./pwa-install-prompt";
 import { HeaderUpcomingCountdown } from "./header-countdown";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -83,7 +84,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         {/* Sticky Sidebar Footer */}
-        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-sidebar-border bg-sidebar/95 p-4 backdrop-blur">
+        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-sidebar-border bg-sidebar/95 p-4 backdrop-blur space-y-3">
+          <DeveloperCredit className="w-full text-sidebar-foreground" />
           <div className="mb-3">
             <PWAInstallButton
               variant="outline"

@@ -14,6 +14,7 @@ import {
 import { IntLogo } from "./logo";
 import { NotificationBell } from "./notification-bell";
 import { useAuth } from "@/lib/auth";
+import { DeveloperCredit } from "./developer-credit";
 import { currentUser } from "@/lib/int-data";
 import {
   DropdownMenu,
@@ -44,28 +45,33 @@ export function PortalShell({ children }: { children: ReactNode }) {
     if (ready && !user) navigate({ to: "/login", replace: true });
   }, [ready, user, navigate]);
 
-  const profile = user ?? currentUser;
-
   function handleSignOut() {
     signOut();
     navigate({ to: "/login", replace: true });
   }
 
+  const profile = {
+    name: user?.name ?? currentUser.name,
+    email: user?.email ?? currentUser.email,
+    company: user?.company ?? currentUser.company,
+    role: user?.role ?? currentUser.role,
+    initials: user?.initials ?? currentUser.initials,
+  };
+
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-card md:flex">
-        <div className="flex h-16 items-center border-b border-border px-5">
-          <Link to="/dashboard">
-            <IntLogo size="sm" subtitle="Participant Portal" />
-          </Link>
+    <div className="min-h-screen bg-background pb-16 md:pb-0">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-card text-foreground md:flex">
+        <div className="flex h-16 items-center border-b border-border px-6">
+          <IntLogo subtitle="Participant Portal" />
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {nav.map((item) => (
             <Link
               key={item.to}
               to={item.to}
-              activeProps={{ className: "bg-accent text-accent-foreground" }}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+              activeOptions={{ exact: item.to === "/dashboard" }}
+              activeProps={{ className: "bg-primary text-primary-foreground font-semibold" }}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
             >
               <item.icon className="h-4 w-4" />
               {item.label}
@@ -73,8 +79,9 @@ export function PortalShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         {/* Sticky Sidebar Footer */}
-        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-border bg-card/95 p-4 backdrop-blur">
-          <div className="mb-3">
+        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-border bg-card/95 p-4 backdrop-blur space-y-3">
+          <DeveloperCredit className="w-full text-foreground" />
+          <div>
             <PWAInstallButton variant="outline" className="w-full justify-center text-xs gap-2" />
           </div>
           <div className="flex items-center justify-between gap-2">
@@ -183,7 +190,12 @@ export function PortalShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 py-8 md:px-6">{children}</main>
+        <main className="mx-auto max-w-7xl px-4 py-8 md:px-6">
+          {children}
+          <div className="mt-12 flex justify-center border-t border-border/40 pt-6 md:hidden">
+            <DeveloperCredit />
+          </div>
+        </main>
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-card md:hidden">
