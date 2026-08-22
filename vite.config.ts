@@ -12,6 +12,13 @@ function smtpServerPlugin(): Plugin {
     name: "smtp-server-plugin",
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
+        // Set Enterprise Security Headers on all HTTP responses
+        res.setHeader("X-Frame-Options", "SAMEORIGIN");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        res.setHeader("X-XSS-Protection", "1; mode=block");
+        res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+        res.setHeader("Permissions-Policy", "camera=(self), microphone=(), geolocation=(), payment=(), usb=()");
+
         if (req.method === "POST" && req.url === "/api/test-smtp") {
           let body = "";
           req.on("data", (chunk) => (body += chunk));
