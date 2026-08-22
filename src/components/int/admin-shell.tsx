@@ -12,6 +12,7 @@ import {
   Users,
   Bell,
   Ticket,
+  UserCog,
 } from "lucide-react";
 import { IntLogo } from "./logo";
 import { NotificationBell } from "./notification-bell";
@@ -32,6 +33,7 @@ const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/events", label: "Events", icon: CalendarDays },
   { to: "/admin/registrations", label: "Registrations", icon: Ticket },
+  { to: "/admin/accounts", label: "Accounts", icon: UserCog },
   { to: "/admin/attendees", label: "Attendees", icon: Users },
   { to: "/admin/vendors", label: "Vendors", icon: Building2 },
   { to: "/admin/attendance", label: "Attendance", icon: ClipboardList },
