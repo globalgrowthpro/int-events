@@ -1667,6 +1667,19 @@ export function AdminInvitationsPage() {
                     </div>
                   </div>
 
+                  {/* VIP DELEGATION PERKS */}
+                  <div className="rounded-xl border border-slate-800 bg-[#131B2C] p-4 text-xs text-slate-300 space-y-1.5">
+                    <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#F37021]">
+                      VIP Delegation Benefits Included:
+                    </span>
+                    <p className="text-[11px] leading-relaxed text-slate-400">
+                      &bull; Priority Fast-Track Gate Entry with Scannable Pass<br />
+                      &bull; Reserved Executive Keynote & Summit Seating<br />
+                      &bull; Executive Networking Lounge & Refreshment Access<br />
+                      &bull; Verified Digital Attendance Certificate & Materials Kit
+                    </p>
+                  </div>
+
                   {/* DIRECT REGISTRATION CTA BUTTON */}
                   <div className="text-center pt-2 space-y-2">
                     <a
