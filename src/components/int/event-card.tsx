@@ -22,7 +22,7 @@ export function EventCard({ event }: { event: IntEvent }) {
           <StatusBadge status={event.status} />
         </div>
       </div>
-      <div className="flex flex-1 flex-col p-5">
+      <div className="flex flex-1 flex-col p-5 pb-4">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
           {event.category}
         </p>
@@ -51,10 +51,12 @@ export function EventCard({ event }: { event: IntEvent }) {
             <Countdown target={parseEventStart(event.date, event.startTime)} size="sm" />
           </div>
         )}
+      </div>
+      <div className="px-5 pb-5 pt-0">
         <Link
           to="/events/$eventId"
           params={{ eventId: event.id }}
-          className="mt-4 inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
+          className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
         >
           View Event
         </Link>
