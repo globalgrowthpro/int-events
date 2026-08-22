@@ -9,6 +9,8 @@ import heroImg from "@/assets/hero-summit.jpg";
 import { PasswordInput } from "@/components/ui/password-input";
 import { AlertCircle, Clock, ShieldAlert, Loader2 } from "lucide-react";
 
+import { toast } from "sonner";
+
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
@@ -90,6 +92,15 @@ export function LoginPage() {
     const result = await signIn(email, password);
 
     if (!result.ok || !result.user) {
+      if (result.isInactive) {
+        toast.error("Account Inactive or Suspended", {
+          description: result.error || "This account is deactivated. Sign in is disabled.",
+        });
+        setError(result.error || "Your account is currently inactive or suspended.");
+        setSubmitting(false);
+        return;
+      }
+
       const newAttempts = failedAttempts + 1;
       setFailedAttempts(newAttempts);
       sessionStorage.setItem("int_login_attempts", newAttempts.toString());

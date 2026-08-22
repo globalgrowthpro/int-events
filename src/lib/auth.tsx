@@ -73,11 +73,18 @@ export const verifiedAccounts: DemoAccount[] = [
 
 export type SessionUser = Omit<DemoAccount, "password" | "label" | "description">;
 
+type AuthResult = {
+  ok: boolean;
+  user?: SessionUser;
+  error?: string;
+  isInactive?: boolean;
+};
+
 type AuthContextValue = {
   user: SessionUser | null;
   ready: boolean;
-  signIn: (email: string, password: string) => Promise<{ ok: boolean; user?: SessionUser; error?: string }>;
-  signInAs: (account: DemoAccount) => SessionUser;
+  signIn: (email: string, password: string) => Promise<AuthResult>;
+  signInAs: (account: DemoAccount) => Promise<AuthResult>;
   signOut: () => void;
 };
 
@@ -121,6 +128,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn: async (email, password) => {
         const cleanEmail = email.trim().toLowerCase();
 
+        // 0. Check if account is active in Supabase profiles
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("status, full_name, email")
+            .ilike("email", cleanEmail)
+            .maybeSingle();
+
+          if (profile && (profile.status === "suspended" || profile.status === "inactive" || profile.status === "pending")) {
+            return {
+              ok: false,
+              isInactive: true,
+              error: "Your account is currently inactive or suspended. Sign in is disabled by the administrator.",
+            };
+          }
+        } catch {
+          /* continue */
+        }
+
         // 1. Try real Supabase Auth first
         try {
           const { data, error: supaError } = await supabase.auth.signInWithPassword({
@@ -135,6 +161,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .select("*")
               .eq("id", data.user.id)
               .single();
+
+            if (profile && (profile.status === "suspended" || profile.status === "inactive" || profile.status === "pending")) {
+              await supabase.auth.signOut();
+              return {
+                ok: false,
+                isInactive: true,
+                error: "Your account is currently inactive or suspended. Sign in is disabled.",
+              };
+            }
 
             const role = (profile?.role as DemoRole) || "client";
             const session: SessionUser = {
@@ -175,10 +210,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         persist(session);
         return { ok: true, user: session };
       },
-      signInAs: (account) => {
+      signInAs: async (account) => {
+        const cleanEmail = account.email.trim().toLowerCase();
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("status, full_name")
+            .ilike("email", cleanEmail)
+            .maybeSingle();
+
+          if (profile && (profile.status === "suspended" || profile.status === "inactive" || profile.status === "pending")) {
+            return {
+              ok: false,
+              isInactive: true,
+              error: `Account for ${account.name} is currently inactive / suspended in database.`,
+            };
+          }
+        } catch {}
+
         const session = toSession(account);
         persist(session);
-        return session;
+        return { ok: true, user: session };
       },
       signOut: async () => {
         try {
