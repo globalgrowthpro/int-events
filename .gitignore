@@ -18,7 +18,6 @@ dist-ssr
 .env
 .env.*
 scripts/
-.lovable/
 !npm-shrinkwrap.json
 
 # Wrangler / Cloudflare
