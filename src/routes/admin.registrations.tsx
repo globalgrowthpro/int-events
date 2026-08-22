@@ -5,7 +5,7 @@ import {
   Search,
   Plus,
   Download,
-  QrCode,
+  QrCode as QrIcon,
   CheckCircle2,
   XCircle,
   RefreshCw,
@@ -23,6 +23,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { StateBadge } from "@/components/int/status-badge";
+import { QrCode as RealQrCode } from "@/components/int/qr-code";
 import { supabase } from "@/lib/supabase";
 import { events } from "@/lib/int-data";
 import { toast } from "sonner";
@@ -648,7 +649,7 @@ export function AdminRegistrationsPage() {
                         className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
                         title="View Badge QR"
                       >
-                        <QrCode className="h-4 w-4" />
+                        <QrIcon className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => openEdit(r)}
@@ -881,8 +882,16 @@ export function AdminRegistrationsPage() {
             </header>
 
             <div className="p-6 text-center space-y-4">
-              <div className="mx-auto grid h-44 w-44 place-items-center rounded-2xl border border-border bg-white p-3 shadow-inner">
-                <QrCode className="h-36 w-36 text-navy" />
+              <div className="mx-auto flex flex-col items-center justify-center rounded-2xl border border-border bg-white p-4 shadow-inner">
+                <RealQrCode
+                  value={JSON.stringify({
+                    t: previewPass.ticket_token,
+                    a: previewPass.attendee_name,
+                    e: previewPass.event_id,
+                    c: previewPass.company || "Integrated Technics",
+                  })}
+                  size={160}
+                />
               </div>
 
               <div>
@@ -1041,7 +1050,7 @@ export function AdminRegistrationsPage() {
                               className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
                               title="View Badge QR"
                             >
-                              <QrCode className="h-4 w-4" />
+                              <QrIcon className="h-4 w-4" />
                             </button>
                             <button
                               type="button"
