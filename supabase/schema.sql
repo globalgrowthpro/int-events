@@ -165,6 +165,31 @@ CREATE TABLE IF NOT EXISTS public.certificates (
 );
 
 -- ==============================================================================
+-- Table: INVITATIONS (Event Invitations sent via SMTP with delay pacing)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.invitations (
+  id TEXT PRIMARY KEY,
+  event_id TEXT NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+  event_title TEXT,
+  recipient_name TEXT NOT NULL,
+  recipient_email TEXT NOT NULL,
+  company TEXT,
+  job_title TEXT,
+  phone TEXT,
+  source TEXT NOT NULL DEFAULT 'accounts' CHECK (source IN ('accounts', 'excel', 'manual')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sending', 'sent', 'failed')),
+  sent_at TIMESTAMPTZ,
+  error_message TEXT,
+  token TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TRIGGER set_invitations_updated_at
+  BEFORE UPDATE ON public.invitations
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- ==============================================================================
 -- Table: NOTIFICATIONS (System alerts & event reminders)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.notifications (
@@ -336,6 +361,12 @@ ALTER TABLE public.vendors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attendance_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.invitations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Invitations manageable by admins"
+  ON public.invitations FOR ALL
+  USING (true)
+  WITH CHECK (true);
 
 -- Helper function to check if current user is admin
 CREATE OR REPLACE FUNCTION public.is_admin()

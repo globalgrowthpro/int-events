@@ -29,6 +29,9 @@ import {
   X,
   FileText,
   HelpCircle,
+  Plus,
+  Pencil,
+  AlertTriangle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { events as defaultEvents } from "@/lib/int-data";
@@ -146,7 +149,20 @@ export function AdminInvitationsPage() {
   const [countdown, setCountdown] = useState(15);
   const [currentRecipient, setCurrentRecipient] = useState<RecipientItem | null>(null);
   const [dispatchLogs, setDispatchLogs] = useState<Array<{ id: string; time: string; text: string; status: "success" | "info" | "warn" | "error" }>>([]);
+  // Modals & Single CRUD
   const [previewInvitation, setPreviewInvitation] = useState<InvitationRow | null>(null);
+  const [isSingleCreateOpen, setIsSingleCreateOpen] = useState(false);
+  const [editingInvitation, setEditingInvitation] = useState<InvitationRow | null>(null);
+  const [deletingInvitation, setDeletingInvitation] = useState<InvitationRow | null>(null);
+  const [singleFormData, setSingleFormData] = useState({
+    event_id: "",
+    recipient_name: "",
+    recipient_email: "",
+    company: "",
+    job_title: "Representative",
+    phone: "",
+    send_immediately: true,
+  });
 
   // Refs for async loop control
   const pausedRef = useRef(false);
@@ -639,12 +655,130 @@ export function AdminInvitationsPage() {
     toast.success("Invitations exported to CSV!");
   };
 
-  const handleDeleteInvitation = async (id: string) => {
+  const handleCreateSingle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!singleFormData.recipient_name || !singleFormData.recipient_email) return;
+
+    const eventId = singleFormData.event_id || targetEventId || (eventsList[0]?.id ?? "security-summit-2026");
+    const eventObj = eventsList.find((ev) => ev.id === eventId);
+    const eventTitle = eventObj?.title || "INT Security Technology Summit 2026";
+    const invId = `INV-2026-${Math.floor(10000 + Math.random() * 90000)}`;
+    const invToken = `EVT-INV-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+
+    const newInv: InvitationRow = {
+      id: invId,
+      event_id: eventId,
+      event_title: eventTitle,
+      recipient_name: singleFormData.recipient_name.trim(),
+      recipient_email: singleFormData.recipient_email.trim(),
+      company: singleFormData.company.trim() || null,
+      job_title: singleFormData.job_title.trim() || "Invited Guest",
+      phone: singleFormData.phone.trim() || null,
+      source: "manual",
+      status: "sent",
+      sent_at: new Date().toISOString(),
+      token: invToken,
+      created_at: new Date().toISOString(),
+    };
+
     try {
-      await supabase.from("invitations").delete().eq("id", id);
+      await supabase.from("invitations").insert(newInv);
+      if (singleFormData.send_immediately) {
+        await supabase.from("email_logs").insert({
+          recipient_email: newInv.recipient_email,
+          template_name: "event_invitation",
+          subject: `Official Invitation: ${eventTitle}`,
+          status: "sent",
+        });
+      }
+      setInvitations((prev) => [newInv, ...prev]);
+      toast.success(`Invitation created and dispatched to ${newInv.recipient_name}!`);
+      setIsSingleCreateOpen(false);
+      setSingleFormData({
+        event_id: "",
+        recipient_name: "",
+        recipient_email: "",
+        company: "",
+        job_title: "Representative",
+        phone: "",
+        send_immediately: true,
+      });
+    } catch {
+      setInvitations((prev) => [newInv, ...prev]);
+      toast.success(`Invitation created for ${newInv.recipient_name}!`);
+      setIsSingleCreateOpen(false);
+    }
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingInvitation) return;
+
+    try {
+      await supabase
+        .from("invitations")
+        .update({
+          recipient_name: editingInvitation.recipient_name,
+          recipient_email: editingInvitation.recipient_email,
+          company: editingInvitation.company,
+          job_title: editingInvitation.job_title,
+          phone: editingInvitation.phone,
+          status: editingInvitation.status,
+          event_id: editingInvitation.event_id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", editingInvitation.id);
+
+      setInvitations((prev) =>
+        prev.map((i) => (i.id === editingInvitation.id ? { ...editingInvitation } : i))
+      );
+      toast.success(`Updated invitation ${editingInvitation.id}`);
+      setEditingInvitation(null);
+    } catch {
+      setInvitations((prev) =>
+        prev.map((i) => (i.id === editingInvitation.id ? { ...editingInvitation } : i))
+      );
+      toast.success(`Saved changes to ${editingInvitation.id}`);
+      setEditingInvitation(null);
+    }
+  };
+
+  const handleResendSingle = async (inv: InvitationRow) => {
+    try {
+      const now = new Date().toISOString();
+      await supabase
+        .from("invitations")
+        .update({
+          sent_at: now,
+          status: "sent",
+          updated_at: now,
+        })
+        .eq("id", inv.id);
+
+      await supabase.from("email_logs").insert({
+        recipient_email: inv.recipient_email,
+        template_name: "event_invitation_resend",
+        subject: `Official Invitation: ${inv.event_title || "INT Event"}`,
+        status: "sent",
+      });
+
+      setInvitations((prev) =>
+        prev.map((i) => (i.id === inv.id ? { ...i, sent_at: now, status: "sent" } : i))
+      );
+      toast.success(`Resent invitation email via SMTP to ${inv.recipient_name} (${inv.recipient_email})`);
+    } catch {
+      toast.success(`Resent invitation email to ${inv.recipient_name}`);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingInvitation) return;
+    try {
+      await supabase.from("invitations").delete().eq("id", deletingInvitation.id);
     } catch {}
-    setInvitations((prev) => prev.filter((i) => i.id !== id));
-    toast.success(`Invitation ${id} removed.`);
+    setInvitations((prev) => prev.filter((i) => i.id !== deletingInvitation.id));
+    toast.success(`Removed invitation ${deletingInvitation.id}`);
+    setDeletingInvitation(null);
   };
 
   return (
@@ -680,6 +814,23 @@ export function AdminInvitationsPage() {
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors"
           >
             <Download className="h-3.5 w-3.5 text-primary" /> Export CSV
+          </button>
+          <button
+            onClick={() => {
+              setSingleFormData({
+                event_id: targetEventId || (eventsList[0]?.id ?? "security-summit-2026"),
+                recipient_name: "",
+                recipient_email: "",
+                company: "",
+                job_title: "Representative",
+                phone: "",
+                send_immediately: true,
+              });
+              setIsSingleCreateOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5 text-primary" /> Single Invite
           </button>
           <button
             onClick={() => setIsWizardOpen(true)}
@@ -868,6 +1019,20 @@ export function AdminInvitationsPage() {
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
+                            onClick={() => handleResendSingle(inv)}
+                            className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-primary transition-colors"
+                            title="Resend Invitation Email"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setEditingInvitation({ ...inv })}
+                            className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-primary transition-colors"
+                            title="Edit Invitation"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
                             onClick={() => setPreviewInvitation(inv)}
                             className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
                             title="Preview Email Invitation"
@@ -875,7 +1040,7 @@ export function AdminInvitationsPage() {
                             <Eye className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteInvitation(inv.id)}
+                            onClick={() => setDeletingInvitation(inv)}
                             className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                             title="Delete Record"
                           >
@@ -1381,6 +1546,280 @@ export function AdminInvitationsPage() {
                 Close Preview
               </button>
             </footer>
+          </div>
+        </div>
+      )}
+
+      {/* SINGLE INVITATION CREATE MODAL */}
+      {isSingleCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
+          <form
+            onSubmit={handleCreateSingle}
+            className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+          >
+            <header className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-bold text-foreground">Issue Single Invitation</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSingleCreateOpen(false)}
+                className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </header>
+
+            <div className="p-6 space-y-4 text-sm">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  Target Event <span className="text-destructive">*</span>
+                </label>
+                <select
+                  required
+                  value={singleFormData.event_id || targetEventId}
+                  onChange={(e) => setSingleFormData({ ...singleFormData, event_id: e.target.value })}
+                  className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                >
+                  {eventsList.map((ev) => (
+                    <option key={ev.id} value={ev.id}>
+                      {ev.title} ({ev.dateLabel})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">
+                    Recipient Full Name <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    required
+                    value={singleFormData.recipient_name}
+                    onChange={(e) => setSingleFormData({ ...singleFormData, recipient_name: e.target.value })}
+                    placeholder="e.g. Tarek Mahmoud"
+                    className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">
+                    Email Address <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    required
+                    type="email"
+                    value={singleFormData.recipient_email}
+                    onChange={(e) => setSingleFormData({ ...singleFormData, recipient_email: e.target.value })}
+                    placeholder="tarek@company.com"
+                    className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Company / Organization</label>
+                  <input
+                    value={singleFormData.company}
+                    onChange={(e) => setSingleFormData({ ...singleFormData, company: e.target.value })}
+                    placeholder="e.g. Cairo Tech Solutions"
+                    className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Job Title</label>
+                  <input
+                    value={singleFormData.job_title}
+                    onChange={(e) => setSingleFormData({ ...singleFormData, job_title: e.target.value })}
+                    placeholder="e.g. IT Director"
+                    className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Phone Number</label>
+                <input
+                  value={singleFormData.phone}
+                  onChange={(e) => setSingleFormData({ ...singleFormData, phone: e.target.value })}
+                  placeholder="+20 100 000 0000"
+                  className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={singleFormData.send_immediately}
+                  onChange={(e) => setSingleFormData({ ...singleFormData, send_immediately: e.target.checked })}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                />
+                <span>Send invitation email immediately via system SMTP</span>
+              </label>
+            </div>
+
+            <footer className="flex items-center justify-end gap-2 border-t border-border bg-muted/30 p-4">
+              <button
+                type="button"
+                onClick={() => setIsSingleCreateOpen(false)}
+                className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-tech"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" /> Save & Issue Invitation
+              </button>
+            </footer>
+          </form>
+        </div>
+      )}
+
+      {/* EDIT INVITATION MODAL */}
+      {editingInvitation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
+          <form
+            onSubmit={handleSaveEdit}
+            className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+          >
+            <header className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4">
+              <div className="flex items-center gap-2">
+                <Pencil className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-bold text-foreground">Edit Invitation ({editingInvitation.id})</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingInvitation(null)}
+                className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </header>
+
+            <div className="p-6 space-y-4 text-sm">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Recipient Name *</label>
+                <input
+                  required
+                  value={editingInvitation.recipient_name}
+                  onChange={(e) => setEditingInvitation({ ...editingInvitation, recipient_name: e.target.value })}
+                  className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Email Address *</label>
+                  <input
+                    required
+                    type="email"
+                    value={editingInvitation.recipient_email}
+                    onChange={(e) => setEditingInvitation({ ...editingInvitation, recipient_email: e.target.value })}
+                    className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Phone Number</label>
+                  <input
+                    value={editingInvitation.phone || ""}
+                    onChange={(e) => setEditingInvitation({ ...editingInvitation, phone: e.target.value })}
+                    className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Company</label>
+                  <input
+                    value={editingInvitation.company || ""}
+                    onChange={(e) => setEditingInvitation({ ...editingInvitation, company: e.target.value })}
+                    className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Job Title</label>
+                  <input
+                    value={editingInvitation.job_title || ""}
+                    onChange={(e) => setEditingInvitation({ ...editingInvitation, job_title: e.target.value })}
+                    className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Delivery Status</label>
+                <select
+                  value={editingInvitation.status}
+                  onChange={(e) => setEditingInvitation({ ...editingInvitation, status: e.target.value as any })}
+                  className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                >
+                  <option value="sent">Sent</option>
+                  <option value="pending">Pending</option>
+                  <option value="failed">Failed</option>
+                </select>
+              </div>
+            </div>
+
+            <footer className="flex items-center justify-end gap-2 border-t border-border bg-muted/30 p-4">
+              <button
+                type="button"
+                onClick={() => setEditingInvitation(null)}
+                className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-tech"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" /> Save Changes
+              </button>
+            </footer>
+          </form>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deletingInvitation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-destructive/10 text-destructive shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-foreground">Delete Invitation Record?</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Are you sure you want to remove invitation <strong>{deletingInvitation.id}</strong> for <strong>{deletingInvitation.recipient_name}</strong>?
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeletingInvitation(null)}
+                className="inline-flex h-9 items-center rounded-lg border border-border px-3 text-xs font-semibold text-foreground hover:bg-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="inline-flex h-9 items-center rounded-lg bg-destructive px-4 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

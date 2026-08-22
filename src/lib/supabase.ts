@@ -145,6 +145,25 @@ export type Database = {
           created_at: string;
         };
       };
+      invitations: {
+        Row: {
+          id: string;
+          event_id: string;
+          event_title: string | null;
+          recipient_name: string;
+          recipient_email: string;
+          company: string | null;
+          job_title: string | null;
+          phone: string | null;
+          source: "accounts" | "excel" | "manual";
+          status: "pending" | "sending" | "sent" | "failed";
+          sent_at: string | null;
+          error_message: string | null;
+          token: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+      };
     };
   };
 };
