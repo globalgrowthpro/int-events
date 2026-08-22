@@ -1597,13 +1597,13 @@ export function AdminInvitationsPage() {
                   {/* Top Branding */}
                   <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                     <div className="flex items-center gap-3">
-                      <img src="/logo.png" alt="INT" className="h-8 w-8 object-contain" />
+                      <img src="/logo.png" alt="INT" className="h-9 w-9 object-contain bg-white rounded-lg p-0.5 border border-slate-700" />
                       <div>
                         <h4 className="font-extrabold text-white text-base tracking-tight">Integrated Technics</h4>
-                        <p className="text-[11px] text-slate-400">Enterprise Technology Summits</p>
+                        <p className="text-[11px] text-slate-400">التقنيات المتكاملة &bull; Enterprise Summits</p>
                       </div>
                     </div>
-                    <span className="rounded-full bg-sky-500/10 px-3 py-1 text-[10px] font-bold text-sky-400 border border-sky-500/20 uppercase tracking-wider">
+                    <span className="rounded-full bg-orange-500/15 px-3 py-1 text-[10px] font-bold text-orange-400 border border-orange-500/30 uppercase tracking-wider">
                       ✦ VIP Invitation
                     </span>
                   </div>
@@ -1611,21 +1611,21 @@ export function AdminInvitationsPage() {
                   <p className="text-sm text-slate-300 leading-relaxed">
                     Dear <strong className="text-white">{previewInvitation.recipient_name}</strong>,
                     <br />
-                    You are cordially invited as a distinguished guest to attend <strong className="text-sky-400">{eventTitle}</strong>.
+                    You are cordially invited as a distinguished guest to attend <strong className="text-[#F37021]">{eventTitle}</strong>.
                   </p>
 
                   {/* VIP DIGITAL PASS CARD */}
-                  <div className="rounded-2xl border-2 border-sky-400/60 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-5 shadow-xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 h-32 w-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
+                  <div className="rounded-2xl border-2 border-[#F37021] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-5 shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 h-32 w-32 bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
 
                     <div className="flex items-center justify-between border-b border-dashed border-slate-700 pb-3 mb-4">
                       <div>
-                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-sky-400">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F37021]">
                           Delegation Access Pass
                         </span>
                         <h5 className="font-bold text-white text-sm">{eventTitle}</h5>
                       </div>
-                      <span className="rounded bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white tracking-wider">
+                      <span className="rounded bg-[#F37021] px-2.5 py-0.5 text-[10px] font-bold text-white tracking-wider">
                         VIP
                       </span>
                     </div>
@@ -1643,7 +1643,7 @@ export function AdminInvitationsPage() {
                           <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Guest Name</span>
                           <p className="text-base font-bold text-white">{previewInvitation.recipient_name}</p>
                           {previewInvitation.job_title && (
-                            <p className="text-xs text-sky-400 font-medium">{previewInvitation.job_title}</p>
+                            <p className="text-xs text-[#F37021] font-semibold">{previewInvitation.job_title}</p>
                           )}
                         </div>
 
@@ -1656,7 +1656,7 @@ export function AdminInvitationsPage() {
 
                         <div>
                           <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Pass Token ID</span>
-                          <p className="font-mono text-sm font-extrabold text-sky-400 tracking-wider">{token}</p>
+                          <p className="font-mono text-sm font-extrabold text-[#F37021] tracking-wider">{token}</p>
                         </div>
                       </div>
                     </div>
@@ -1673,13 +1673,13 @@ export function AdminInvitationsPage() {
                       href={registerUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg hover:from-sky-400 hover:to-blue-500 transition-all hover:scale-[1.02]"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#F37021] to-[#D95D14] px-6 py-3 text-sm font-bold text-white shadow-lg hover:from-orange-500 hover:to-orange-600 transition-all hover:scale-[1.02]"
                     >
                       <span>Claim Pass & Confirm Registration</span>
                       <ArrowRight className="h-4 w-4" />
                     </a>
                     <p className="text-[10px] text-slate-400 break-all">
-                      Redirect Link: <span className="text-sky-400 underline">{registerUrl}</span>
+                      Redirect Link: <span className="text-[#F37021] underline">{registerUrl}</span>
                     </p>
                   </div>
                 </div>

@@ -151,11 +151,11 @@ function smtpServerPlugin(): Plugin {
                             
                             <!-- Header Banner -->
                             <tr>
-                              <td style="padding: 32px 32px 24px 32px; background: linear-gradient(135deg, #0a192f 0%, #172a46 60%, #0284c7 100%); border-bottom: 1px solid #334155;">
+                              <td style="padding: 32px 32px 24px 32px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #ea580c 100%); border-bottom: 1px solid #334155;">
                                 <table width="100%" cellspacing="0" cellpadding="0">
                                   <tr>
                                     <td>
-                                      <div style="display: inline-block; padding: 5px 14px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 100px; color: #38bdf8; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+                                      <div style="display: inline-block; padding: 5px 14px; background: rgba(243, 112, 33, 0.18); border: 1px solid rgba(243, 112, 33, 0.4); border-radius: 100px; color: #f37021; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
                                         ✦ VIP DELEGATION PASS
                                       </div>
                                       <h1 style="margin: 16px 0 4px 0; color: #ffffff; font-size: 24px; font-weight: 800; line-height: 1.2; letter-spacing: -0.5px;">
@@ -175,7 +175,7 @@ function smtpServerPlugin(): Plugin {
                               <td style="padding: 28px 32px 16px 32px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
                                 <p style="margin: 0 0 10px 0; font-size: 16px;">Dear <strong style="color: #ffffff;">${recipientName}</strong>,</p>
                                 <p style="margin: 0; color: #cbd5e1;">
-                                  We have the pleasure of cordially inviting you as an honored delegate to attend <strong style="color: #38bdf8;">${eventTitle}</strong>.
+                                  We have the pleasure of cordially inviting you as an honored delegate to attend <strong style="color: #f37021;">${eventTitle}</strong>.
                                 </p>
                               </td>
                             </tr>
@@ -183,19 +183,19 @@ function smtpServerPlugin(): Plugin {
                             <!-- DIGITAL PASS CARD -->
                             <tr>
                               <td style="padding: 8px 32px 24px 32px;">
-                                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%); border: 2px solid #38bdf8; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);">
+                                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%); border: 2px solid #f37021; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);">
                                   
                                   <!-- Card Top Bar -->
                                   <tr>
-                                    <td style="padding: 16px 20px; background: rgba(56, 189, 248, 0.08); border-bottom: 1px dashed #334155;">
+                                    <td style="padding: 16px 20px; background: rgba(243, 112, 33, 0.1); border-bottom: 1px dashed #334155;">
                                       <table width="100%" cellspacing="0" cellpadding="0">
                                         <tr>
                                           <td>
-                                            <span style="font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #38bdf8;">DIGITAL PASS HOLDER</span>
+                                            <span style="font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #f37021;">DIGITAL PASS HOLDER</span>
                                             <h2 style="margin: 2px 0 0 0; color: #ffffff; font-size: 16px; font-weight: 700;">${eventTitle}</h2>
                                           </td>
                                           <td align="right" style="vertical-align: middle;">
-                                            <span style="display: inline-block; padding: 4px 10px; background: #059669; border-radius: 6px; color: #ffffff; font-size: 10px; font-weight: 800; letter-spacing: 1px;">
+                                            <span style="display: inline-block; padding: 4px 10px; background: #f37021; border-radius: 6px; color: #ffffff; font-size: 10px; font-weight: 800; letter-spacing: 1px;">
                                               CONFIRMED VIP
                                             </span>
                                           </td>
@@ -224,7 +224,7 @@ function smtpServerPlugin(): Plugin {
                                             <div style="margin-bottom: 10px;">
                                               <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600;">Attendee Name</span>
                                               <div style="color: #ffffff; font-size: 16px; font-weight: 700; margin-top: 2px;">${recipientName}</div>
-                                              ${data.job_title ? `<div style="color: #38bdf8; font-size: 12px; font-weight: 500;">${data.job_title}</div>` : ""}
+                                              ${data.job_title ? `<div style="color: #f37021; font-size: 12px; font-weight: 600;">${data.job_title}</div>` : ""}
                                             </div>
 
                                             ${data.company ? `
@@ -236,7 +236,7 @@ function smtpServerPlugin(): Plugin {
 
                                             <div>
                                               <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600;">Pass ID / Token</span>
-                                              <div style="font-family: 'Courier New', Courier, monospace; color: #38bdf8; font-size: 14px; font-weight: 800; letter-spacing: 1.5px; margin-top: 2px;">
+                                              <div style="font-family: 'Courier New', Courier, monospace; color: #f37021; font-size: 14px; font-weight: 800; letter-spacing: 1.5px; margin-top: 2px;">
                                                 ${token}
                                               </div>
                                             </div>
@@ -266,7 +266,7 @@ function smtpServerPlugin(): Plugin {
                               <td style="padding: 12px 32px 28px 32px;" align="center">
                                 <table cellspacing="0" cellpadding="0">
                                   <tr>
-                                    <td align="center" style="border-radius: 12px; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); box-shadow: 0 10px 20px -3px rgba(37, 99, 235, 0.5);">
+                                    <td align="center" style="border-radius: 12px; background: linear-gradient(135deg, #f37021 0%, #d95d14 100%); box-shadow: 0 10px 20px -3px rgba(243, 112, 33, 0.45);">
                                       <a href="${registerUrl}" target="_blank" style="display: inline-block; padding: 16px 36px; font-size: 15px; font-weight: 700; color: #ffffff; text-decoration: none; border-radius: 12px; letter-spacing: 0.5px;">
                                         Claim Pass & Confirm Registration &rarr;
                                       </a>
@@ -274,7 +274,7 @@ function smtpServerPlugin(): Plugin {
                                   </tr>
                                 </table>
                                 <p style="margin: 12px 0 0 0; color: #64748b; font-size: 11px; word-break: break-all;">
-                                  Direct Link: <a href="${registerUrl}" style="color: #38bdf8; text-decoration: underline;">${registerUrl}</a>
+                                  Direct Link: <a href="${registerUrl}" style="color: #f37021; text-decoration: underline;">${registerUrl}</a>
                                 </p>
                               </td>
                             </tr>
@@ -286,7 +286,7 @@ function smtpServerPlugin(): Plugin {
                                   Integrated Technics Event Management
                                 </p>
                                 <p style="margin: 0 0 10px 0;">
-                                  Support & Inquiries: <a href="mailto:events@integratedtechnics.com" style="color: #38bdf8; text-decoration: none;">events@integratedtechnics.com</a>
+                                  Support & Inquiries: <a href="mailto:events@integratedtechnics.com" style="color: #f37021; text-decoration: none;">events@integratedtechnics.com</a>
                                 </p>
                                 <p style="margin: 0; font-size: 10px; color: #475569;">
                                   &copy; 2026 Integrated Technics. All rights reserved. &bull; <a href="https://odooteams.com" style="color: #475569; text-decoration: none;">Developer: Mr. Hafez Rahim</a>
