@@ -225,14 +225,27 @@ function Field({
   );
 }
 
-function SelectField({ label, id, options }: { label: string; id: string; options: string[] }) {
+function SelectField({
+  label,
+  id,
+  options,
+  otherLabel = "Please specify",
+}: {
+  label: string;
+  id: string;
+  options: string[];
+  otherLabel?: string;
+}) {
+  const [value, setValue] = useState("");
+  const isOther = value.toLowerCase() === "other";
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
       <select
         id={id}
         className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-        defaultValue=""
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
       >
         <option value="" disabled>
           Select…
@@ -241,9 +254,13 @@ function SelectField({ label, id, options }: { label: string; id: string; option
           <option key={o}>{o}</option>
         ))}
       </select>
+      {isOther ? (
+        <Input id={`${id}-other`} placeholder={otherLabel} className="mt-2" />
+      ) : null}
     </div>
   );
 }
+
 
 function FileField({ label, id, full }: { label: string; id: string; full?: boolean }) {
   return (
@@ -402,7 +419,32 @@ function VendorFields() {
         <SelectField
           label="Vendor Category"
           id="vcat"
-          options={["Unified Security", "Network Video", "Access Control", "ICT", "Data Centre", "Other"]}
+          otherLabel="Enter your category name"
+          options={[
+            "Unified Security",
+            "Network Video",
+            "Access Control",
+            "Intrusion Detection & Alarms",
+            "Fire Alarm & Life Safety",
+            "Perimeter Protection",
+            "Video Analytics & AI",
+            "Command & Control / PSIM",
+            "ICT",
+            "Networking & Connectivity",
+            "Cybersecurity",
+            "Data Centre",
+            "Cloud & Managed Services",
+            "Power & UPS Systems",
+            "Audio Visual & Public Address",
+            "Building Management & IoT",
+            "Smart Cities & ITS",
+            "System Integration",
+            "Consultancy & Design",
+            "Installation & Maintenance Services",
+            "Training & Certification",
+            "Other",
+          ]}
+
         />
         <Field label="Number of Representatives" id="vreps" type="number" />
         <div className="space-y-2 sm:col-span-2">
