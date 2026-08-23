@@ -40,13 +40,27 @@ function smtpServerPlugin(): Plugin {
           req.on("end", async () => {
             try {
               const data = JSON.parse(body || "{}");
-              const host = data.host || "box5517.bluehost.com";
-              const port = Number(data.port) || 465;
-              const user = data.username || "event@integratedtechnics.com";
-              const pass = data.password || "event786@hafez";
-              const fromEmail = data.from_email || "event@integratedtechnics.com";
-              const fromName = data.from_name || "Integrated Technics Events";
-              const to = data.recipient_email || "h.rahim@integratedtechnics.com";
+              const host = data.host || SMTP.host;
+              const port = Number(data.port) || SMTP.port;
+              const user = data.username || SMTP.user;
+              const pass = data.password || SMTP.pass;
+              const fromEmail = data.from_email || SMTP.fromEmail || user;
+              const fromName = data.from_name || SMTP.fromName;
+              const to = data.recipient_email;
+
+              if (!host || !user || !pass) {
+                res.setHeader("Content-Type", "application/json");
+                res.statusCode = 500;
+                res.end(JSON.stringify({ success: false, error: smtpConfigError }));
+                return;
+              }
+              if (!to) {
+                res.setHeader("Content-Type", "application/json");
+                res.statusCode = 400;
+                res.end(JSON.stringify({ success: false, error: "Missing recipient email" }));
+                return;
+              }
+
 
               const logoPath = path.resolve("public/logo.png");
               const hasLogo = fs.existsSync(logoPath);
