@@ -110,7 +110,7 @@ function RegisterPage() {
             <p className="mt-2 text-sm text-muted-foreground">
               We sent a verification link to your email. Confirm it to activate your INT Events
               account
-              {type === "vendor" ? " — vendor accounts are then reviewed by an administrator." : "."}
+              {type === "client" ? " — client accounts are then reviewed by an administrator." : "."}
             </p>
             <Button asChild className="mt-6 w-full">
               <Link to="/dashboard">Continue to dashboard</Link>
@@ -365,7 +365,12 @@ function ClientFields() {
           <Textarea placeholder="Video surveillance, access control, ICT infrastructure…" />
         </div>
       </Section>
+      <p className="rounded-md border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
+        Client accounts require administrator approval. Your status will be{" "}
+        <strong>Pending Approval</strong> until reviewed.
+      </p>
     </>
+
   );
 }
 
@@ -406,10 +411,6 @@ function VendorFields() {
         </div>
         <SelectField label="Existing Partnership with INT" id="vpart" options={["Yes", "No"]} />
       </Section>
-      <p className="rounded-md border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
-        Vendor accounts require administrator approval. Your status will be{" "}
-        <strong>Pending Approval</strong> until reviewed.
-      </p>
     </>
   );
 }
