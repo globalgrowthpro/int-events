@@ -36,20 +36,22 @@ export function Passes() {
       const liveEvents = await getEvents();
       setEventsList(liveEvents);
 
-      const userEmail = user?.email?.toLowerCase() || "client@intevents.com";
+      const userEmail = user?.email?.toLowerCase() || "";
+      const userName = user?.name?.trim().toLowerCase() || "";
+
       const { data: regsData, error } = await supabase
         .from("registrations")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (!error && regsData && regsData.length > 0) {
-        const filteredRegs = regsData.filter(
+      if (!error && regsData) {
+        const mine = regsData.filter(
           (r) =>
-            r.attendee_email?.toLowerCase() === userEmail ||
-            (user?.role === "client" && r.role === "client")
+            (userEmail && r.attendee_email?.toLowerCase() === userEmail) ||
+            (userName && r.attendee_name?.trim().toLowerCase() === userName),
         );
 
-        const mapped: Registration[] = (filteredRegs.length > 0 ? filteredRegs : regsData.slice(0, 3)).map((r) => ({
+        const mapped: Registration[] = mine.map((r) => ({
           id: r.id,
           eventId: r.event_id,
           attendee: r.attendee_name,
@@ -108,7 +110,7 @@ export function Passes() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {userRegistrations.map((reg) => {
-            const event = eventsList.find((e) => e.id === reg.eventId) || eventsList[0];
+            const event = eventsList.find((e) => e.id === reg.eventId);
             if (!event) return null;
             return <PassCard key={reg.id} registration={reg} event={event} compact />;
           })}
