@@ -161,14 +161,22 @@ function smtpServerPlugin(): Plugin {
           req.on("end", async () => {
             try {
               const data = JSON.parse(body || "{}");
-              const host = "box5517.bluehost.com";
-              const port = 465;
-              const user = "event@integratedtechnics.com";
-              const pass = "event786@hafez";
-              const fromEmail = "event@integratedtechnics.com";
-              const fromName = "Integrated Technics Events";
+              const host = SMTP.host;
+              const port = SMTP.port;
+              const user = SMTP.user;
+              const pass = SMTP.pass;
+              const fromEmail = SMTP.fromEmail || user;
+              const fromName = SMTP.fromName;
               const recipientName = data.recipient_name || "Valued Guest";
               const recipientEmail = data.recipient_email;
+
+              if (!host || !user || !pass) {
+                res.setHeader("Content-Type", "application/json");
+                res.statusCode = 500;
+                res.end(JSON.stringify({ success: false, error: smtpConfigError }));
+                return;
+              }
+
               const eventId = data.event_id || "security-summit-2026";
               const eventTitle = data.event_title || "INT Security Technology Summit 2026";
               const eventDate = data.event_date || "November 14, 2026 • 09:00 AM";
