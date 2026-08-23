@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
-import { events, type IntEvent } from "@/lib/int-data";
+import { getEvents } from "@/lib/api";
+import { type IntEvent } from "@/lib/int-data";
 import { parseEventStart, diffParts, FlipUnit } from "./countdown";
 
 export function HeaderUpcomingCountdown({ className = "" }: { className?: string }) {
   const [now, setNow] = useState<number>(Date.now());
+  const [events, setEvents] = useState<IntEvent[]>([]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -13,6 +15,19 @@ export function HeaderUpcomingCountdown({ className = "" }: { className?: string
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    getEvents()
+      .then((data) => {
+        if (active) setEvents(data);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
 
   // Find closest upcoming event
   const nextEvent: { event: IntEvent; startTimestamp: number } | null = useMemo(() => {
