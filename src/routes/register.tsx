@@ -434,6 +434,7 @@ function EmployeeFields() {
         <Field label="Department" id="edep" />
         <Field label="Job Title" id="ejt" />
       </Section>
+      <IdentitySection prefix="employee" />
       <p className="rounded-md border border-border bg-secondary px-4 py-3 text-sm text-muted-foreground">
         Accounts using an <strong>@integratedtechnics.com</strong> address are automatically
         identified as INT employees after email verification.
