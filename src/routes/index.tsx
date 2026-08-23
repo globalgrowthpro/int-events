@@ -39,6 +39,20 @@ const reasons = [
 
 function Landing() {
   const { user, signOut } = useAuth();
+  const [eventsList, setEventsList] = useState<IntEvent[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    getEvents()
+      .then((data) => {
+        if (active) setEventsList(data);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background">
       <header className="sticky top-0 z-30 w-full border-b border-border bg-card/95 backdrop-blur">
