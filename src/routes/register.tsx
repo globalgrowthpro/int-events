@@ -365,7 +365,12 @@ function ClientFields() {
           <Textarea placeholder="Video surveillance, access control, ICT infrastructure…" />
         </div>
       </Section>
+      <p className="rounded-md border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
+        Client accounts require administrator approval. Your status will be{" "}
+        <strong>Pending Approval</strong> until reviewed.
+      </p>
     </>
+
   );
 }
 
