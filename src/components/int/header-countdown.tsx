@@ -48,7 +48,7 @@ export function HeaderUpcomingCountdown({ className = "" }: { className?: string
           }
         : null)
     );
-  }, [now]);
+  }, [now, events]);
 
   if (!nextEvent) return null;
 
