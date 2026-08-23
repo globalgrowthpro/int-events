@@ -157,8 +157,9 @@ function Landing() {
           </Link>
         </div>
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {events
+          {eventsList
             .filter((e) => e.status !== "completed")
+            .slice(0, 3)
             .map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
