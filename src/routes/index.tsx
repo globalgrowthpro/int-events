@@ -1,10 +1,12 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Cpu, Handshake, Lightbulb, Users } from "lucide-react";
 import heroImg from "@/assets/hero-summit.jpg";
 import { IntLogo } from "@/components/int/logo";
 import { useAuth } from "@/lib/auth";
 import { EventCard } from "@/components/int/event-card";
-import { events } from "@/lib/int-data";
+import { getEvents } from "@/lib/api";
+import type { IntEvent } from "@/lib/int-data";
 import { PWAInstallButton } from "@/components/int/pwa-install-prompt";
 import { WhyAttendSlider } from "@/components/int/why-attend-slider";
 
