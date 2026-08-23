@@ -844,7 +844,7 @@ export function AdminEventsPage() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-foreground">
-                        Event Date <span className="text-destructive">*</span>
+                        Event Start Date <span className="text-destructive">*</span>
                       </label>
                       <input
                         type="date"
@@ -856,14 +856,24 @@ export function AdminEventsPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-foreground">Date Display Label</label>
+                      <label className="text-xs font-semibold text-foreground">Event End Date</label>
                       <input
-                        value={formData.dateLabel}
-                        onChange={(e) => setFormData({ ...formData, dateLabel: e.target.value })}
-                        placeholder="e.g. 15 September 2026"
+                        type="date"
+                        value={formData.endDate}
+                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                         className={inputClass}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-foreground">Date Display Label</label>
+                    <input
+                      value={formData.dateLabel}
+                      onChange={(e) => setFormData({ ...formData, dateLabel: e.target.value })}
+                      placeholder="e.g. 15 September 2026"
+                      className={inputClass}
+                    />
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
