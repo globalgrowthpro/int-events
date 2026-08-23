@@ -56,6 +56,7 @@ type EventFormValues = {
   title: string;
   category: string;
   date: string;
+  endDate: string;
   dateLabel: string;
   startTime: string;
   endTime: string;
@@ -77,6 +78,7 @@ const defaultFormValues: EventFormValues = {
   title: "",
   category: "Summit",
   date: new Date().toISOString().split("T")[0]!,
+  endDate: new Date().toISOString().split("T")[0]!,
   dateLabel: "15 September 2026",
   startTime: "09:00 AM",
   endTime: "05:00 PM",
@@ -187,6 +189,7 @@ export function AdminEventsPage() {
       title: ev.title,
       category: ev.category,
       date: ev.date,
+      endDate: ev.endDate || ev.date,
       dateLabel: ev.dateLabel,
       startTime: ev.startTime || "09:00 AM",
       endTime: ev.endTime || "05:00 PM",
@@ -306,6 +309,7 @@ export function AdminEventsPage() {
         title: formData.title,
         category: formData.category,
         date: formData.date,
+        endDate: formData.endDate,
         dateLabel: formData.dateLabel || formData.date,
         startTime: formData.startTime,
         endTime: formData.endTime,
@@ -343,6 +347,7 @@ export function AdminEventsPage() {
         title: formData.title,
         category: formData.category,
         date: formData.date,
+        endDate: formData.endDate,
         dateLabel: formData.dateLabel || formData.date,
         startTime: formData.startTime,
         endTime: formData.endTime,
@@ -839,7 +844,7 @@ export function AdminEventsPage() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-foreground">
-                        Event Date <span className="text-destructive">*</span>
+                        Event Start Date <span className="text-destructive">*</span>
                       </label>
                       <input
                         type="date"
@@ -851,14 +856,24 @@ export function AdminEventsPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-foreground">Date Display Label</label>
+                      <label className="text-xs font-semibold text-foreground">Event End Date</label>
                       <input
-                        value={formData.dateLabel}
-                        onChange={(e) => setFormData({ ...formData, dateLabel: e.target.value })}
-                        placeholder="e.g. 15 September 2026"
+                        type="date"
+                        value={formData.endDate}
+                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                         className={inputClass}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-foreground">Date Display Label</label>
+                    <input
+                      value={formData.dateLabel}
+                      onChange={(e) => setFormData({ ...formData, dateLabel: e.target.value })}
+                      placeholder="e.g. 15 September 2026"
+                      className={inputClass}
+                    />
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
