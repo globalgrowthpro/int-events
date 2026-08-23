@@ -358,7 +358,7 @@ function ClientFields() {
         </div>
         <Field label="LinkedIn (optional)" id="li" full />
       </Section>
-      <IdentitySection />
+      <IdentitySection prefix="client" />
       <Section title="Areas of Interest (optional)">
         <div className="sm:col-span-2">
           <Textarea placeholder="Video surveillance, access control, ICT infrastructure…" />
