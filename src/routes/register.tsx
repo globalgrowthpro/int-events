@@ -245,6 +245,100 @@ function SelectField({ label, id, options }: { label: string; id: string; option
   );
 }
 
+function FileField({ label, id, full }: { label: string; id: string; full?: boolean }) {
+  return (
+    <div className={cn("space-y-2", full && "sm:col-span-2")}>
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} type="file" accept="image/*,application/pdf" required />
+    </div>
+  );
+}
+
+function IdentitySection() {
+  const [docType, setDocType] = useState<"national-id" | "passport">("national-id");
+  const [nid, setNid] = useState("");
+
+  const nidError =
+    nid.length === 0
+      ? ""
+      : !/^\d*$/.test(nid)
+        ? "Digits only."
+        : !/^[23]/.test(nid)
+          ? "National ID must start with 2 or 3."
+          : nid.length !== 14
+            ? `National ID must be 14 digits (${nid.length}/14).`
+            : "";
+
+  return (
+    <Section title="Identification">
+      <div className="sm:col-span-2 grid gap-3 sm:grid-cols-2">
+        {(
+          [
+            { id: "national-id", label: "National ID", hint: "14 digits, starting with 2 or 3" },
+            { id: "passport", label: "Passport", hint: "Passport number and copy" },
+          ] as const
+        ).map((o) => (
+          <label
+            key={o.id}
+            className={cn(
+              "flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors",
+              docType === o.id
+                ? "border-primary bg-accent/50 ring-1 ring-primary"
+                : "border-border bg-card hover:border-primary/40",
+            )}
+          >
+            <input
+              type="radio"
+              name="doc-type"
+              value={o.id}
+              checked={docType === o.id}
+              onChange={() => setDocType(o.id)}
+              className="mt-1 h-4 w-4 accent-[hsl(var(--primary))]"
+            />
+            <span>
+              <span className="block text-sm font-semibold">{o.label}</span>
+              <span className="block text-xs text-muted-foreground">{o.hint}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {docType === "national-id" ? (
+        <>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="nid">National ID Number</Label>
+            <Input
+              id="nid"
+              inputMode="numeric"
+              maxLength={14}
+              required
+              pattern="[23][0-9]{13}"
+              placeholder="e.g. 29001011234567"
+              value={nid}
+              onChange={(e) => setNid(e.target.value.replace(/\D/g, "").slice(0, 14))}
+              aria-invalid={Boolean(nidError)}
+            />
+            {nidError ? (
+              <p className="text-xs text-destructive">{nidError}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Must be 14 digits and start with 2 or 3.
+              </p>
+            )}
+          </div>
+          <FileField label="National ID — Front Copy" id="nid-front" />
+          <FileField label="National ID — Back Copy" id="nid-back" />
+        </>
+      ) : (
+        <>
+          <Field label="Passport Number" id="passport-no" placeholder="e.g. A12345678" />
+          <FileField label="Passport Copy" id="passport-copy" />
+        </>
+      )}
+    </Section>
+  );
+}
+
 function ClientFields() {
   return (
     <>
@@ -265,6 +359,7 @@ function ClientFields() {
         </div>
         <Field label="LinkedIn (optional)" id="li" full />
       </Section>
+      <IdentitySection />
       <Section title="Areas of Interest (optional)">
         <div className="sm:col-span-2">
           <Textarea placeholder="Video surveillance, access control, ICT infrastructure…" />
@@ -273,6 +368,7 @@ function ClientFields() {
     </>
   );
 }
+
 
 function VendorFields() {
   return (
