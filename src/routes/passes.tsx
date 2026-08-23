@@ -110,7 +110,7 @@ export function Passes() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {userRegistrations.map((reg) => {
-            const event = eventsList.find((e) => e.id === reg.eventId) || eventsList[0];
+            const event = eventsList.find((e) => e.id === reg.eventId);
             if (!event) return null;
             return <PassCard key={reg.id} registration={reg} event={event} compact />;
           })}
