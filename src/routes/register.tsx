@@ -225,14 +225,27 @@ function Field({
   );
 }
 
-function SelectField({ label, id, options }: { label: string; id: string; options: string[] }) {
+function SelectField({
+  label,
+  id,
+  options,
+  otherLabel = "Please specify",
+}: {
+  label: string;
+  id: string;
+  options: string[];
+  otherLabel?: string;
+}) {
+  const [value, setValue] = useState("");
+  const isOther = value.toLowerCase() === "other";
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
       <select
         id={id}
         className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-        defaultValue=""
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
       >
         <option value="" disabled>
           Select…
@@ -241,9 +254,13 @@ function SelectField({ label, id, options }: { label: string; id: string; option
           <option key={o}>{o}</option>
         ))}
       </select>
+      {isOther ? (
+        <Input id={`${id}-other`} placeholder={otherLabel} className="mt-2" />
+      ) : null}
     </div>
   );
 }
+
 
 function FileField({ label, id, full }: { label: string; id: string; full?: boolean }) {
   return (
