@@ -406,10 +406,6 @@ function VendorFields() {
         </div>
         <SelectField label="Existing Partnership with INT" id="vpart" options={["Yes", "No"]} />
       </Section>
-      <p className="rounded-md border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
-        Vendor accounts require administrator approval. Your status will be{" "}
-        <strong>Pending Approval</strong> until reviewed.
-      </p>
     </>
   );
 }
