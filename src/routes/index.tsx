@@ -1,10 +1,12 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Cpu, Handshake, Lightbulb, Users } from "lucide-react";
 import heroImg from "@/assets/hero-summit.jpg";
 import { IntLogo } from "@/components/int/logo";
 import { useAuth } from "@/lib/auth";
 import { EventCard } from "@/components/int/event-card";
-import { events } from "@/lib/int-data";
+import { getEvents } from "@/lib/api";
+import type { IntEvent } from "@/lib/int-data";
 import { PWAInstallButton } from "@/components/int/pwa-install-prompt";
 import { WhyAttendSlider } from "@/components/int/why-attend-slider";
 
@@ -37,6 +39,20 @@ const reasons = [
 
 function Landing() {
   const { user, signOut } = useAuth();
+  const [eventsList, setEventsList] = useState<IntEvent[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    getEvents()
+      .then((data) => {
+        if (active) setEventsList(data);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background">
       <header className="sticky top-0 z-30 w-full border-b border-border bg-card/95 backdrop-blur">
@@ -141,8 +157,9 @@ function Landing() {
           </Link>
         </div>
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {events
+          {eventsList
             .filter((e) => e.status !== "completed")
+            .slice(0, 3)
             .map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
