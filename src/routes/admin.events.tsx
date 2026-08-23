@@ -866,15 +866,8 @@ export function AdminEventsPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-foreground">Date Display Label</label>
-                    <input
-                      value={formData.dateLabel}
-                      onChange={(e) => setFormData({ ...formData, dateLabel: e.target.value })}
-                      placeholder="e.g. 15 September 2026"
-                      className={inputClass}
-                    />
-                  </div>
+                  <input type="hidden" value={formData.dateLabel} />
+
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1">
