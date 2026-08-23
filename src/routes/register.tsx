@@ -419,7 +419,32 @@ function VendorFields() {
         <SelectField
           label="Vendor Category"
           id="vcat"
-          options={["Unified Security", "Network Video", "Access Control", "ICT", "Data Centre", "Other"]}
+          otherLabel="Enter your category name"
+          options={[
+            "Unified Security",
+            "Network Video",
+            "Access Control",
+            "Intrusion Detection & Alarms",
+            "Fire Alarm & Life Safety",
+            "Perimeter Protection",
+            "Video Analytics & AI",
+            "Command & Control / PSIM",
+            "ICT",
+            "Networking & Connectivity",
+            "Cybersecurity",
+            "Data Centre",
+            "Cloud & Managed Services",
+            "Power & UPS Systems",
+            "Audio Visual & Public Address",
+            "Building Management & IoT",
+            "Smart Cities & ITS",
+            "System Integration",
+            "Consultancy & Design",
+            "Installation & Maintenance Services",
+            "Training & Certification",
+            "Other",
+          ]}
+
         />
         <Field label="Number of Representatives" id="vreps" type="number" />
         <div className="space-y-2 sm:col-span-2">
