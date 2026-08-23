@@ -254,23 +254,21 @@ function FileField({ label, id, full }: { label: string; id: string; full?: bool
   );
 }
 
-function IdentitySection() {
+function IdentitySection({ prefix = "id", title = "Identification" }: { prefix?: string; title?: string }) {
   const [docType, setDocType] = useState<"national-id" | "passport">("national-id");
   const [nid, setNid] = useState("");
 
   const nidError =
     nid.length === 0
       ? ""
-      : !/^\d*$/.test(nid)
-        ? "Digits only."
-        : !/^[23]/.test(nid)
-          ? "National ID must start with 2 or 3."
-          : nid.length !== 14
-            ? `National ID must be 14 digits (${nid.length}/14).`
-            : "";
+      : !/^[23]/.test(nid)
+        ? "National ID must start with 2 or 3."
+        : nid.length !== 14
+          ? `National ID must be 14 digits (${nid.length}/14).`
+          : "";
 
   return (
-    <Section title="Identification">
+    <Section title={title}>
       <div className="sm:col-span-2 grid gap-3 sm:grid-cols-2">
         {(
           [
@@ -289,7 +287,7 @@ function IdentitySection() {
           >
             <input
               type="radio"
-              name="doc-type"
+              name={`${prefix}-doc-type`}
               value={o.id}
               checked={docType === o.id}
               onChange={() => setDocType(o.id)}
@@ -306,9 +304,9 @@ function IdentitySection() {
       {docType === "national-id" ? (
         <>
           <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="nid">National ID Number</Label>
+            <Label htmlFor={`${prefix}-nid`}>National ID Number</Label>
             <Input
-              id="nid"
+              id={`${prefix}-nid`}
               inputMode="numeric"
               maxLength={14}
               required
@@ -326,18 +324,19 @@ function IdentitySection() {
               </p>
             )}
           </div>
-          <FileField label="National ID — Front Copy" id="nid-front" />
-          <FileField label="National ID — Back Copy" id="nid-back" />
+          <FileField label="National ID — Front Copy" id={`${prefix}-nid-front`} />
+          <FileField label="National ID — Back Copy" id={`${prefix}-nid-back`} />
         </>
       ) : (
         <>
-          <Field label="Passport Number" id="passport-no" placeholder="e.g. A12345678" />
-          <FileField label="Passport Copy" id="passport-copy" />
+          <Field label="Passport Number" id={`${prefix}-passport-no`} placeholder="e.g. A12345678" />
+          <FileField label="Passport Copy" id={`${prefix}-passport-copy`} />
         </>
       )}
     </Section>
   );
 }
+
 
 function ClientFields() {
   return (
