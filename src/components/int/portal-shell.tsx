@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Home,
   LogOut,
+  MessageSquare,
   QrCode,
   Search,
   Shield,
@@ -28,17 +29,26 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HeaderUpcomingCountdown } from "./header-countdown";
 import { PWAInstallButton } from "./pwa-install-prompt";
 import { MobileBottomNav } from "./mobile-bottom-nav";
+import { getUserAvatar } from "@/lib/logos";
+import { SystemCreditButton } from "./system-credit-dialog";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: Home },
   { to: "/events", label: "Events", icon: CalendarDays },
   { to: "/my-events", label: "My Events", icon: Ticket },
   { to: "/passes", label: "My Passes", icon: QrCode },
+  { to: "/chat", label: "Chat", icon: MessageSquare },
   { to: "/notifications", label: "Notifications", icon: Bell },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
-export function PortalShell({ children }: { children: ReactNode }) {
+export function PortalShell({
+  children,
+  fullWidth = false,
+}: {
+  children: ReactNode;
+  fullWidth?: boolean;
+}) {
   const navigate = useNavigate();
   const { user, ready, signOut } = useAuth();
 
@@ -60,7 +70,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
+    <div className={fullWidth ? "h-screen overflow-hidden flex flex-col bg-background" : "min-h-screen bg-background pb-20 md:pb-0"}>
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-card text-foreground md:flex">
         <div className="flex h-16 items-center border-b border-border px-6">
           <IntLogo subtitle="Participant Portal" />
@@ -88,7 +98,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <Avatar className="h-8 w-8 border border-border shrink-0">
-                <AvatarImage src="" alt={profile.name} />
+                <AvatarImage src={getUserAvatar(profile.name, profile.role, user?.avatar_url)} alt={profile.name} />
                 <AvatarFallback className="bg-navy text-xs font-bold text-navy-foreground">
                   {profile.initials}
                 </AvatarFallback>
@@ -109,8 +119,8 @@ export function PortalShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="md:pl-64">
-        <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur">
+      <div className={fullWidth ? "md:pl-64 flex flex-col flex-1 h-full min-h-0 overflow-hidden" : "md:pl-64"}>
+        <header className="sticky top-0 z-30 shrink-0 border-b border-border bg-card/95 backdrop-blur">
           <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-1.5 px-3 sm:gap-3 sm:px-6">
             <div className="flex shrink-0 items-center gap-2 sm:gap-4">
               <Link to="/dashboard" className="md:hidden">
@@ -129,12 +139,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
               <PWAInstallButton variant="outline" size="sm" className="hidden lg:inline-flex text-xs gap-1.5" />
 
-              <button
-                className="hidden h-9 w-9 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:text-foreground sm:grid"
-                aria-label="Search"
-              >
-                <Search className="h-4 w-4" />
-              </button>
+              <SystemCreditButton />
 
               <NotificationBell />
 
@@ -142,7 +147,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-border py-0.5 pl-0.5 pr-0.5 sm:pr-2.5 transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/20">
                   <Avatar className="h-7 w-7 border border-border">
-                    <AvatarImage src="" alt={profile.name} />
+                    <AvatarImage src={getUserAvatar(profile.name, profile.role, user?.avatar_url)} alt={profile.name} />
                     <AvatarFallback className="bg-navy text-[11px] font-bold text-navy-foreground">
                       {profile.initials}
                     </AvatarFallback>
@@ -153,6 +158,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
                   <DropdownMenuLabel className="p-3">
                     <div className="flex items-center gap-2.5">
                       <Avatar className="h-8 w-8 border border-border">
+                        <AvatarImage src={getUserAvatar(profile.name, profile.role, user?.avatar_url)} alt={profile.name} />
                         <AvatarFallback className="bg-navy text-xs font-bold text-navy-foreground">
                           {profile.initials}
                         </AvatarFallback>
@@ -186,15 +192,17 @@ export function PortalShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8 md:px-6">
+        <main className={fullWidth ? "flex-1 min-h-0 w-full overflow-hidden p-0 flex flex-col" : "mx-auto max-w-7xl px-2 py-3 sm:py-8 sm:px-6 md:px-8 w-full max-w-full overflow-x-hidden"}>
           {children}
-          <div className="mt-12 flex justify-center border-t border-border/40 pt-6 md:hidden">
-            <DeveloperCredit />
-          </div>
+          {!fullWidth && (
+            <div className="mt-12 flex justify-center border-t border-border/40 pt-6 md:hidden">
+              <DeveloperCredit />
+            </div>
+          )}
         </main>
       </div>
 
-      <MobileBottomNav variant="portal" />
+      {!fullWidth && <MobileBottomNav variant="portal" />}
     </div>
   );
 }

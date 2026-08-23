@@ -36,6 +36,9 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
   const [repCount, setRepCount] = useState<number>(1);
   const [reps, setReps] = useState<Representative[]>([]);
 
+  const [willingToTravel, setWillingToTravel] = useState<string>("Yes");
+  const [transportationType, setTransportationType] = useState<string>("");
+
   if (!open) return null;
 
   const handleRepCountChange = (count: number) => {
@@ -73,18 +76,27 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
       fullName: (formData.get("fullName") as string) || user?.name || "Attendee",
       email: (formData.get("email") as string) || user?.email || "attendee@example.com",
       gender: (formData.get("gender") as string) || "Male",
-      phone: (formData.get("phone") as string) || "",
-      company: (formData.get("company") as string) || user?.company || "Company",
+      phone: (formData.get("mobile") as string || formData.get("phone") as string) || "",
+      company: (formData.get("organization") as string || formData.get("company") as string) || user?.company || "Company",
       jobTitle: (formData.get("jobTitle") as string) || "Director",
     };
 
+    const isTravel = (formData.get("travel") as string) === "Yes" || willingToTravel === "Yes";
+    const transportChoice = isTravel ? ((formData.get("transportationType") as string) || transportationType) : "";
+
+    const userConsiderations = (formData.get("considerations") as string) || "";
+    const combinedConsiderations = [
+      transportChoice ? `Transportation: ${transportChoice}` : "",
+      userConsiderations,
+    ].filter(Boolean).join(" | ");
+
     const meta = {
-      datesAttending: (formData.get("datesAttending") as string) || "All days",
+      datesAttending: (formData.get("dates") as string || formData.get("datesAttending") as string) || "All days",
       sector: (formData.get("sector") as string) || "Enterprise",
-      travelRequired: formData.get("travelRequired") === "yes",
-      checkInDetails: (formData.get("checkInDetails") as string) || "",
-      checkOutDetails: (formData.get("checkOutDetails") as string) || "",
-      considerations: (formData.get("considerations") as string) || "",
+      travelRequired: isTravel,
+      checkInDetails: (formData.get("checkIn") as string || formData.get("checkInDetails") as string) || "",
+      checkOutDetails: (formData.get("checkOut") as string || formData.get("checkOutDetails") as string) || "",
+      considerations: combinedConsiderations,
     };
 
     const delegates = reps.map((r) => ({
@@ -94,14 +106,24 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
       phone: r.mobile,
     }));
 
-    await createRegistrationWithDelegates({
+    const result = await createRegistrationWithDelegates({
       eventId: event.id,
+      userId: user?.id,
       primaryAttendee,
       delegates,
       meta,
     });
 
     setSubmitting(false);
+
+    if (result.duplicate) {
+      toast.error("Already Registered", {
+        description: `You (${primaryAttendee.email}) are already registered for this event. Check My Passes to view your badge.`,
+      });
+      onClose();
+      return;
+    }
+
     toast.success("Registration confirmed!", {
       description: `${repCount} ticket(s) reserved for ${event.title}. Passes are ready in My Passes.`,
     });
@@ -261,11 +283,45 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
               </Field>
 
               <Field label="Are you willing to travel?" required>
-                <select name="travel" required defaultValue="Yes" className={inputClass}>
+                <select
+                  name="travel"
+                  required
+                  value={willingToTravel}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setWillingToTravel(val);
+                    if (val === "No") {
+                      setTransportationType("");
+                    }
+                  }}
+                  className={inputClass}
+                >
                   <option value="Yes">Yes</option>
                   <option value="No">No</option>
                 </select>
               </Field>
+
+              {willingToTravel === "Yes" && (
+                <Field label="Transportation Requirement" required>
+                  <select
+                    name="transportationType"
+                    required
+                    value={transportationType}
+                    onChange={(e) => setTransportationType(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="" disabled>
+                      Select transportation option...
+                    </option>
+                    <option value="I Use my own transportation">
+                      1 - I Use my own transportation
+                    </option>
+                    <option value="I need transportation">
+                      2 - I need transportation
+                    </option>
+                  </select>
+                </Field>
+              )}
             </div>
           </div>
 

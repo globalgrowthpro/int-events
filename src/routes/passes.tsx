@@ -47,11 +47,22 @@ export function Passes() {
       if (!error && regsData) {
         const mine = regsData.filter(
           (r) =>
-            (userEmail && r.attendee_email?.toLowerCase() === userEmail) ||
-            (userName && r.attendee_name?.trim().toLowerCase() === userName),
+            (userEmail && r.attendee_email?.trim().toLowerCase() === userEmail) ||
+            (userName && r.attendee_name?.trim().toLowerCase() === userName) ||
+            (user?.id && r.user_id === user.id)
         );
 
-        const mapped: Registration[] = mine.map((r) => ({
+        // Deduplicate multiple registrations for the same event (keep most recent active)
+        const seenEvents = new Set<string>();
+        const uniqueMine: typeof mine = [];
+        for (const reg of mine) {
+          if (!seenEvents.has(reg.event_id)) {
+            seenEvents.add(reg.event_id);
+            uniqueMine.push(reg);
+          }
+        }
+
+        const mapped: Registration[] = uniqueMine.map((r) => ({
           id: r.id,
           eventId: r.event_id,
           attendee: r.attendee_name,

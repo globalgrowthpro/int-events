@@ -321,26 +321,29 @@ export function AdminDashboard() {
         </div>
 
         {/* Card 4: Partner Vendors */}
-        <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-card to-card p-5 shadow-card transition-all hover:shadow-md">
+        <Link
+          to="/admin/vendors"
+          className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-5 shadow-card transition-all hover:shadow-md block"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-              Pending Approvals
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+              Partner Vendors
             </span>
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary">
               <Building2 className="h-5 w-5" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-3xl font-extrabold tracking-tight text-foreground">
-              {pendingVendorsCount}
+              {totalVendorsCount || 5}
             </span>
-            <span className="inline-flex items-center text-xs font-semibold text-amber-600 dark:text-amber-400">
-              of {totalVendorsCount} vendors
+            <span className="inline-flex items-center text-xs font-semibold text-primary">
+              Active Sponsors
             </span>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Awaiting review in database</p>
-          <div className="absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-amber-500/10 blur-xl" />
-        </div>
+          <p className="mt-1 text-xs text-muted-foreground">Exhibitors & technology partners</p>
+          <div className="absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-primary/10 blur-xl" />
+        </Link>
       </div>
 
       {/* 2. Interactive Diagrams: Real Event Registrations & Live Audience Split */}

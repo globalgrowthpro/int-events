@@ -9,6 +9,7 @@ import { getEvents } from "@/lib/api";
 import type { IntEvent } from "@/lib/int-data";
 import { PWAInstallButton } from "@/components/int/pwa-install-prompt";
 import { WhyAttendSlider } from "@/components/int/why-attend-slider";
+import { HeroSlider } from "@/components/int/hero-slider";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -104,45 +105,8 @@ function Landing() {
         </div>
       </header>
 
-      <section className="relative isolate w-full overflow-hidden bg-navy">
-        <img
-          src={heroImg}
-          alt="Integrated Technics technology summit main stage"
-          width={1920}
-          height={1080}
-          className="absolute inset-0 h-full w-full object-cover opacity-45"
-        />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:py-24 md:px-6 md:py-32">
-          <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] text-sky">
-            Integrated Technics
-          </p>
-          <h1 className="mt-3 sm:mt-4 max-w-3xl text-3xl font-extrabold leading-tight tracking-tight text-navy-foreground sm:text-5xl md:text-6xl">
-            Discover INT Events
-          </h1>
-          <p className="mt-2.5 sm:mt-3 text-base sm:text-lg font-medium tracking-wide text-sky">
-            Connect. Discover. Innovate.
-          </p>
-          <p className="mt-4 sm:mt-5 max-w-2xl text-sm sm:text-base text-navy-foreground/75 leading-relaxed">
-            Join Integrated Technics summits, technology forums, partner sessions and industry
-            experiences — register online, receive a digital QR pass and check in at the door in
-            seconds.
-          </p>
-          <div className="mt-6 sm:mt-8 flex flex-wrap gap-2.5 sm:gap-3">
-            <Link
-              to="/events"
-              className="inline-flex h-10 sm:h-11 items-center rounded-xl bg-primary px-5 sm:px-6 text-xs sm:text-sm font-bold text-primary-foreground transition-colors hover:bg-tech shadow-md"
-            >
-              Explore Events
-            </Link>
-            <Link
-              to="/register"
-              className="inline-flex h-10 sm:h-11 items-center rounded-xl border border-navy-foreground/25 px-5 sm:px-6 text-xs sm:text-sm font-bold text-navy-foreground transition-colors hover:bg-navy-foreground/10"
-            >
-              Create Account
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* Dynamic Database-driven Hero Slider */}
+      <HeroSlider />
 
       <section className="mx-auto max-w-7xl px-4 py-16 md:px-6">
         <div className="flex items-end justify-between gap-4">

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MyEventsRouteImport } from './routes/my-events'
@@ -22,6 +23,8 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAccountsRouteImport } from './routes/admin.accounts'
 import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AdminAttendeesRouteImport } from './routes/admin.attendees'
+import { Route as AdminChatRouteImport } from './routes/admin.chat'
+import { Route as AdminClientsRouteImport } from './routes/admin.clients'
 import { Route as AdminEventsRouteImport } from './routes/admin.events'
 import { Route as AdminInvitationsRouteImport } from './routes/admin.invitations'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
@@ -29,6 +32,7 @@ import { Route as AdminRegistrationsRouteImport } from './routes/admin.registrat
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminScannerRouteImport } from './routes/admin.scanner'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminSlidersRouteImport } from './routes/admin.sliders'
 import { Route as AdminVendorsRouteImport } from './routes/admin.vendors'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
@@ -41,6 +45,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -98,6 +107,16 @@ const AdminAttendeesRoute = AdminAttendeesRouteImport.update({
   path: '/attendees',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminChatRoute = AdminChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminClientsRoute = AdminClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEventsRoute = AdminEventsRouteImport.update({
   id: '/events',
   path: '/events',
@@ -133,6 +152,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSlidersRoute = AdminSlidersRouteImport.update({
+  id: '/sliders',
+  path: '/sliders',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminVendorsRoute = AdminVendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
@@ -152,6 +176,7 @@ const EventsEventIdRoute = EventsEventIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/chat': typeof ChatRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/my-events': typeof MyEventsRoute
@@ -162,6 +187,8 @@ export interface FileRoutesByFullPath {
   '/admin/accounts': typeof AdminAccountsRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/attendees': typeof AdminAttendeesRoute
+  '/admin/chat': typeof AdminChatRoute
+  '/admin/clients': typeof AdminClientsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -169,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scanner': typeof AdminScannerRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sliders': typeof AdminSlidersRoute
   '/admin/vendors': typeof AdminVendorsRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -176,6 +204,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/my-events': typeof MyEventsRoute
@@ -186,6 +215,8 @@ export interface FileRoutesByTo {
   '/admin/accounts': typeof AdminAccountsRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/attendees': typeof AdminAttendeesRoute
+  '/admin/chat': typeof AdminChatRoute
+  '/admin/clients': typeof AdminClientsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -193,6 +224,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scanner': typeof AdminScannerRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sliders': typeof AdminSlidersRoute
   '/admin/vendors': typeof AdminVendorsRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/admin': typeof AdminIndexRoute
@@ -202,6 +234,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/chat': typeof ChatRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/my-events': typeof MyEventsRoute
@@ -212,6 +245,8 @@ export interface FileRoutesById {
   '/admin/accounts': typeof AdminAccountsRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/attendees': typeof AdminAttendeesRoute
+  '/admin/chat': typeof AdminChatRoute
+  '/admin/clients': typeof AdminClientsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -219,6 +254,7 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scanner': typeof AdminScannerRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sliders': typeof AdminSlidersRoute
   '/admin/vendors': typeof AdminVendorsRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -229,6 +265,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/chat'
     | '/dashboard'
     | '/login'
     | '/my-events'
@@ -239,6 +276,8 @@ export interface FileRouteTypes {
     | '/admin/accounts'
     | '/admin/attendance'
     | '/admin/attendees'
+    | '/admin/chat'
+    | '/admin/clients'
     | '/admin/events'
     | '/admin/invitations'
     | '/admin/notifications'
@@ -246,6 +285,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/scanner'
     | '/admin/settings'
+    | '/admin/sliders'
     | '/admin/vendors'
     | '/events/$eventId'
     | '/admin/'
@@ -253,6 +293,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/chat'
     | '/dashboard'
     | '/login'
     | '/my-events'
@@ -263,6 +304,8 @@ export interface FileRouteTypes {
     | '/admin/accounts'
     | '/admin/attendance'
     | '/admin/attendees'
+    | '/admin/chat'
+    | '/admin/clients'
     | '/admin/events'
     | '/admin/invitations'
     | '/admin/notifications'
@@ -270,6 +313,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/scanner'
     | '/admin/settings'
+    | '/admin/sliders'
     | '/admin/vendors'
     | '/events/$eventId'
     | '/admin'
@@ -278,6 +322,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/chat'
     | '/dashboard'
     | '/login'
     | '/my-events'
@@ -288,6 +333,8 @@ export interface FileRouteTypes {
     | '/admin/accounts'
     | '/admin/attendance'
     | '/admin/attendees'
+    | '/admin/chat'
+    | '/admin/clients'
     | '/admin/events'
     | '/admin/invitations'
     | '/admin/notifications'
@@ -295,6 +342,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/scanner'
     | '/admin/settings'
+    | '/admin/sliders'
     | '/admin/vendors'
     | '/events/$eventId'
     | '/admin/'
@@ -304,6 +352,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ChatRoute: typeof ChatRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   MyEventsRoute: typeof MyEventsRoute
@@ -329,6 +378,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -408,6 +464,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAttendeesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/chat': {
+      id: '/admin/chat'
+      path: '/chat'
+      fullPath: '/admin/chat'
+      preLoaderRoute: typeof AdminChatRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/clients': {
+      id: '/admin/clients'
+      path: '/clients'
+      fullPath: '/admin/clients'
+      preLoaderRoute: typeof AdminClientsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/events': {
       id: '/admin/events'
       path: '/events'
@@ -457,6 +527,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/sliders': {
+      id: '/admin/sliders'
+      path: '/sliders'
+      fullPath: '/admin/sliders'
+      preLoaderRoute: typeof AdminSlidersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/vendors': {
       id: '/admin/vendors'
       path: '/vendors'
@@ -485,6 +562,8 @@ interface AdminRouteChildren {
   AdminAccountsRoute: typeof AdminAccountsRoute
   AdminAttendanceRoute: typeof AdminAttendanceRoute
   AdminAttendeesRoute: typeof AdminAttendeesRoute
+  AdminChatRoute: typeof AdminChatRoute
+  AdminClientsRoute: typeof AdminClientsRoute
   AdminEventsRoute: typeof AdminEventsRoute
   AdminInvitationsRoute: typeof AdminInvitationsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
@@ -492,6 +571,7 @@ interface AdminRouteChildren {
   AdminReportsRoute: typeof AdminReportsRoute
   AdminScannerRoute: typeof AdminScannerRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminSlidersRoute: typeof AdminSlidersRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -500,6 +580,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAccountsRoute: AdminAccountsRoute,
   AdminAttendanceRoute: AdminAttendanceRoute,
   AdminAttendeesRoute: AdminAttendeesRoute,
+  AdminChatRoute: AdminChatRoute,
+  AdminClientsRoute: AdminClientsRoute,
   AdminEventsRoute: AdminEventsRoute,
   AdminInvitationsRoute: AdminInvitationsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
@@ -507,6 +589,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminReportsRoute: AdminReportsRoute,
   AdminScannerRoute: AdminScannerRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminSlidersRoute: AdminSlidersRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -516,6 +599,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  ChatRoute: ChatRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   MyEventsRoute: MyEventsRoute,

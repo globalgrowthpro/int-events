@@ -692,7 +692,7 @@ export function AdminEventsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in">
           <div className="w-full max-w-4xl lg:max-w-5xl rounded-2xl border border-border bg-card shadow-elevated overflow-hidden flex flex-col max-h-[92vh]">
             {/* Modal Header */}
-            <header className="flex items-center justify-between border-b border-border px-6 py-4 bg-muted/20">
+            <header className="shrink-0 flex items-center justify-between border-b border-border px-6 py-4 bg-muted/20">
               <div className="flex items-center gap-3">
                 <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
                   <Calendar className="h-5 w-5" />
@@ -716,7 +716,7 @@ export function AdminEventsPage() {
             </header>
 
             {/* Modal Tab Navigation */}
-            <div className="flex border-b border-border bg-muted/40 px-6 text-xs font-semibold overflow-x-auto">
+            <nav className="shrink-0 flex border-b border-border bg-muted/40 px-4 sm:px-6 text-xs font-semibold overflow-x-auto z-10">
               {[
                 { id: "details", label: "1. Overview & Capacity" },
                 { id: "location", label: "2. Date, Venue & Map" },
@@ -728,19 +728,19 @@ export function AdminEventsPage() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveFormTab(tab.id as any)}
-                  className={`py-3 px-4 border-b-2 font-medium transition-all whitespace-nowrap text-xs ${
+                  className={`py-3.5 px-4 border-b-2 font-medium transition-all whitespace-nowrap text-xs -mb-px shrink-0 ${
                     activeFormTab === tab.id
-                      ? "border-primary text-primary font-bold bg-background/50"
+                      ? "border-primary text-primary font-bold bg-background/80"
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {tab.label}
                 </button>
               ))}
-            </div>
+            </nav>
 
             {/* Form Content */}
-            <form onSubmit={handleSaveEvent} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+            <form onSubmit={handleSaveEvent} className="min-h-0 flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
               {/* TAB 1: DETAILS */}
               {activeFormTab === "details" && (
                 <div className="space-y-5">

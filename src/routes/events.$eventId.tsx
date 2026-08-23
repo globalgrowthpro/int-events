@@ -19,7 +19,8 @@ import { PortalShell } from "@/components/int/portal-shell";
 import { StatusBadge } from "@/components/int/status-badge";
 import { Countdown, parseEventStart } from "@/components/int/countdown";
 import { getEvent, type IntEvent } from "@/lib/int-data";
-import { getEventById } from "@/lib/api";
+import { getEventById, checkUserRegistration } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { toDdMmYyyy } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -54,10 +55,21 @@ export const Route = createFileRoute("/events/$eventId")({
 });
 
 function EventDetail() {
+  const { user } = useAuth();
   const { event: initialEvent } = Route.useLoaderData();
   const { eventId } = Route.useParams();
   const [event, setEvent] = useState<IntEvent>(initialEvent);
   const [formOpen, setFormOpen] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
+
+  // Check if current user is already registered
+  useEffect(() => {
+    if (eventId && user?.email) {
+      checkUserRegistration(eventId, user.email, user.id).then((res) => {
+        setIsRegistered(res.isRegistered);
+      });
+    }
+  }, [eventId, user?.email, user?.id, formOpen]);
 
   // Client-side real-time sync with Supabase
   useEffect(() => {
@@ -196,15 +208,25 @@ function EventDetail() {
 
           {/* Call to Action Actions */}
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              disabled={event.status === "completed" || event.status === "cancelled"}
-              onClick={() => setFormOpen(true)}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-7 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-tech disabled:opacity-50"
-            >
-              <Sparkles className="h-4 w-4" />
-              Register for this Summit
-            </button>
+            {isRegistered ? (
+              <Link
+                to="/passes"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-emerald-600 px-7 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Already Registered · View My Pass
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled={event.status === "completed" || event.status === "cancelled"}
+                onClick={() => setFormOpen(true)}
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-7 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-tech disabled:opacity-50"
+              >
+                <Sparkles className="h-4 w-4" />
+                Register for this Summit
+              </button>
+            )}
 
             {event.mapUrl && (
               <a

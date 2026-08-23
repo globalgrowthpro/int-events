@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, Bell, BellRing, CheckCheck, CheckCircle2, Info, X } from "lucide-react";
+import { AlertTriangle, Bell, BellRing, CheckCheck, CheckCircle2, Info, MessageSquare, X } from "lucide-react";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ export const toneIcons: Record<NotificationTone, typeof Info> = {
   success: CheckCircle2,
   warning: AlertTriangle,
   critical: BellRing,
+  chat: MessageSquare,
 };
 
 export function NotificationBell() {
@@ -57,7 +58,8 @@ export function NotificationBell() {
           ) : (
             <ul className="divide-y divide-border">
               {notifications.map((n) => {
-                const Icon = toneIcons[n.tone];
+                const Icon = (n.tone && toneIcons[n.tone as NotificationTone]) ? toneIcons[n.tone as NotificationTone] : Info;
+                const toneClass = (n.tone && toneClasses[n.tone as NotificationTone]) ? toneClasses[n.tone as NotificationTone] : "text-primary";
                 return (
                   <li
                     key={n.id}
@@ -65,7 +67,7 @@ export function NotificationBell() {
                       n.read ? "" : "bg-primary/5"
                     }`}
                   >
-                    <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${toneClasses[n.tone]}`} />
+                    <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${toneClass}`} />
                     <Link
                       to={n.link ?? allHref}
                       onClick={() => {

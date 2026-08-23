@@ -40,7 +40,8 @@ export function MyEvents() {
       const liveEvents = await getEvents();
       setEventsList(liveEvents);
 
-      const userEmail = user?.email?.toLowerCase() || "client@intevents.com";
+      const userEmail = user?.email?.trim().toLowerCase() || "";
+      const userName = user?.name?.trim().toLowerCase() || "";
       const { data: regsData, error } = await supabase
         .from("registrations")
         .select("*")
@@ -49,11 +50,24 @@ export function MyEvents() {
       if (!error && regsData && regsData.length > 0) {
         const filteredRegs = regsData.filter(
           (r) =>
-            r.attendee_email?.toLowerCase() === userEmail ||
-            (user?.role === "client" && r.role === "client")
+            (userEmail && r.attendee_email?.trim().toLowerCase() === userEmail) ||
+            (userName && r.attendee_name?.trim().toLowerCase() === userName) ||
+            (user?.id && r.user_id === user.id)
         );
 
-        const mapped: Registration[] = (filteredRegs.length > 0 ? filteredRegs : regsData.slice(0, 3)).map((r) => ({
+        // Deduplicate multiple registrations for the same event (keep most recent active)
+        const seenEvents = new Set<string>();
+        const uniqueRegs: typeof filteredRegs = [];
+        for (const reg of filteredRegs) {
+          if (!seenEvents.has(reg.event_id)) {
+            seenEvents.add(reg.event_id);
+            uniqueRegs.push(reg);
+          }
+        }
+
+        const targetList = uniqueRegs.length > 0 ? uniqueRegs : (user ? [] : regsData.slice(0, 1));
+
+        const mapped: Registration[] = targetList.map((r) => ({
           id: r.id,
           eventId: r.event_id,
           attendee: r.attendee_name,
@@ -65,6 +79,8 @@ export function MyEvents() {
         }));
 
         setUserRegistrations(mapped);
+      } else {
+        setUserRegistrations([]);
       }
       if (showToast) toast.success("My events synced with database!");
     } catch {
@@ -104,11 +120,10 @@ export function MyEvents() {
           <button
             key={item}
             onClick={() => setTab(item)}
-            className={`rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
-              tab === item
+            className={`rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${tab === item
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "border border-border bg-card text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             {item}
           </button>

@@ -12,13 +12,14 @@ import { supabase } from "./supabase";
 export type DemoRole = "client" | "vendor" | "employee" | "admin";
 
 export type DemoAccount = {
-  id?: string;
+  id: string;
   email: string;
   password: string;
   name: string;
   company: string;
   role: DemoRole;
   initials: string;
+  avatar_url?: string;
   label: string;
   description: string;
   home: "/dashboard" | "/admin";
@@ -26,52 +27,60 @@ export type DemoAccount = {
 
 export const verifiedAccounts: DemoAccount[] = [
   {
+    id: "a0000000-0000-0000-0000-000000000001",
     email: "admin@integratedtechnics.com",
     password: "Admin@INT2026!",
     name: "Hafez Rahim",
     company: "Integrated Technics",
     role: "admin",
     initials: "HR",
+    avatar_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
     label: "Super Admin",
     description: "Full platform access and management",
     home: "/admin",
   },
   {
+    id: "b0000000-0000-0000-0000-000000000002",
     email: "client@intevents.com",
     password: "Client@INT2026!",
     name: "Ahmed Mohamed",
     company: "ABC Corporation",
     role: "client",
     initials: "AM",
+    avatar_url: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&auto=format&fit=crop&q=80",
     label: "Client / Attendee",
     description: "Event registration and passes",
     home: "/dashboard",
   },
   {
+    id: "c0000000-0000-0000-0000-000000000003",
     email: "vendor@genetec.com",
     password: "Vendor@INT2026!",
     name: "Sarah Klein",
     company: "Genetec",
     role: "vendor",
     initials: "SK",
+    avatar_url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80",
     label: "Vendor / Partner",
     description: "Exhibitor booth and delegation passes",
     home: "/dashboard",
   },
   {
+    id: "d0000000-0000-0000-0000-000000000004",
     email: "employee@integratedtechnics.com",
     password: "Employee@INT2026!",
     name: "Omar Ali",
     company: "Integrated Technics",
     role: "employee",
     initials: "OA",
+    avatar_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80",
     label: "INT Employee",
     description: "Staff and gate QR check-in operator",
     home: "/dashboard",
   },
 ];
 
-export type SessionUser = Omit<DemoAccount, "password" | "label" | "description">;
+export type SessionUser = Omit<DemoAccount, "password" | "label" | "description"> & { id: string };
 
 type AuthResult = {
   ok: boolean;
@@ -86,6 +95,7 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signInAs: (account: DemoAccount) => Promise<AuthResult>;
   signOut: () => void;
+  updateUser: (partial: Partial<SessionUser>) => void;
 };
 
 const STORAGE_KEY = "int-events-session";
@@ -102,13 +112,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    let initialUser: SessionUser | null = null;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setUser(JSON.parse(raw) as SessionUser);
+      if (raw) {
+        initialUser = JSON.parse(raw) as SessionUser;
+        // Check if there is a custom profile avatar saved locally
+        const profileRaw = localStorage.getItem(`int-profile-id-${initialUser.email || "default"}`);
+        if (profileRaw) {
+          const parsed = JSON.parse(profileRaw);
+          if (parsed.avatarUrl) {
+            initialUser.avatar_url = parsed.avatarUrl;
+          }
+        }
+        setUser(initialUser);
+      }
     } catch {
       /* ignore */
     }
     setReady(true);
+
+    // Also fetch fresh avatar_url and details from Supabase profiles
+    if (initialUser?.id || initialUser?.email) {
+      const fetchProfile = async () => {
+        try {
+          const { data } = await supabase
+            .from("profiles")
+            .select("avatar_url, full_name, company")
+            .or(`id.eq.${initialUser?.id},email.eq.${initialUser?.email}`)
+            .maybeSingle();
+
+          if (data && data.avatar_url) {
+            setUser((prev) => {
+              if (!prev) return null;
+              const updated = { ...prev, avatar_url: data.avatar_url, name: data.full_name || prev.name, company: data.company || prev.company };
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+              } catch {}
+              return updated;
+            });
+          }
+        } catch {
+          /* ignore */
+        }
+      };
+      fetchProfile();
+    }
   }, []);
 
   const persist = useCallback((next: SessionUser | null) => {
@@ -119,6 +168,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
+  }, []);
+
+  const updateUser = useCallback((partial: Partial<SessionUser>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const next = { ...prev, ...partial };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        if (next.email && next.avatar_url) {
+          const profKey = `int-profile-id-${next.email}`;
+          const current = localStorage.getItem(profKey);
+          if (current) {
+            const parsed = JSON.parse(current);
+            parsed.avatarUrl = next.avatar_url;
+            localStorage.setItem(profKey, JSON.stringify(parsed));
+          }
+        }
+        window.dispatchEvent(new CustomEvent("int-user-avatar-updated", { detail: next }));
+      } catch {}
+      return next;
+    });
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -173,6 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const role = (profile?.role as DemoRole) || "client";
             const session: SessionUser = {
+              id: data.user.id,
               email: data.user.email || cleanEmail,
               name: profile?.full_name || cleanEmail.split("@")[0],
               company: profile?.company || "Integrated Technics",
@@ -240,8 +311,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         persist(null);
       },
+      updateUser,
     }),
-    [user, ready, persist]
+    [user, ready, persist, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -12,6 +12,7 @@ import {
   Sparkles,
   LogIn,
   UserPlus,
+  MessageSquare,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useNotifications } from "@/lib/notifications";
@@ -128,16 +129,23 @@ export function MobileBottomNav({ variant }: { variant?: "public" | "portal" | "
   }
 
   if (mode === "portal") {
-    const portalTabs = [
+    const portalTabs: Array<{
+      to: string;
+      label: string;
+      icon: any;
+      exact?: boolean;
+      isCenterAction?: boolean;
+      badge?: number;
+    }> = [
       { to: "/dashboard", label: "Home", icon: Home, exact: true },
-      { to: "/events", label: "Events", icon: CalendarDays },
+      { to: "/my-events", label: "My Events", icon: CalendarDays },
       {
         to: "/passes",
         label: "VIP Pass",
         icon: QrCode,
         isCenterAction: true,
       },
-      { to: "/notifications", label: "Alerts", icon: Bell, badge: unreadCount },
+      { to: "/events", label: "Explore", icon: Sparkles },
       { to: "/profile", label: "Profile", icon: User },
     ];
 

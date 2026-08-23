@@ -39,21 +39,34 @@ export function Dashboard() {
       setEventsList(liveEvents);
 
       // 2. Fetch live user registrations
-      const userEmail = user?.email?.toLowerCase() || "client@intevents.com";
+      const userEmail = user?.email?.trim().toLowerCase() || "";
+      const userName = user?.name?.trim().toLowerCase() || "";
       const { data: regsData, error } = await supabase
         .from("registrations")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (!error && regsData && regsData.length > 0) {
-        // Filter for this user's registrations or display matching registrations
         const filteredRegs = regsData.filter(
           (r) =>
-            r.attendee_email?.toLowerCase() === userEmail ||
-            (user?.role === "client" && r.role === "client")
+            (userEmail && r.attendee_email?.trim().toLowerCase() === userEmail) ||
+            (userName && r.attendee_name?.trim().toLowerCase() === userName) ||
+            (user?.id && r.user_id === user.id)
         );
 
-        const mapped: Registration[] = (filteredRegs.length > 0 ? filteredRegs : regsData.slice(0, 3)).map((r) => ({
+        // Deduplicate multiple registrations for the same event (keep most recent active)
+        const seenEvents = new Set<string>();
+        const uniqueRegs: typeof filteredRegs = [];
+        for (const reg of filteredRegs) {
+          if (!seenEvents.has(reg.event_id)) {
+            seenEvents.add(reg.event_id);
+            uniqueRegs.push(reg);
+          }
+        }
+
+        const targetList = uniqueRegs.length > 0 ? uniqueRegs : (user ? [] : regsData.slice(0, 3));
+
+        const mapped: Registration[] = targetList.map((r) => ({
           id: r.id,
           eventId: r.event_id,
           attendee: r.attendee_name,
@@ -65,6 +78,8 @@ export function Dashboard() {
         }));
 
         setUserRegistrations(mapped);
+      } else {
+        setUserRegistrations([]);
       }
     } catch (err) {
       console.warn("Client dashboard sync:", err);

@@ -23,6 +23,8 @@ scripts/
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
+.temp/
+supabase/.temp/
 
 # Editor directories and files
 .vscode/*

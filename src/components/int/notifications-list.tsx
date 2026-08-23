@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { BellOff, CheckCheck, RotateCcw, Trash2, X } from "lucide-react";
+import { BellOff, CheckCheck, Info, RotateCcw, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNotifications, toneClasses } from "@/lib/notifications";
+import { useNotifications, toneClasses, type NotificationTone } from "@/lib/notifications";
 import { toneIcons } from "./notification-bell";
 
 export function NotificationsList() {
@@ -38,7 +38,8 @@ export function NotificationsList() {
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-card">
           {notifications.map((n) => {
-            const Icon = toneIcons[n.tone];
+            const Icon = (n.tone && toneIcons[n.tone as NotificationTone]) ? toneIcons[n.tone as NotificationTone] : Info;
+            const toneClass = (n.tone && toneClasses[n.tone as NotificationTone]) ? toneClasses[n.tone as NotificationTone] : "text-primary";
             return (
               <li
                 key={n.id}
@@ -46,7 +47,7 @@ export function NotificationsList() {
                   n.read ? "" : "bg-primary/5"
                 }`}
               >
-                <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${toneClasses[n.tone]}`} />
+                <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${toneClass}`} />
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     {n.title}

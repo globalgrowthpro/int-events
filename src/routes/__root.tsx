@@ -11,6 +11,7 @@ import { PresenceProvider } from "@/lib/presence";
 import { NotificationsProvider } from "@/lib/notifications";
 import { Toaster } from "@/components/ui/sonner";
 import { PWAInstallPrompt } from "@/components/int/pwa-install-prompt";
+import { FloatingMoveableChatButton } from "@/components/int/floating-chat-button";
 
 function NotFoundComponent() {
   const router = useRouter();
@@ -130,6 +131,7 @@ function RootComponent() {
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
             <PWAInstallPrompt />
+            <FloatingMoveableChatButton />
             <Toaster position="top-center" richColors />
           </NotificationsProvider>
         </PresenceProvider>

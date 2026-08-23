@@ -33,10 +33,16 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('admin', 'client', 'vendor', 'employee')),
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'pending', 'suspended')),
   avatar_url TEXT,
+  can_chat BOOLEAN DEFAULT true,
+  id_type TEXT DEFAULT 'National ID',
+  id_number TEXT,
+  document_url TEXT,
+  id_doc_name TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+DROP TRIGGER IF EXISTS set_profiles_updated_at ON public.profiles;
 CREATE TRIGGER set_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -70,6 +76,7 @@ CREATE TABLE IF NOT EXISTS public.events (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+DROP TRIGGER IF EXISTS set_events_updated_at ON public.events;
 CREATE TRIGGER set_events_updated_at
   BEFORE UPDATE ON public.events
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -103,6 +110,7 @@ CREATE TABLE IF NOT EXISTS public.registrations (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+DROP TRIGGER IF EXISTS set_registrations_updated_at ON public.registrations;
 CREATE TRIGGER set_registrations_updated_at
   BEFORE UPDATE ON public.registrations
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -131,6 +139,7 @@ CREATE TABLE IF NOT EXISTS public.vendors (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+DROP TRIGGER IF EXISTS set_vendors_updated_at ON public.vendors;
 CREATE TRIGGER set_vendors_updated_at
   BEFORE UPDATE ON public.vendors
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -185,6 +194,7 @@ CREATE TABLE IF NOT EXISTS public.invitations (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+DROP TRIGGER IF EXISTS set_invitations_updated_at ON public.invitations;
 CREATE TRIGGER set_invitations_updated_at
   BEFORE UPDATE ON public.invitations
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -221,6 +231,7 @@ CREATE TABLE IF NOT EXISTS public.smtp_settings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+DROP TRIGGER IF EXISTS set_smtp_settings_updated_at ON public.smtp_settings;
 CREATE TRIGGER set_smtp_settings_updated_at
   BEFORE UPDATE ON public.smtp_settings
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -399,6 +410,7 @@ ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invitations ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Invitations manageable by admins" ON public.invitations;
 CREATE POLICY "Invitations manageable by admins"
   ON public.invitations FOR ALL
   USING (true)
@@ -416,84 +428,103 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 1. Profiles Policies
+DROP POLICY IF EXISTS "Public profiles are readable by authenticated users" ON public.profiles;
 CREATE POLICY "Public profiles are readable by authenticated users"
   ON public.profiles FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile"
   ON public.profiles FOR UPDATE
   USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Admins have full access to profiles" ON public.profiles;
 CREATE POLICY "Admins have full access to profiles"
   ON public.profiles FOR ALL
   USING (public.is_admin());
 
 -- 2. Events Policies
+DROP POLICY IF EXISTS "Events are viewable by everyone" ON public.events;
 CREATE POLICY "Events are viewable by everyone"
   ON public.events FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Admins can insert, update, delete events" ON public.events;
 CREATE POLICY "Admins can insert, update, delete events"
   ON public.events FOR ALL
   USING (public.is_admin());
 
 -- 3. Registrations Policies
+DROP POLICY IF EXISTS "Users can view their own registrations" ON public.registrations;
 CREATE POLICY "Users can view their own registrations"
   ON public.registrations FOR SELECT
   USING (auth.uid() = user_id OR public.is_admin());
 
+DROP POLICY IF EXISTS "Users can create registrations" ON public.registrations;
 CREATE POLICY "Users can create registrations"
   ON public.registrations FOR INSERT
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Users can update their own registrations" ON public.registrations;
 CREATE POLICY "Users can update their own registrations"
   ON public.registrations FOR UPDATE
   USING (auth.uid() = user_id OR public.is_admin());
 
+DROP POLICY IF EXISTS "Admins have full access to registrations" ON public.registrations;
 CREATE POLICY "Admins have full access to registrations"
   ON public.registrations FOR ALL
   USING (public.is_admin());
 
 -- 4. Vendors Policies
+DROP POLICY IF EXISTS "Vendors viewable by authenticated users" ON public.vendors;
 CREATE POLICY "Vendors viewable by authenticated users"
   ON public.vendors FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Vendors can register and edit own company" ON public.vendors;
 CREATE POLICY "Vendors can register and edit own company"
   ON public.vendors FOR INSERT
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Vendors can update own company" ON public.vendors;
 CREATE POLICY "Vendors can update own company"
   ON public.vendors FOR UPDATE
   USING (auth.uid() = user_id OR public.is_admin());
 
+DROP POLICY IF EXISTS "Admins have full access to vendors" ON public.vendors;
 CREATE POLICY "Admins have full access to vendors"
   ON public.vendors FOR ALL
   USING (public.is_admin());
 
 -- 5. Attendance Logs Policies
+DROP POLICY IF EXISTS "Attendance logs readable by admins" ON public.attendance_logs;
 CREATE POLICY "Attendance logs readable by admins"
   ON public.attendance_logs FOR SELECT
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "Attendance logs insertable by authorized scanners" ON public.attendance_logs;
 CREATE POLICY "Attendance logs insertable by authorized scanners"
   ON public.attendance_logs FOR INSERT
   WITH CHECK (true);
 
 -- 6. Certificates Policies
+DROP POLICY IF EXISTS "Certificates readable by everyone with verification hash" ON public.certificates;
 CREATE POLICY "Certificates readable by everyone with verification hash"
   ON public.certificates FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Admins have full access to certificates" ON public.certificates;
 CREATE POLICY "Admins have full access to certificates"
   ON public.certificates FOR ALL
   USING (public.is_admin());
 
 -- 7. Notifications Policies
+DROP POLICY IF EXISTS "Users can view their own notifications" ON public.notifications;
 CREATE POLICY "Users can view their own notifications"
   ON public.notifications FOR SELECT
   USING (auth.uid() = user_id OR public.is_admin());
 
+DROP POLICY IF EXISTS "Users can update own notifications" ON public.notifications;
 CREATE POLICY "Users can update own notifications"
   ON public.notifications FOR UPDATE
   USING (auth.uid() = user_id);
@@ -584,3 +615,158 @@ VALUES
   ('HID Global', 'Amira Zaki', 'Access Control', 2, 1, 'pending', 'azaki@hidglobal.com', '+20 100 456 7890'),
   ('Vertiv', 'Daniel Okoro', 'Data Centre', 2, 1, 'rejected', 'dokoro@vertiv.com', '+20 100 567 8901')
 ON CONFLICT DO NOTHING;
+
+-- ==============================================================================
+-- Table: MESSAGES (Chat System)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.messages (
+  id TEXT PRIMARY KEY DEFAULT ('msg-' || substr(md5(random()::text || clock_timestamp()::text), 1, 12)),
+  sender_id TEXT NOT NULL,
+  recipient_id TEXT NOT NULL,
+  sender_name TEXT NOT NULL,
+  sender_company TEXT,
+  sender_role TEXT DEFAULT 'client' CHECK (sender_role IN ('admin', 'client', 'vendor', 'employee')),
+  content TEXT NOT NULL,
+  attachment_url TEXT,
+  attachment_name TEXT,
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_messages_participants ON public.messages (sender_id, recipient_id);
+CREATE INDEX IF NOT EXISTS idx_messages_recipient ON public.messages (recipient_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_messages_created_at ON public.messages (created_at DESC);
+
+DROP TRIGGER IF EXISTS set_messages_updated_at ON public.messages;
+CREATE TRIGGER set_messages_updated_at
+  BEFORE UPDATE ON public.messages
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- ==============================================================================
+-- Table: SLIDERS (Hero / Promotional Banner Carousel)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.sliders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  image_url TEXT NOT NULL,
+  title TEXT NOT NULL,
+  subtitle TEXT,
+  description TEXT,
+  event_link TEXT,
+  order_index INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sliders_order ON public.sliders (order_index ASC, created_at DESC);
+
+DROP TRIGGER IF EXISTS set_sliders_updated_at ON public.sliders;
+CREATE TRIGGER set_sliders_updated_at
+  BEFORE UPDATE ON public.sliders
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- Enable RLS
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sliders ENABLE ROW LEVEL SECURITY;
+
+-- Messages Policies
+DROP POLICY IF EXISTS "Users can view their own chat messages or admin views all" ON public.messages;
+DROP POLICY IF EXISTS "Users can send messages as themselves or admin sends as anyone" ON public.messages;
+DROP POLICY IF EXISTS "Recipients can mark messages read or admin updates" ON public.messages;
+DROP POLICY IF EXISTS "Senders or admins can delete messages" ON public.messages;
+DROP POLICY IF EXISTS "Messages full access" ON public.messages;
+
+CREATE POLICY "Messages full access"
+  ON public.messages FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+-- Sliders Policies
+DROP POLICY IF EXISTS "Anyone can view active sliders" ON public.sliders;
+DROP POLICY IF EXISTS "Admins have full access to sliders" ON public.sliders;
+DROP POLICY IF EXISTS "Sliders full access" ON public.sliders;
+
+CREATE POLICY "Sliders full access"
+  ON public.sliders FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+-- Seed Initial Sliders
+INSERT INTO public.sliders (image_url, title, subtitle, description, event_link, order_index, is_active)
+VALUES
+  (
+    'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1600&auto=format&fit=crop&q=80',
+    'INT Security Technology Summit 2026',
+    'Cairo, Egypt · September 15, 2026',
+    'Join industry leaders, enterprise CTOs, and global tech partners at Egypt''s flagship summit on unified surveillance and smart security infrastructure.',
+    '/events/security-summit-2026',
+    1,
+    TRUE
+  ),
+  (
+    'https://images.unsplash.com/photo-1511578314322-379afb476865?w=1600&auto=format&fit=crop&q=80',
+    'INT Technology & ICT Forum',
+    'Cairo, Egypt · October 20, 2026',
+    'Interactive keynote panels, data center modernisation workshops, and live demonstrations of enterprise infrastructure.',
+    '/events/technology-forum-2026',
+    2,
+    TRUE
+  ),
+  (
+    'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=1600&auto=format&fit=crop&q=80',
+    'INT Partner & Sponsor Day',
+    'Alexandria, Egypt · November 10, 2026',
+    'Exclusive gathering exploring go-to-market strategies, technological roadmaps, and high-level enterprise networking.',
+    '/events/partner-day-2026',
+    3,
+    TRUE
+  )
+ON CONFLICT DO NOTHING;
+
+-- ==============================================================================
+-- Table: SCHEDULED_REMINDERS (Automated Campaigns, Timing, Push, Email & In-App)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.scheduled_reminders (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  reminder_type TEXT NOT NULL DEFAULT 'event_countdown',
+  event_id TEXT REFERENCES public.events(id) ON DELETE SET NULL,
+  target_audience TEXT NOT NULL DEFAULT 'all_attendees',
+  timing_mode TEXT NOT NULL DEFAULT 'scheduled',
+  scheduled_time TIMESTAMPTZ,
+  relative_offset TEXT,
+  send_email BOOLEAN NOT NULL DEFAULT true,
+  send_browser_push BOOLEAN NOT NULL DEFAULT true,
+  send_in_app BOOLEAN NOT NULL DEFAULT true,
+  status TEXT NOT NULL DEFAULT 'scheduled',
+  recipient_count INT NOT NULL DEFAULT 0,
+  delivered_count INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Table: NOTIFICATIONS (In-App notifications log)
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id TEXT PRIMARY KEY,
+  user_id TEXT,
+  target_audience TEXT DEFAULT 'all',
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  tone TEXT NOT NULL DEFAULT 'info',
+  link TEXT,
+  send_email BOOLEAN DEFAULT true,
+  send_push BOOLEAN DEFAULT true,
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.scheduled_reminders ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "scheduled_reminders_all" ON public.scheduled_reminders;
+CREATE POLICY "scheduled_reminders_all" ON public.scheduled_reminders FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "notifications_all" ON public.notifications;
+CREATE POLICY "notifications_all" ON public.notifications FOR ALL USING (true) WITH CHECK (true);
+
