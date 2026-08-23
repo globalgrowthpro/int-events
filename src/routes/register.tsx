@@ -110,7 +110,7 @@ function RegisterPage() {
             <p className="mt-2 text-sm text-muted-foreground">
               We sent a verification link to your email. Confirm it to activate your INT Events
               account
-              {type === "vendor" ? " — vendor accounts are then reviewed by an administrator." : "."}
+              {type === "client" ? " — client accounts are then reviewed by an administrator." : "."}
             </p>
             <Button asChild className="mt-6 w-full">
               <Link to="/dashboard">Continue to dashboard</Link>
