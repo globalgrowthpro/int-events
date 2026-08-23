@@ -56,6 +56,7 @@ type EventFormValues = {
   title: string;
   category: string;
   date: string;
+  endDate: string;
   dateLabel: string;
   startTime: string;
   endTime: string;
@@ -77,6 +78,7 @@ const defaultFormValues: EventFormValues = {
   title: "",
   category: "Summit",
   date: new Date().toISOString().split("T")[0]!,
+  endDate: new Date().toISOString().split("T")[0]!,
   dateLabel: "15 September 2026",
   startTime: "09:00 AM",
   endTime: "05:00 PM",

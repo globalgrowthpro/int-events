@@ -32,6 +32,7 @@ export interface IntEvent {
   title: string;
   category: string;
   date: string;
+  endDate?: string;
   dateLabel: string;
   startTime: string;
   endTime: string;
