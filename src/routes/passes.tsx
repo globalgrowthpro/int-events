@@ -36,20 +36,22 @@ export function Passes() {
       const liveEvents = await getEvents();
       setEventsList(liveEvents);
 
-      const userEmail = user?.email?.toLowerCase() || "client@intevents.com";
+      const userEmail = user?.email?.toLowerCase() || "";
+      const userName = user?.name?.trim().toLowerCase() || "";
+
       const { data: regsData, error } = await supabase
         .from("registrations")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (!error && regsData && regsData.length > 0) {
-        const filteredRegs = regsData.filter(
+      if (!error && regsData) {
+        const mine = regsData.filter(
           (r) =>
-            r.attendee_email?.toLowerCase() === userEmail ||
-            (user?.role === "client" && r.role === "client")
+            (userEmail && r.attendee_email?.toLowerCase() === userEmail) ||
+            (userName && r.attendee_name?.trim().toLowerCase() === userName),
         );
 
-        const mapped: Registration[] = (filteredRegs.length > 0 ? filteredRegs : regsData.slice(0, 3)).map((r) => ({
+        const mapped: Registration[] = mine.map((r) => ({
           id: r.id,
           eventId: r.event_id,
           attendee: r.attendee_name,
