@@ -7,6 +7,21 @@ import fs from "fs";
 import nodemailer from "nodemailer";
 import QRCode from "qrcode";
 
+// SMTP credentials come from environment variables only — never commit them.
+// Define them in a local `.env` file (see `.env.example`) or the host's env config.
+const SMTP = {
+  host: process.env["SMTP_HOST"] || "",
+  port: Number(process.env["SMTP_PORT"] || 465),
+  user: process.env["SMTP_USER"] || "",
+  pass: process.env["SMTP_PASS"] || "",
+  fromEmail: process.env["SMTP_FROM_EMAIL"] || process.env["SMTP_USER"] || "",
+  fromName: process.env["SMTP_FROM_NAME"] || "Integrated Technics Events",
+};
+
+const smtpConfigError =
+  "SMTP is not configured. Set SMTP_HOST, SMTP_USER and SMTP_PASS in your environment (.env).";
+
+
 function smtpServerPlugin(): Plugin {
   return {
     name: "smtp-server-plugin",
@@ -25,13 +40,27 @@ function smtpServerPlugin(): Plugin {
           req.on("end", async () => {
             try {
               const data = JSON.parse(body || "{}");
-              const host = data.host || "box5517.bluehost.com";
-              const port = Number(data.port) || 465;
-              const user = data.username || "event@integratedtechnics.com";
-              const pass = data.password || "event786@hafez";
-              const fromEmail = data.from_email || "event@integratedtechnics.com";
-              const fromName = data.from_name || "Integrated Technics Events";
-              const to = data.recipient_email || "h.rahim@integratedtechnics.com";
+              const host = data.host || SMTP.host;
+              const port = Number(data.port) || SMTP.port;
+              const user = data.username || SMTP.user;
+              const pass = data.password || SMTP.pass;
+              const fromEmail = data.from_email || SMTP.fromEmail || user;
+              const fromName = data.from_name || SMTP.fromName;
+              const to = data.recipient_email;
+
+              if (!host || !user || !pass) {
+                res.setHeader("Content-Type", "application/json");
+                res.statusCode = 500;
+                res.end(JSON.stringify({ success: false, error: smtpConfigError }));
+                return;
+              }
+              if (!to) {
+                res.setHeader("Content-Type", "application/json");
+                res.statusCode = 400;
+                res.end(JSON.stringify({ success: false, error: "Missing recipient email" }));
+                return;
+              }
+
 
               const logoPath = path.resolve("public/logo.png");
               const hasLogo = fs.existsSync(logoPath);
@@ -132,14 +161,22 @@ function smtpServerPlugin(): Plugin {
           req.on("end", async () => {
             try {
               const data = JSON.parse(body || "{}");
-              const host = "box5517.bluehost.com";
-              const port = 465;
-              const user = "event@integratedtechnics.com";
-              const pass = "event786@hafez";
-              const fromEmail = "event@integratedtechnics.com";
-              const fromName = "Integrated Technics Events";
+              const host = SMTP.host;
+              const port = SMTP.port;
+              const user = SMTP.user;
+              const pass = SMTP.pass;
+              const fromEmail = SMTP.fromEmail || user;
+              const fromName = SMTP.fromName;
               const recipientName = data.recipient_name || "Valued Guest";
               const recipientEmail = data.recipient_email;
+
+              if (!host || !user || !pass) {
+                res.setHeader("Content-Type", "application/json");
+                res.statusCode = 500;
+                res.end(JSON.stringify({ success: false, error: smtpConfigError }));
+                return;
+              }
+
               const eventId = data.event_id || "security-summit-2026";
               const eventTitle = data.event_title || "INT Security Technology Summit 2026";
               const eventDate = data.event_date || "November 14, 2026 • 09:00 AM";
