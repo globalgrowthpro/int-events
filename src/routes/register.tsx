@@ -397,6 +397,7 @@ function VendorFields() {
           <Field label="Mobile" id="vmb" type="tel" />
         </div>
       </Section>
+      <IdentitySection prefix="vendor" title="Contact Person Identification" />
       <Section title="Business Information">
         <SelectField
           label="Vendor Category"
