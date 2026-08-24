@@ -238,3 +238,9 @@
   scrollbar-width: none !important;
 }
 
+
+.int-rte:empty::before {
+  content: attr(data-placeholder);
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+}

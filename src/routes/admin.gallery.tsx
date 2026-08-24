@@ -15,7 +15,7 @@ import {
 } from "@/lib/api";
 import type { IntEvent } from "@/lib/int-data";
 import { Button } from "@/components/ui/button";
-import { RichTextEditor, RichTextView } from "@/components/int/rich-text-editor";
+import { RichTextEditor } from "@/components/int/rich-text-editor";
 
 export const Route = createFileRoute("/admin/gallery")({
   head: () => ({
