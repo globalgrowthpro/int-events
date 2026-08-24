@@ -56,12 +56,14 @@ export function RichTextEditor({
   onChange,
   placeholder,
   className,
+  minHeight = "140px",
 }: {
   id?: string;
   value: string;
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
+  minHeight?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
