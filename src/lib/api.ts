@@ -1500,8 +1500,8 @@ export interface EventGallery {
   results?: string | null;
   images: string[];
   is_published: boolean;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 export const GALLERY_MAX_IMAGES = 10;
