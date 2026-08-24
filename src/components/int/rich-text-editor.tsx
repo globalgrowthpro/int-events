@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   Bold,
   Italic,
@@ -6,188 +6,145 @@ import {
   List,
   ListOrdered,
   Heading2,
-  Heading3,
-  Quote,
-  Code,
-  Link as LinkIcon,
-  RotateCcw,
-  RotateCw,
-  Eye,
-  Code2,
-  RemoveFormatting,
+  Link2,
+  Eraser,
 } from "lucide-react";
 
-interface RichTextEditorProps {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  minHeight?: string;
+/** Very small allow-list sanitizer for editor HTML (tags + inline hrefs only). */
+export function sanitizeRichText(html: string): string {
+  if (!html) return "";
+  if (typeof window === "undefined") return html;
+  const allowed = new Set([
+    "P", "BR", "B", "STRONG", "I", "EM", "U", "UL", "OL", "LI", "H2", "H3", "A", "DIV", "SPAN",
+  ]);
+  const root = document.createElement("div");
+  root.innerHTML = html;
+  root.querySelectorAll("*").forEach((el) => {
+    if (!allowed.has(el.tagName)) {
+      el.replaceWith(...Array.from(el.childNodes));
+      return;
+    }
+    Array.from(el.attributes).forEach((attr) => {
+      const isSafeHref =
+        el.tagName === "A" &&
+        attr.name === "href" &&
+        /^(https?:|mailto:|tel:)/i.test(attr.value.trim());
+      if (!isSafeHref) el.removeAttribute(attr.name);
+    });
+    if (el.tagName === "A") {
+      el.setAttribute("target", "_blank");
+      el.setAttribute("rel", "noreferrer noopener");
+    }
+  });
+  return root.innerHTML;
 }
 
+/** True when the html has no visible text or media. */
+export function isRichTextEmpty(html: string): boolean {
+  return !html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+}
+
+type ToolButton = {
+  icon: typeof Bold;
+  label: string;
+  run: () => void;
+};
+
 export function RichTextEditor({
+  id,
   value,
   onChange,
-  placeholder = "Write detailed event summary, key topics, agenda highlights...",
-  minHeight = "180px",
-}: RichTextEditorProps) {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<"visual" | "html">("visual");
+  placeholder,
+  className,
+  minHeight = "140px",
+}: {
+  id?: string;
+  value: string;
+  onChange: (html: string) => void;
+  placeholder?: string;
+  className?: string;
+  minHeight?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
 
-  // Keep editor content in sync with external value without resetting cursor needlessly
   useEffect(() => {
-    if (editorRef.current && mode === "visual") {
-      if (editorRef.current.innerHTML !== value) {
-        editorRef.current.innerHTML = value || "";
-      }
-    }
-  }, [value, mode]);
+    const el = ref.current;
+    if (el && el.innerHTML !== value) el.innerHTML = value || "";
+  }, [value]);
 
-  const handleInput = () => {
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
+  const emit = () => {
+    if (ref.current) onChange(sanitizeRichText(ref.current.innerHTML));
   };
 
-  const exec = (command: string, val: string | undefined = undefined) => {
-    document.execCommand(command, false, val);
-    if (editorRef.current) {
-      editorRef.current.focus();
-      onChange(editorRef.current.innerHTML);
-    }
+  const cmd = (command: string, arg?: string) => {
+    ref.current?.focus();
+    document.execCommand(command, false, arg);
+    emit();
   };
 
-  const handleAddLink = () => {
-    const url = prompt("Enter link URL (e.g. https://example.com):");
-    if (url) {
-      exec("createLink", url);
-    }
-  };
-
-  const handleFormatBlock = (tag: string) => {
-    exec("formatBlock", tag);
-  };
+  const buttons: ToolButton[] = [
+    { icon: Bold, label: "Bold", run: () => cmd("bold") },
+    { icon: Italic, label: "Italic", run: () => cmd("italic") },
+    { icon: Underline, label: "Underline", run: () => cmd("underline") },
+    { icon: Heading2, label: "Heading", run: () => cmd("formatBlock", "<h3>") },
+    { icon: List, label: "Bulleted list", run: () => cmd("insertUnorderedList") },
+    { icon: ListOrdered, label: "Numbered list", run: () => cmd("insertOrderedList") },
+    {
+      icon: Link2,
+      label: "Insert link",
+      run: () => {
+        const url = window.prompt("Link URL (https://…)");
+        if (url) cmd("createLink", url);
+      },
+    },
+    { icon: Eraser, label: "Clear formatting", run: () => cmd("removeFormat") },
+  ];
 
   return (
-    <div className="rounded-xl border border-input bg-background shadow-2xs overflow-hidden focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-1 border-b border-border bg-muted/40 p-1.5 text-foreground">
-        <div className="flex flex-wrap items-center gap-0.5">
-          <ToolbarButton onClick={() => exec("bold")} title="Bold (Ctrl+B)">
-            <Bold className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => exec("italic")} title="Italic (Ctrl+I)">
-            <Italic className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => exec("underline")} title="Underline (Ctrl+U)">
-            <Underline className="h-3.5 w-3.5" />
-          </ToolbarButton>
-
-          <span className="mx-1 h-4 w-px bg-border" />
-
-          <ToolbarButton onClick={() => handleFormatBlock("h2")} title="Heading 2">
-            <Heading2 className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => handleFormatBlock("h3")} title="Heading 3">
-            <Heading3 className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => handleFormatBlock("p")} title="Paragraph">
-            <span className="text-[11px] font-bold">P</span>
-          </ToolbarButton>
-
-          <span className="mx-1 h-4 w-px bg-border" />
-
-          <ToolbarButton onClick={() => exec("insertUnorderedList")} title="Bullet List">
-            <List className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => exec("insertOrderedList")} title="Numbered List">
-            <ListOrdered className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => handleFormatBlock("blockquote")} title="Quote">
-            <Quote className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => handleFormatBlock("pre")} title="Code Block">
-            <Code className="h-3.5 w-3.5" />
-          </ToolbarButton>
-
-          <span className="mx-1 h-4 w-px bg-border" />
-
-          <ToolbarButton onClick={handleAddLink} title="Insert Link">
-            <LinkIcon className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => exec("removeFormat")} title="Clear Formatting">
-            <RemoveFormatting className="h-3.5 w-3.5" />
-          </ToolbarButton>
-
-          <span className="mx-1 h-4 w-px bg-border" />
-
-          <ToolbarButton onClick={() => exec("undo")} title="Undo">
-            <RotateCcw className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => exec("redo")} title="Redo">
-            <RotateCw className="h-3.5 w-3.5" />
-          </ToolbarButton>
-        </div>
-
-        {/* Mode Toggle */}
-        <div className="flex items-center gap-1">
+    <div className={`mt-1.5 overflow-hidden rounded-xl border border-border bg-background ${className ?? ""}`}>
+      <div className="flex flex-wrap items-center gap-1 border-b border-border bg-muted/40 p-1.5">
+        {buttons.map((b) => (
           <button
+            key={b.label}
             type="button"
-            onClick={() => setMode(mode === "visual" ? "html" : "visual")}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+            title={b.label}
+            aria-label={b.label}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={b.run}
+            className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-background hover:text-foreground"
           >
-            {mode === "visual" ? (
-              <>
-                <Code2 className="h-3 w-3" /> HTML View
-              </>
-            ) : (
-              <>
-                <Eye className="h-3 w-3" /> Visual View
-              </>
-            )}
+            <b.icon className="h-4 w-4" />
           </button>
-        </div>
+        ))}
       </div>
-
-      {/* Editor Body */}
-      {mode === "visual" ? (
-        <div
-          ref={editorRef}
-          contentEditable
-          onInput={handleInput}
-          onBlur={handleInput}
-          style={{ minHeight }}
-          data-placeholder={placeholder}
-          className="prose prose-sm dark:prose-invert max-w-none p-3.5 text-xs sm:text-sm text-foreground outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground"
-        />
-      ) : (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          style={{ minHeight }}
-          className="w-full bg-background p-3.5 font-mono text-xs text-foreground outline-none resize-y"
-        />
-      )}
+      <div
+        id={id}
+        ref={ref}
+        role="textbox"
+        aria-multiline="true"
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder={placeholder}
+        onInput={emit}
+        onBlur={emit}
+        style={{ minHeight }}
+        onPaste={(e) => {
+          e.preventDefault();
+          const text = e.clipboardData.getData("text/plain");
+          document.execCommand("insertText", false, text);
+        }}
+        className="int-rte w-full p-3 text-sm leading-relaxed text-foreground outline-none [&_a]:underline [&_h3]:mb-1 [&_h3]:mt-2 [&_h3]:text-base [&_h3]:font-bold [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+      />
     </div>
   );
 }
 
-function ToolbarButton({
-  children,
-  onClick,
-  title,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  title: string;
-}) {
+export function RichTextView({ html, className }: { html: string; className?: string }) {
+  if (isRichTextEmpty(html)) return null;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className="grid h-7 w-7 place-items-center rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-    >
-      {children}
-    </button>
+    <div
+      className={`text-sm leading-relaxed text-muted-foreground [&_a]:underline [&_h3]:mb-1 [&_h3]:mt-2 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-foreground [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_strong]:text-foreground [&_ul]:list-disc [&_ul]:pl-5 ${className ?? ""}`}
+      dangerouslySetInnerHTML={{ __html: sanitizeRichText(html) }}
+    />
   );
 }
