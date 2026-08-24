@@ -24,6 +24,7 @@ import { getEventById, checkUserRegistration, getGalleriesByEvent, type EventGal
 import { useAuth } from "@/lib/auth";
 import { toDdMmYyyy } from "@/lib/format";
 import { toast } from "sonner";
+import { RichTextView } from "@/components/int/rich-text-editor";
 
 export const Route = createFileRoute("/events/$eventId")({
   loader: async ({ params }) => {
@@ -346,9 +347,7 @@ function EventDetail() {
                       <p className="text-sm font-bold text-foreground">{gallery.title}</p>
                     )}
                     {gallery.results && (
-                      <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
-                        {gallery.results}
-                      </p>
+                      <RichTextView html={gallery.results} />
                     )}
                     {gallery.images.length > 0 && (
                       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">

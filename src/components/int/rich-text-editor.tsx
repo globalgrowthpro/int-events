@@ -127,12 +127,13 @@ export function RichTextEditor({
         data-placeholder={placeholder}
         onInput={emit}
         onBlur={emit}
+        style={{ minHeight }}
         onPaste={(e) => {
           e.preventDefault();
           const text = e.clipboardData.getData("text/plain");
           document.execCommand("insertText", false, text);
         }}
-        className="int-rte min-h-[140px] w-full p-3 text-sm leading-relaxed text-foreground outline-none [&_a]:underline [&_h3]:mb-1 [&_h3]:mt-2 [&_h3]:text-base [&_h3]:font-bold [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+        className="int-rte w-full p-3 text-sm leading-relaxed text-foreground outline-none [&_a]:underline [&_h3]:mb-1 [&_h3]:mt-2 [&_h3]:text-base [&_h3]:font-bold [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
       />
     </div>
   );

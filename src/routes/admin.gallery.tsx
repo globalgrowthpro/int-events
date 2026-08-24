@@ -15,6 +15,7 @@ import {
 } from "@/lib/api";
 import type { IntEvent } from "@/lib/int-data";
 import { Button } from "@/components/ui/button";
+import { RichTextEditor, RichTextView } from "@/components/int/rich-text-editor";
 
 export const Route = createFileRoute("/admin/gallery")({
   head: () => ({
@@ -313,13 +314,12 @@ function AdminGalleryPage() {
                 <label htmlFor="gallery-results" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Details about the result of the event
                 </label>
-                <textarea
+                <RichTextEditor
                   id="gallery-results"
-                  rows={5}
                   value={form.results}
-                  onChange={(e) => setForm({ ...form, results: e.target.value })}
+                  onChange={(html) => setForm({ ...form, results: html })}
                   placeholder="Attendance achieved, key outcomes, signed partnerships, media coverage…"
-                  className="mt-1.5 w-full rounded-xl border border-border bg-background p-3 text-sm leading-relaxed text-foreground"
+                  minHeight="160px"
                 />
               </div>
 
