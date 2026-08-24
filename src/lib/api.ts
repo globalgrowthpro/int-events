@@ -1486,3 +1486,132 @@ export async function triggerSendReminderNow(reminder: ScheduledReminder): Promi
 }
 
 
+
+/**
+ * ==============================================================================
+ * Event Galleries — post-event results and photo albums
+ * ==============================================================================
+ */
+
+export interface EventGallery {
+  id: string;
+  event_id: string;
+  title?: string | null;
+  results?: string | null;
+  images: string[];
+  is_published: boolean;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
+}
+
+export const GALLERY_MAX_IMAGES = 10;
+export const GALLERY_MAX_IMAGE_BYTES = 1024 * 1024; // 1 MB
+export const GALLERY_ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+
+const GALLERY_STORAGE_KEY = "int-event-galleries";
+
+function readLocalGalleries(): EventGallery[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(GALLERY_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as EventGallery[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalGalleries(items: EventGallery[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(items));
+  } catch (err) {
+    console.warn("Unable to persist galleries locally:", err);
+  }
+}
+
+function normaliseGallery(row: Record<string, unknown>): EventGallery {
+  const images = Array.isArray(row["images"]) ? (row["images"] as string[]) : [];
+  return {
+    id: String(row["id"]),
+    event_id: String(row["event_id"]),
+    title: (row["title"] as string | null) ?? null,
+    results: (row["results"] as string | null) ?? null,
+    images,
+    is_published: row["is_published"] !== false,
+    created_at: row["created_at"] as string | undefined,
+    updated_at: row["updated_at"] as string | undefined,
+  };
+}
+
+export async function getGalleries(): Promise<EventGallery[]> {
+  try {
+    const { data, error } = await supabase
+      .from("event_galleries")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      return (data as Record<string, unknown>[]).map(normaliseGallery);
+    }
+  } catch (err) {
+    console.warn("getGalleries fallback to local storage:", err);
+  }
+  return readLocalGalleries();
+}
+
+export async function getGalleriesByEvent(eventId: string): Promise<EventGallery[]> {
+  const all = await getGalleries();
+  return all.filter((g) => g.event_id === eventId && g.is_published !== false);
+}
+
+export async function createGallery(
+  input: Omit<EventGallery, "id" | "created_at" | "updated_at">,
+): Promise<EventGallery | null> {
+  try {
+    const { data, error } = await supabase
+      .from("event_galleries")
+      .insert([input])
+      .select()
+      .single();
+
+    if (!error && data) return normaliseGallery(data as Record<string, unknown>);
+  } catch (err) {
+    console.warn("createGallery fallback to local storage:", err);
+  }
+
+  const fallback: EventGallery = {
+    id: `gal-${Date.now()}`,
+    ...input,
+    created_at: new Date().toISOString(),
+  };
+  writeLocalGalleries([fallback, ...readLocalGalleries()]);
+  return fallback;
+}
+
+export async function updateGallery(galleryId: string, updates: Partial<EventGallery>): Promise<boolean> {
+  try {
+    const { error } = await supabase.from("event_galleries").update(updates).eq("id", galleryId);
+    if (!error) return true;
+  } catch (err) {
+    console.warn("updateGallery fallback to local storage:", err);
+  }
+
+  writeLocalGalleries(
+    readLocalGalleries().map((g) =>
+      g.id === galleryId ? { ...g, ...updates, updated_at: new Date().toISOString() } : g,
+    ),
+  );
+  return true;
+}
+
+export async function deleteGallery(galleryId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase.from("event_galleries").delete().eq("id", galleryId);
+    if (!error) return true;
+  } catch (err) {
+    console.warn("deleteGallery fallback to local storage:", err);
+  }
+
+  writeLocalGalleries(readLocalGalleries().filter((g) => g.id !== galleryId));
+  return true;
+}

@@ -16,6 +16,7 @@ import {
   MessageSquare,
   UserCog,
   Layers,
+  Images,
   Menu,
   X,
   ChevronRight,
@@ -53,6 +54,7 @@ const nav = [
   { to: "/admin/chat", label: "Chat Support", icon: MessageSquare },
   { to: "/admin/notifications", label: "Reminders & Alerts", icon: BellRing },
   { to: "/admin/sliders", label: "Sliders & Banners", icon: Layers },
+  { to: "/admin/gallery", label: "Gallery", icon: Images },
   { to: "/admin/reports", label: "Reports & Analytics", icon: FileText },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
