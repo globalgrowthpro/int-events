@@ -13,13 +13,14 @@ import {
   Share2,
   CheckCircle2,
   FileText,
+  Images,
 } from "lucide-react";
 import { RegistrationDialog } from "@/components/int/registration-dialog";
 import { PortalShell } from "@/components/int/portal-shell";
 import { StatusBadge } from "@/components/int/status-badge";
 import { Countdown, parseEventStart } from "@/components/int/countdown";
 import { getEvent, type IntEvent } from "@/lib/int-data";
-import { getEventById, checkUserRegistration } from "@/lib/api";
+import { getEventById, checkUserRegistration, getGalleriesByEvent, type EventGallery } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { toDdMmYyyy } from "@/lib/format";
 import { toast } from "sonner";
@@ -61,6 +62,21 @@ function EventDetail() {
   const [event, setEvent] = useState<IntEvent>(initialEvent);
   const [formOpen, setFormOpen] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [galleries, setGalleries] = useState<EventGallery[]>([]);
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  // Load published post-event galleries
+  useEffect(() => {
+    let active = true;
+    getGalleriesByEvent(eventId)
+      .then((rows) => {
+        if (active) setGalleries(rows);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [eventId]);
 
   // Check if current user is already registered
   useEffect(() => {
@@ -319,6 +335,45 @@ function EventDetail() {
               </div>
             </Panel>
           )}
+
+          {/* Post-event Gallery & Results */}
+          {galleries.length > 0 && (
+            <Panel title="Event Gallery & Results" icon={Images}>
+              <div className="space-y-6">
+                {galleries.map((gallery) => (
+                  <div key={gallery.id} className="space-y-3">
+                    {gallery.title && (
+                      <p className="text-sm font-bold text-foreground">{gallery.title}</p>
+                    )}
+                    {gallery.results && (
+                      <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+                        {gallery.results}
+                      </p>
+                    )}
+                    {gallery.images.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                        {gallery.images.map((src, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setLightbox(src)}
+                            className="aspect-4/3 overflow-hidden rounded-xl border border-border transition-transform hover:scale-[1.02]"
+                          >
+                            <img
+                              src={src}
+                              alt={`${event.title} gallery image ${i + 1}`}
+                              loading="lazy"
+                              className="h-full w-full object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          )}
         </div>
 
         {/* Right Sidebar: Partners & Exhibitors with Logos, Venue, Organizer */}
@@ -399,6 +454,16 @@ function EventDetail() {
           </Panel>
         </div>
       </div>
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/85 p-4"
+          onClick={() => setLightbox(null)}
+          role="presentation"
+        >
+          <img src={lightbox} alt="Gallery preview" className="max-h-[85vh] max-w-full rounded-xl object-contain" />
+        </div>
+      )}
 
       <RegistrationDialog event={event} open={formOpen} onClose={() => setFormOpen(false)} />
     </PortalShell>
