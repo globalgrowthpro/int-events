@@ -243,7 +243,10 @@ function AdminGalleryPage() {
               </div>
 
               {gallery.results && (
-                <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-muted-foreground">{gallery.results}</p>
+                <div
+                  className="mt-3 line-clamp-3 text-xs leading-relaxed text-muted-foreground [&_p]:mb-1 [&_strong]:text-foreground [&_ul]:list-disc [&_ul]:pl-4"
+                  dangerouslySetInnerHTML={{ __html: gallery.results }}
+                />
               )}
 
               <div className="mt-4 grid grid-cols-5 gap-2">
