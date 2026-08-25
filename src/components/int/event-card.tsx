@@ -58,7 +58,7 @@ export function EventCard({ event }: { event: IntEvent }) {
           params={{ eventId: event.id }}
           className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
         >
-          View Event
+          {event.status === "completed" ? "View Recap & Gallery" : "View Event"}
         </Link>
       </div>
     </article>

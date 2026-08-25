@@ -27,11 +27,18 @@ export const Route = createFileRoute("/events/")({
 });
 
 const categories = ["All", "Summit", "Forum", "Partner Event", "Workshop"];
+const statusTabs = [
+  { key: "all", label: "All events" },
+  { key: "upcoming", label: "Upcoming" },
+  { key: "completed", label: "Completed" },
+] as const;
+type StatusKey = (typeof statusTabs)[number]["key"];
 
 function EventsPage() {
   const [eventsList, setEventsList] = useState<IntEvent[]>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
+  const [status, setStatus] = useState<StatusKey>("all");
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = async (showToast = false) => {
@@ -53,6 +60,10 @@ function EventsPage() {
 
   const filtered = eventsList.filter(
     (event) =>
+      (status === "all" ||
+        (status === "completed"
+          ? event.status === "completed"
+          : event.status !== "completed" && event.status !== "cancelled")) &&
       (category === "All" || event.category === category) &&
       (event.title.toLowerCase().includes(query.toLowerCase()) ||
         event.city.toLowerCase().includes(query.toLowerCase())),
@@ -73,6 +84,22 @@ function EventsPage() {
           <RefreshCw className={`h-3.5 w-3.5 text-primary ${refreshing ? "animate-spin" : ""}`} />
           Sync
         </button>
+      </div>
+
+      <div className="mb-4 inline-flex rounded-lg border border-border bg-card p-1">
+        {statusTabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setStatus(tab.key)}
+            className={`rounded-md px-4 py-2 text-xs font-semibold transition-colors ${
+              status === tab.key
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
