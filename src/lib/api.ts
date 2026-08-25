@@ -1510,15 +1510,38 @@ export const GALLERY_ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg", "
 
 const GALLERY_STORAGE_KEY = "int-event-galleries";
 
+/** Demo gallery shown for a completed event until real galleries are added. */
+const SEED_GALLERIES: EventGallery[] = [
+  {
+    id: "gal-seed-smart-infrastructure",
+    event_id: "smart-infrastructure-workshop",
+    title: "Workshop Highlights & Results",
+    results:
+      "<p><strong>60 engineers</strong> completed the hands-on programme, with <strong>54 verified check-ins</strong> across the full day.</p><ul><li>4 live integration labs covering BMS, ELV and access control commissioning</li><li>Certificates of completion issued to all attending engineers</li><li>Satisfaction score of 4.7 / 5 from the post-event survey</li></ul><p>Follow-up technical clinics with Honeywell and Schneider Electric are scheduled for the next quarter.</p>",
+    images: [
+      "/gallery/smart-infrastructure-workshop-1.jpg",
+      "/gallery/smart-infrastructure-workshop-2.jpg",
+      "/gallery/smart-infrastructure-workshop-3.jpg",
+      "/gallery/smart-infrastructure-workshop-4.jpg",
+    ],
+    is_published: true,
+    created_at: "2026-06-05T10:00:00.000Z",
+    updated_at: "2026-06-05T10:00:00.000Z",
+  },
+];
+
 function readLocalGalleries(): EventGallery[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return SEED_GALLERIES;
   try {
     const raw = window.localStorage.getItem(GALLERY_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as EventGallery[]) : [];
+    const stored = raw ? (JSON.parse(raw) as EventGallery[]) : [];
+    const seeds = SEED_GALLERIES.filter((s) => !stored.some((g) => g.id === s.id));
+    return [...stored, ...seeds];
   } catch {
-    return [];
+    return SEED_GALLERIES;
   }
 }
+
 
 function writeLocalGalleries(items: EventGallery[]) {
   if (typeof window === "undefined") return;
