@@ -23,6 +23,13 @@ export interface InvitationEmailPayload {
   token?: string | null | undefined;
   domain?: string | undefined;
   custom_note?: string | undefined;
+  template_config?: Record<string, string> | undefined;
+  host?: string | undefined;
+  port?: number | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  from_name?: string | undefined;
+  from_email?: string | undefined;
 }
 
 type SendResult = {
@@ -95,9 +102,29 @@ export async function sendLiveTestEmail(payload: SmtpTestPayload): Promise<SendR
 export async function sendLiveInvitationEmail(
   payload: InvitationEmailPayload,
 ): Promise<SendResult> {
+  let templateConfig;
+  try {
+    const { data } = await supabase
+      .from("email_templates")
+      .select("config")
+      .eq("id", "default")
+      .maybeSingle();
+
+    if (data?.config) {
+      templateConfig = data.config;
+    } else {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("int_email_template") : null;
+      if (saved) templateConfig = JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error("Error parsing template config", e);
+  }
+  
+  const finalPayload = { ...payload, template_config: templateConfig };
+
   return dispatch(
     "/api/send-invitation",
     "invitation",
-    payload as unknown as Record<string, unknown>,
+    finalPayload as unknown as Record<string, unknown>,
   );
 }

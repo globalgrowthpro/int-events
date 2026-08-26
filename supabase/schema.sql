@@ -770,3 +770,18 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "notifications_all" ON public.notifications;
 CREATE POLICY "notifications_all" ON public.notifications FOR ALL USING (true) WITH CHECK (true);
 
+
+-- ==============================================================================
+-- Table: EMAIL_TEMPLATES (Global Email Styling)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.email_templates (
+  id TEXT PRIMARY KEY DEFAULT 'default',
+  config JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.email_templates ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "email_templates_all" ON public.email_templates;
+CREATE POLICY "email_templates_all" ON public.email_templates FOR ALL USING (true) WITH CHECK (true);
+
+INSERT INTO public.email_templates (id, config) VALUES ('default', '{}'::jsonb) ON CONFLICT DO NOTHING;

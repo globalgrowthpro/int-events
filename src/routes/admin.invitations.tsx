@@ -142,6 +142,8 @@ export function AdminInvitationsPage() {
     from_email: "events@integratedtechnics.com",
     host: "mail.integratedtechnics.com",
   });
+  const [smtpFullConfig, setSmtpFullConfig] = useState<any>(null);
+  const [templateConfig, setTemplateConfig] = useState<any>(null);
 
   // Sending Engine State
   const [isSending, setIsSending] = useState(false);
@@ -220,11 +222,18 @@ export function AdminInvitationsPage() {
       // 3. SMTP Config
       const { data: smtpData } = await supabase.from("smtp_settings").select("*").limit(1).single();
       if (smtpData) {
+        setSmtpFullConfig(smtpData);
         setSmtpSender({
           from_name: smtpData.from_name || "Integrated Technics Events",
           from_email: smtpData.from_email || "events@integratedtechnics.com",
           host: smtpData.host || "mail.integratedtechnics.com",
         });
+      }
+
+      // Fetch Email Template
+      const { data: tplData } = await supabase.from("email_templates").select("config").eq("id", "default").maybeSingle();
+      if (tplData?.config) {
+        setTemplateConfig(tplData.config);
       }
 
       // 4. Invitations
@@ -564,6 +573,12 @@ export function AdminInvitationsPage() {
           job_title: recipient.jobTitle,
           token: invToken,
           domain: typeof window !== "undefined" ? window.location.origin : "https://events.integratedtechnics.com",
+          host: smtpFullConfig?.host,
+          port: smtpFullConfig?.port,
+          username: smtpFullConfig?.username,
+          password: smtpFullConfig?.password_encrypted,
+          from_name: smtpFullConfig?.from_name,
+          from_email: smtpFullConfig?.from_email,
         });
 
         // Record in invitations table
@@ -718,6 +733,12 @@ export function AdminInvitationsPage() {
           job_title: newInv.job_title,
           token: invToken,
           domain: typeof window !== "undefined" ? window.location.origin : "https://events.integratedtechnics.com",
+          host: smtpFullConfig?.host,
+          port: smtpFullConfig?.port,
+          username: smtpFullConfig?.username,
+          password: smtpFullConfig?.password_encrypted,
+          from_name: smtpFullConfig?.from_name,
+          from_email: smtpFullConfig?.from_email,
         });
 
         await supabase.from("email_logs").insert({
@@ -797,6 +818,12 @@ export function AdminInvitationsPage() {
         job_title: inv.job_title,
         token: inv.token,
         domain: typeof window !== "undefined" ? window.location.origin : "https://events.integratedtechnics.com",
+        host: smtpFullConfig?.host,
+        port: smtpFullConfig?.port,
+        username: smtpFullConfig?.username,
+        password: smtpFullConfig?.password_encrypted,
+        from_name: smtpFullConfig?.from_name,
+        from_email: smtpFullConfig?.from_email,
       });
 
       await supabase
@@ -1556,6 +1583,17 @@ export function AdminInvitationsPage() {
           url: registerUrl,
         });
 
+        const primaryColor = templateConfig?.primaryColor || "#F37021";
+        const secondaryColor = templateConfig?.secondaryColor || "#1e293b";
+        const bgColor = templateConfig?.backgroundColor || "#0B1120";
+        const textColor = templateConfig?.textColor || "#f8fafc";
+        const headerText = templateConfig?.headerText || "Integrated Technics";
+        const headerSubtext = templateConfig?.headerSubtext || "التقنيات المتكاملة • Enterprise Summits";
+        const logoUrl = templateConfig?.logoUrl || "/logo.png";
+        const bodyTextRaw = templateConfig?.bodyText || "You are cordially invited as a distinguished guest to attend {eventTitle}.";
+        const bodyText = bodyTextRaw.replace('{recipientName}', previewInvitation.recipient_name).replace('{eventTitle}', eventTitle);
+        const btnText = templateConfig?.buttonText || "Confirm Attendance";
+
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/70 p-4 backdrop-blur-md overflow-y-auto">
             <div className="w-full max-w-xl overflow-hidden rounded-3xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-200 my-8">
@@ -1593,39 +1631,54 @@ export function AdminInvitationsPage() {
                 </div>
 
                 {/* Simulated Email Body */}
-                <div className="rounded-2xl border border-slate-800 bg-[#0B1120] p-6 text-slate-200 shadow-2xl space-y-5">
+                <div 
+                  className="rounded-2xl border p-6 shadow-2xl space-y-5"
+                  style={{ backgroundColor: bgColor, borderColor: secondaryColor, color: textColor }}
+                >
                   {/* Top Branding */}
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                  <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: secondaryColor }}>
                     <div className="flex items-center gap-3">
-                      <img src="/logo.png" alt="INT" className="h-9 w-9 object-contain bg-white rounded-lg p-0.5 border border-slate-700" />
+                      {logoUrl && (
+                        <img src={logoUrl} alt="INT" className="h-9 w-9 object-contain bg-white rounded-lg p-0.5 border border-slate-700" />
+                      )}
                       <div>
-                        <h4 className="font-extrabold text-white text-base tracking-tight">Integrated Technics</h4>
-                        <p className="text-[11px] text-slate-400">التقنيات المتكاملة &bull; Enterprise Summits</p>
+                        <h4 className="font-extrabold text-base tracking-tight" style={{ color: textColor }}>{headerText}</h4>
+                        <p className="text-[11px]" style={{ color: primaryColor }}>{headerSubtext}</p>
                       </div>
                     </div>
-                    <span className="rounded-full bg-orange-500/15 px-3 py-1 text-[10px] font-bold text-orange-400 border border-orange-500/30 uppercase tracking-wider">
+                    <span 
+                      className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider border"
+                      style={{ color: primaryColor, backgroundColor: `${primaryColor}20`, borderColor: `${primaryColor}50` }}
+                    >
                       ✦ VIP Invitation
                     </span>
                   </div>
 
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    Dear <strong className="text-white">{previewInvitation.recipient_name}</strong>,
-                    <br />
-                    You are cordially invited as a distinguished guest to attend <strong className="text-[#F37021]">{eventTitle}</strong>.
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: textColor }}>
+                    {bodyText}
                   </p>
 
-                  {/* VIP DIGITAL PASS CARD */}
-                  <div className="rounded-2xl border-2 border-[#F37021] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-5 shadow-xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 h-32 w-32 bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
+                  <div className="flex justify-center mt-6 mb-2">
+                    <div className="px-6 py-2.5 rounded-lg text-sm font-bold text-white shadow-lg cursor-not-allowed" style={{ backgroundColor: primaryColor }}>
+                      {btnText}
+                    </div>
+                  </div>
 
-                    <div className="flex items-center justify-between border-b border-dashed border-slate-700 pb-3 mb-4">
+                  {/* VIP DIGITAL PASS CARD */}
+                  <div 
+                    className="rounded-2xl border-2 p-5 shadow-xl relative overflow-hidden"
+                    style={{ borderColor: primaryColor, background: `linear-gradient(to bottom right, ${secondaryColor}, ${bgColor})` }}
+                  >
+                    <div className="absolute top-0 right-0 h-32 w-32 rounded-full blur-2xl pointer-events-none" style={{ backgroundColor: `${primaryColor}20` }} />
+
+                    <div className="flex items-center justify-between border-b border-dashed pb-3 mb-4" style={{ borderColor: `${primaryColor}50` }}>
                       <div>
-                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F37021]">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: primaryColor }}>
                           Delegation Access Pass
                         </span>
-                        <h5 className="font-bold text-white text-sm">{eventTitle}</h5>
+                        <h5 className="font-bold text-sm" style={{ color: textColor }}>{eventTitle}</h5>
                       </div>
-                      <span className="rounded bg-[#F37021] px-2.5 py-0.5 text-[10px] font-bold text-white tracking-wider">
+                      <span className="rounded px-2.5 py-0.5 text-[10px] font-bold text-white tracking-wider" style={{ backgroundColor: primaryColor }}>
                         VIP
                       </span>
                     </div>
@@ -1641,9 +1694,9 @@ export function AdminInvitationsPage() {
                       <div className="sm:col-span-7 space-y-2.5 text-left">
                         <div>
                           <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Guest Name</span>
-                          <p className="text-base font-bold text-white">{previewInvitation.recipient_name}</p>
+                          <p className="text-base font-bold" style={{ color: textColor }}>{previewInvitation.recipient_name}</p>
                           {previewInvitation.job_title && (
-                            <p className="text-xs text-[#F37021] font-semibold">{previewInvitation.job_title}</p>
+                            <p className="text-xs font-semibold" style={{ color: primaryColor }}>{previewInvitation.job_title}</p>
                           )}
                         </div>
 

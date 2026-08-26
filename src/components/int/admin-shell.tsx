@@ -57,6 +57,7 @@ const nav = [
   { to: "/admin/gallery", label: "Gallery", icon: Images },
   { to: "/admin/reports", label: "Reports & Analytics", icon: FileText },
   { to: "/admin/settings", label: "Settings", icon: Settings },
+  { to: "/admin/email-templates", label: "Email Templates", icon: Mail },
 ] as const;
 
 export function AdminShell({

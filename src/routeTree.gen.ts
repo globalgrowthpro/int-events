@@ -25,6 +25,7 @@ import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AdminAttendeesRouteImport } from './routes/admin.attendees'
 import { Route as AdminChatRouteImport } from './routes/admin.chat'
 import { Route as AdminClientsRouteImport } from './routes/admin.clients'
+import { Route as AdminEmailTemplatesRouteImport } from './routes/admin.email-templates'
 import { Route as AdminEventsRouteImport } from './routes/admin.events'
 import { Route as AdminGalleryRouteImport } from './routes/admin.gallery'
 import { Route as AdminInvitationsRouteImport } from './routes/admin.invitations'
@@ -118,6 +119,11 @@ const AdminClientsRoute = AdminClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEmailTemplatesRoute = AdminEmailTemplatesRouteImport.update({
+  id: '/email-templates',
+  path: '/email-templates',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEventsRoute = AdminEventsRouteImport.update({
   id: '/events',
   path: '/events',
@@ -195,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/admin/attendees': typeof AdminAttendeesRoute
   '/admin/chat': typeof AdminChatRoute
   '/admin/clients': typeof AdminClientsRoute
+  '/admin/email-templates': typeof AdminEmailTemplatesRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/invitations': typeof AdminInvitationsRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/admin/attendees': typeof AdminAttendeesRoute
   '/admin/chat': typeof AdminChatRoute
   '/admin/clients': typeof AdminClientsRoute
+  '/admin/email-templates': typeof AdminEmailTemplatesRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/invitations': typeof AdminInvitationsRoute
@@ -255,6 +263,7 @@ export interface FileRoutesById {
   '/admin/attendees': typeof AdminAttendeesRoute
   '/admin/chat': typeof AdminChatRoute
   '/admin/clients': typeof AdminClientsRoute
+  '/admin/email-templates': typeof AdminEmailTemplatesRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/invitations': typeof AdminInvitationsRoute
@@ -287,6 +296,7 @@ export interface FileRouteTypes {
     | '/admin/attendees'
     | '/admin/chat'
     | '/admin/clients'
+    | '/admin/email-templates'
     | '/admin/events'
     | '/admin/gallery'
     | '/admin/invitations'
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/admin/attendees'
     | '/admin/chat'
     | '/admin/clients'
+    | '/admin/email-templates'
     | '/admin/events'
     | '/admin/gallery'
     | '/admin/invitations'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/admin/attendees'
     | '/admin/chat'
     | '/admin/clients'
+    | '/admin/email-templates'
     | '/admin/events'
     | '/admin/gallery'
     | '/admin/invitations'
@@ -490,6 +502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClientsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/email-templates': {
+      id: '/admin/email-templates'
+      path: '/email-templates'
+      fullPath: '/admin/email-templates'
+      preLoaderRoute: typeof AdminEmailTemplatesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/events': {
       id: '/admin/events'
       path: '/events'
@@ -583,6 +602,7 @@ interface AdminRouteChildren {
   AdminAttendeesRoute: typeof AdminAttendeesRoute
   AdminChatRoute: typeof AdminChatRoute
   AdminClientsRoute: typeof AdminClientsRoute
+  AdminEmailTemplatesRoute: typeof AdminEmailTemplatesRoute
   AdminEventsRoute: typeof AdminEventsRoute
   AdminGalleryRoute: typeof AdminGalleryRoute
   AdminInvitationsRoute: typeof AdminInvitationsRoute
@@ -602,6 +622,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAttendeesRoute: AdminAttendeesRoute,
   AdminChatRoute: AdminChatRoute,
   AdminClientsRoute: AdminClientsRoute,
+  AdminEmailTemplatesRoute: AdminEmailTemplatesRoute,
   AdminEventsRoute: AdminEventsRoute,
   AdminGalleryRoute: AdminGalleryRoute,
   AdminInvitationsRoute: AdminInvitationsRoute,

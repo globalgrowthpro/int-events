@@ -161,12 +161,12 @@ function smtpServerPlugin(): Plugin {
           req.on("end", async () => {
             try {
               const data = JSON.parse(body || "{}");
-              const host = SMTP.host;
-              const port = SMTP.port;
-              const user = SMTP.user;
-              const pass = SMTP.pass;
-              const fromEmail = SMTP.fromEmail || user;
-              const fromName = SMTP.fromName;
+              const host = data.host || SMTP.host;
+              const port = Number(data.port) || SMTP.port;
+              const user = data.username || SMTP.user;
+              const pass = data.password || SMTP.pass;
+              const fromEmail = data.from_email || SMTP.fromEmail || user;
+              const fromName = data.from_name || SMTP.fromName;
               const recipientName = data.recipient_name || "Valued Guest";
               const recipientEmail = data.recipient_email;
 
@@ -233,6 +233,18 @@ function smtpServerPlugin(): Plugin {
                 });
               }
 
+              const template = (data.template_config || {}) as any;
+              const primaryColor = template.primaryColor || '#f37021';
+              const secondaryColor = template.secondaryColor || '#1e293b';
+              const bgColor = template.backgroundColor || '#070b14';
+              const textColor = template.textColor || '#f8fafc';
+              const headerText = template.headerText || 'Integrated Technics';
+              const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Enterprise Technology Summits';
+              const bodyText = (template.bodyText || 'On behalf of the Executive Committee of <strong>Integrated Technics</strong>, we have the distinct honor of cordially inviting you as our distinguished delegate to attend <strong style="color: ' + primaryColor + ';">${eventTitle}</strong>.').replace('{recipientName}', recipientName);
+              const footerText = template.footerText || 'Integrated Technics Events';
+              const buttonText = template.buttonText || 'Confirm Attendance';
+              const finalLogoUrl = template.logoUrl || (hasLogo ? "cid:intlogo" : null);
+
               const info = await transporter.sendMail({
                 from: `"${fromName}" <${fromEmail}>`,
                 to: recipientEmail,
@@ -247,31 +259,31 @@ function smtpServerPlugin(): Plugin {
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>Official VIP Invitation — ${eventTitle}</title>
                   </head>
-                  <body style="margin: 0; padding: 0; background-color: #070b14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f8fafc;">
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #070b14; padding: 32px 12px;">
+                  <body style="margin: 0; padding: 0; background-color: ${bgColor}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: ${textColor};">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: ${bgColor}; padding: 32px 12px;">
                       <tr>
                         <td align="center">
-                          <table role="presentation" width="100%" style="max-width: 640px; background: #0f172a; border: 1px solid #1e293b; border-radius: 28px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);">
+                          <table role="presentation" width="100%" style="max-width: 640px; background: ${secondaryColor}; border: 1px solid ${secondaryColor}; border-radius: 28px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);">
                             
                             <!-- Top Brand Banner with Embedded CID Logo -->
                             <tr>
-                              <td style="padding: 32px 36px 26px 36px; background: linear-gradient(135deg, #090d16 0%, #111c30 50%, #ea580c 120%); border-bottom: 1px solid #1e293b;">
+                              <td style="padding: 32px 36px 26px 36px; background: linear-gradient(135deg, ${secondaryColor} 0%, ${secondaryColor} 50%, ${primaryColor} 120%); border-bottom: 1px solid ${secondaryColor};">
                                 <table width="100%" cellspacing="0" cellpadding="0">
                                   <tr>
                                     <td width="64" style="vertical-align: middle;">
                                       <div style="background: #ffffff; padding: 4px; border-radius: 14px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); display: inline-block;">
-                                        ${hasLogo ? `<img src="cid:intlogo" alt="Integrated Technics Logo" width="56" height="56" style="display: block; border-radius: 10px; object-contain: contain;" />` : `<div style="width: 56px; height: 56px; background: #f37021; border-radius: 10px; text-align: center; line-height: 56px; color: #fff; font-weight: bold; font-size: 20px;">INT</div>`}
+                                        ${finalLogoUrl ? `<img src="${finalLogoUrl}" alt="Logo" width="56" height="56" style="display: block; border-radius: 10px; object-fit: contain;" />` : `<div style="width: 56px; height: 56px; background: ${primaryColor}; border-radius: 10px; text-align: center; line-height: 56px; color: #fff; font-weight: bold; font-size: 20px;">INT</div>`}
                                       </div>
                                     </td>
                                     <td style="padding-left: 16px; vertical-align: middle;">
-                                      <div style="display: inline-block; padding: 4px 12px; background: rgba(243, 112, 33, 0.16); border: 1px solid rgba(243, 112, 33, 0.4); border-radius: 100px; color: #f37021; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+                                      <div style="display: inline-block; padding: 4px 12px; background: ${primaryColor}29; border: 1px solid ${primaryColor}66; border-radius: 100px; color: ${primaryColor}; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
                                         ✦ VIP OFFICIAL INVITATION
                                       </div>
                                       <h1 style="margin: 8px 0 2px 0; color: #ffffff; font-size: 22px; font-weight: 900; line-height: 1.2; letter-spacing: -0.5px;">
-                                        Integrated Technics
+                                        ${headerText}
                                       </h1>
-                                      <p style="margin: 0; color: #f37021; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">
-                                        التقنيات المتكاملة &bull; Enterprise Technology Summits
+                                      <p style="margin: 0; color: ${primaryColor}; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">
+                                        ${headerSubtext}
                                       </p>
                                     </td>
                                   </tr>
@@ -283,8 +295,8 @@ function smtpServerPlugin(): Plugin {
                             <tr>
                               <td style="padding: 28px 36px 16px 36px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
                                 <p style="margin: 0 0 10px 0; font-size: 16px;">Dear <strong style="color: #ffffff;">${recipientName}</strong>,</p>
-                                <p style="margin: 0; color: #cbd5e1;">
-                                  On behalf of the Executive Committee of <strong>Integrated Technics</strong>, we have the distinct honor of cordially inviting you as our distinguished delegate to attend <strong style="color: #f37021;">${eventTitle}</strong>.
+                                <p style="margin: 0; color: ${textColor}80;">
+                                  ${footerText}
                                 </p>
                               </td>
                             </tr>
@@ -292,19 +304,19 @@ function smtpServerPlugin(): Plugin {
                             <!-- ULTRA-LUXURY DIGITAL PASS CARD -->
                             <tr>
                               <td style="padding: 8px 36px 24px 36px;">
-                                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: linear-gradient(145deg, #162032 0%, #0c1322 100%); border: 2px solid #f37021; border-radius: 22px; overflow: hidden; box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.5);">
+                                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: linear-gradient(145deg, ${secondaryColor} 0%, ${bgColor} 100%); border: 2px solid ${primaryColor}; border-radius: 22px; overflow: hidden; box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.5);">
                                   
                                   <!-- Card Top Bar -->
                                   <tr>
-                                    <td style="padding: 16px 22px; background: rgba(243, 112, 33, 0.12); border-bottom: 1px dashed #334155;">
+                                    <td style="padding: 16px 22px; background: ${primaryColor}1e; border-bottom: 1px dashed ${primaryColor}66;">
                                       <table width="100%" cellspacing="0" cellpadding="0">
                                         <tr>
                                           <td>
-                                            <span style="font-size: 9px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #f37021;">DELEGATION ACCESS PASS</span>
+                                            <span style="font-size: 9px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: ${primaryColor};">DELEGATION ACCESS PASS</span>
                                             <h2 style="margin: 2px 0 0 0; color: #ffffff; font-size: 16px; font-weight: 800;">${eventTitle}</h2>
                                           </td>
                                           <td align="right" style="vertical-align: middle;">
-                                            <span style="display: inline-block; padding: 4px 12px; background: #f37021; border-radius: 6px; color: #ffffff; font-size: 10px; font-weight: 900; letter-spacing: 1px;">
+                                            <span style="display: inline-block; padding: 4px 12px; background: ${primaryColor}; border-radius: 6px; color: #ffffff; font-size: 10px; font-weight: 900; letter-spacing: 1px;">
                                               CONFIRMED VIP
                                             </span>
                                           </td>
@@ -333,7 +345,7 @@ function smtpServerPlugin(): Plugin {
                                             <div style="margin-bottom: 12px;">
                                               <span style="font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; font-weight: 700;">Delegate Name</span>
                                               <div style="color: #ffffff; font-size: 17px; font-weight: 800; margin-top: 2px;">${recipientName}</div>
-                                              ${data.job_title ? `<div style="color: #f37021; font-size: 12px; font-weight: 700; margin-top: 1px;">${data.job_title}</div>` : ""}
+                                              ${data.job_title ? `<div style="color: ${primaryColor}; font-size: 12px; font-weight: 700; margin-top: 1px;">${data.job_title}</div>` : ""}
                                             </div>
 
                                             ${data.company ? `
@@ -345,7 +357,7 @@ function smtpServerPlugin(): Plugin {
 
                                             <div>
                                               <span style="font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; font-weight: 700;">Digital Pass Serial</span>
-                                              <div style="font-family: 'Courier New', Courier, monospace; color: #f37021; font-size: 15px; font-weight: 900; letter-spacing: 2px; margin-top: 2px;">
+                                              <div style="font-family: 'Courier New', Courier, monospace; color: ${primaryColor}; font-size: 15px; font-weight: 900; letter-spacing: 2px; margin-top: 2px;">
                                                 ${token}
                                               </div>
                                             </div>
@@ -376,7 +388,7 @@ function smtpServerPlugin(): Plugin {
                                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #131b2c; border: 1px solid #1e293b; border-radius: 16px; padding: 16px 20px;">
                                   <tr>
                                     <td style="color: #cbd5e1; font-size: 12px; line-height: 1.6;">
-                                      <span style="display: block; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #f37021; margin-bottom: 8px;">
+                                      <span style="display: block; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: ${primaryColor}; margin-bottom: 8px;">
                                         VIP Delegation Benefits Included:
                                       </span>
                                       &bull; Priority Fast-Track Gate Entry with Scannable Pass<br />
@@ -394,15 +406,15 @@ function smtpServerPlugin(): Plugin {
                               <td style="padding: 8px 36px 32px 36px;" align="center">
                                 <table cellspacing="0" cellpadding="0">
                                   <tr>
-                                    <td align="center" style="border-radius: 14px; background: linear-gradient(135deg, #f37021 0%, #d95d14 100%); box-shadow: 0 12px 24px -4px rgba(243, 112, 33, 0.5);">
-                                      <a href="${registerUrl}" target="_blank" style="display: inline-block; padding: 18px 42px; font-size: 15px; font-weight: 800; color: #ffffff; text-decoration: none; border-radius: 14px; letter-spacing: 0.5px;">
-                                        Claim VIP Pass & Confirm Registration &rarr;
+                                    <td align="center" style="border-radius: 14px;">
+                                      <a href="${registerUrl}" style="display: inline-block; padding: 18px 36px; background: ${primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ${primaryColor}80;">
+                                        ${buttonText}
                                       </a>
                                     </td>
                                   </tr>
                                 </table>
                                 <p style="margin: 14px 0 0 0; color: #64748b; font-size: 11px; word-break: break-all;">
-                                  Direct Link: <a href="${registerUrl}" style="color: #f37021; text-decoration: underline;">${registerUrl}</a>
+                                  Direct Link: <a href="${registerUrl}" style="color: ${primaryColor}; text-decoration: underline;">${registerUrl}</a>
                                 </p>
                               </td>
                             </tr>

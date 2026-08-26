@@ -1,3 +1,4 @@
+// @ts-nocheck
 // INT Events — production email dispatcher (Supabase Edge Function)
 // Runs on Supabase infrastructure so email works on the live host,
 // not only on the local Vite dev server.
@@ -20,19 +21,27 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-function shell(inner: string) {
+function shell(inner: string, template: any = {}) {
+  const primaryColor = template.primaryColor || '#f37021';
+  const secondaryColor = template.secondaryColor || '#1e293b';
+  const bgColor = template.backgroundColor || '#0b1120';
+  const textColor = template.textColor || '#f8fafc';
+  const headerText = template.headerText || 'Integrated Technics';
+  const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Events Gateway';
+  const footerText = template.footerText || 'Integrated Technics Events';
+
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /></head>
-  <body style="margin:0;padding:0;background:#0b1120;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#f8fafc;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#0b1120;padding:32px 12px;">
+  <body style="margin:0;padding:0;background:${bgColor};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${textColor};">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${bgColor};padding:32px 12px;">
       <tr><td align="center">
-        <table role="presentation" width="100%" style="max-width:580px;background:#0f172a;border:1px solid #1e293b;border-radius:20px;overflow:hidden;">
-          <tr><td style="padding:24px 28px;background:linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#ea580c 100%);border-bottom:1px solid #334155;">
-            <h2 style="margin:0;color:#fff;font-size:18px;font-weight:800;">Integrated Technics</h2>
-            <p style="margin:2px 0 0;color:#f37021;font-size:12px;font-weight:600;">التقنيات المتكاملة &bull; Events Gateway</p>
+        <table role="presentation" width="100%" style="max-width:580px;background:${secondaryColor};border:1px solid ${secondaryColor};border-radius:20px;overflow:hidden;">
+          <tr><td style="padding:24px 28px;background:linear-gradient(135deg,${secondaryColor} 0%,${secondaryColor} 60%,${primaryColor} 100%);border-bottom:1px solid ${secondaryColor};">
+            <h2 style="margin:0;color:#fff;font-size:18px;font-weight:800;">${headerText}</h2>
+            <p style="margin:2px 0 0;color:${primaryColor};font-size:12px;font-weight:600;">${headerSubtext}</p>
           </td></tr>
           <tr><td style="padding:28px;color:#e2e8f0;font-size:14px;line-height:1.6;">${inner}</td></tr>
-          <tr><td style="padding:18px 28px;background:#090e1a;border-top:1px solid #1e293b;color:#64748b;font-size:11px;text-align:center;">
-            Integrated Technics Events
+          <tr><td style="padding:18px 28px;background:#090e1a;border-top:1px solid ${secondaryColor};color:#64748b;font-size:11px;text-align:center;">
+            ${footerText}
           </td></tr>
         </table>
       </td></tr>
@@ -86,6 +95,17 @@ Deno.serve(async (req: Request) => {
       const eventLocation = payload.event_location || "";
       const token = payload.token || `EVT-INV-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
       const baseDomain = (payload.domain || "https://events.integratedtechnics.com").replace(/\/+$/, "");
+      const template = (payload.template_config || {}) as any;
+      const primaryColor = template.primaryColor || '#f37021';
+      const secondaryColor = template.secondaryColor || '#1e293b';
+      const bgColor = template.backgroundColor || '#0b1120';
+      const textColor = template.textColor || '#f8fafc';
+      const headerText = template.headerText || 'Integrated Technics';
+      const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Events Gateway';
+      const bodyText = (template.bodyText || 'Dear {recipientName},<br/>You are cordially invited to attend this Integrated Technics event.').replace('{recipientName}', recipientName);
+      const buttonText = template.buttonText || 'Confirm Attendance';
+      const footerText = template.footerText || 'Integrated Technics Events';
+
       const registerUrl = `${baseDomain}/events/${encodeURIComponent(eventId)}?token=${encodeURIComponent(token)}&email=${encodeURIComponent(to)}&name=${encodeURIComponent(recipientName)}#register`;
 
       const qrDataUrl: string = await QRCode.toDataURL(
@@ -111,19 +131,19 @@ Deno.serve(async (req: Request) => {
 
       subject = `You're invited — ${eventTitle}`;
       html = shell(`
-        <p style="margin:0 0 8px;color:#f37021;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">Official Invitation</p>
+        <p style="margin:0 0 8px;color:${primaryColor};font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">Official Invitation</p>
         <h1 style="margin:0 0 12px;color:#fff;font-size:22px;">${eventTitle}</h1>
-        <p style="margin:0 0 18px;color:#94a3b8;">Dear ${recipientName},<br/>You are cordially invited to attend this Integrated Technics event.</p>
-        <div style="padding:16px;background:#1e293b;border-radius:12px;border-left:4px solid #f37021;font-size:13px;">
+        <p style="margin:0 0 18px;color:#94a3b8;">${bodyText}</p>
+        <div style="padding:16px;background:${secondaryColor};border-radius:12px;border-left:4px solid ${primaryColor};font-size:13px;">
           ${eventDate ? `<p style="margin:0 0 6px;"><strong>Date:</strong> ${eventDate}</p>` : ""}
           ${eventLocation ? `<p style="margin:0 0 6px;"><strong>Venue:</strong> ${eventLocation}</p>` : ""}
           <p style="margin:0;"><strong>Invitation code:</strong> ${token}</p>
         </div>
         <p style="margin:22px 0;text-align:center;">
-          <a href="${registerUrl}" style="display:inline-block;padding:13px 26px;background:#f37021;color:#fff;border-radius:10px;font-weight:700;text-decoration:none;">Confirm Attendance</a>
+          <a href="${registerUrl}" style="display:inline-block;padding:13px 26px;background:${primaryColor};color:#fff;border-radius:10px;font-weight:700;text-decoration:none;">${buttonText}</a>
         </p>
         <p style="text-align:center;margin:0;"><img src="cid:passqr" alt="Invitation QR" width="180" height="180" style="border-radius:12px;background:#fff;padding:8px;" /></p>
-        ${payload.custom_note ? `<p style="margin:18px 0 0;color:#94a3b8;">${payload.custom_note}</p>` : ""}`);
+        ${payload.custom_note ? `<p style="margin:18px 0 0;color:#94a3b8;">${payload.custom_note}</p>` : ""}`, template);
     }
 
     const client = new SMTPClient({
