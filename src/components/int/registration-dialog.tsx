@@ -12,11 +12,44 @@ type Props = {
 };
 
 interface Representative {
+  prefix: string;
   fullName: string;
   gender: string;
   email: string;
   mobile: string;
 }
+
+const PREFIXES = [
+  "Mr",
+  "Mrs",
+  "Ms",
+  "Dr",
+  "Eng",
+  "Prof",
+  "Assoc. Prof",
+  "Capt",
+  "Lt. Col",
+  "Col",
+  "Gen",
+  "Sheikh",
+  "Sir",
+];
+
+const stripPrefix = (name: string) =>
+  name
+    .replace(
+      new RegExp(
+        `^(${PREFIXES.map((p) => p.replace(/\./g, "\\.")).join("|")})\\s+`,
+        "i"
+      ),
+      ""
+    )
+    .trim();
+
+const applyPrefix = (prefix: string, name: string) => {
+  const bare = stripPrefix(name);
+  return prefix ? `${prefix} ${bare}`.trim() : bare;
+};
 
 const sectors = [
   "Government",
