@@ -68,6 +68,8 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [repCount, setRepCount] = useState<number>(1);
   const [reps, setReps] = useState<Representative[]>([]);
+  const [primaryPrefix, setPrimaryPrefix] = useState("");
+  const [primaryName, setPrimaryName] = useState(user?.name ?? "");
 
   const [willingToTravel, setWillingToTravel] = useState<string>("Yes");
   const [transportationType, setTransportationType] = useState<string>("");
