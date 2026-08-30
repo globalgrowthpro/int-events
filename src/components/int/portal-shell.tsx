@@ -45,21 +45,26 @@ const nav = [
 export function PortalShell({
   children,
   fullWidth = false,
+  allowGuest = false,
 }: {
   children: ReactNode;
   fullWidth?: boolean;
+  allowGuest?: boolean;
 }) {
   const navigate = useNavigate();
   const { user, ready, signOut } = useAuth();
+  const isGuest = ready && !user;
 
   useEffect(() => {
-    if (ready && !user) navigate({ to: "/login", replace: true });
-  }, [ready, user, navigate]);
+    if (ready && !user && !allowGuest) navigate({ to: "/login", replace: true });
+  }, [ready, user, allowGuest, navigate]);
 
   function handleSignOut() {
     signOut();
     navigate({ to: "/login", replace: true });
   }
+
+  const navItems = isGuest ? nav.filter((item) => item.to === "/events") : nav;
 
   const profile = {
     name: user?.name ?? currentUser.name,
