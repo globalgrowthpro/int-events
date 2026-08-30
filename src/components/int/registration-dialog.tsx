@@ -11,13 +11,29 @@ type Props = {
   onClose: () => void;
 };
 
+interface IdentityDocs {
+  type: "national-id" | "passport";
+  front?: File | null;
+  back?: File | null;
+  passport?: File | null;
+}
+
+const emptyId = (): IdentityDocs => ({ type: "national-id" });
+
+const idSummary = (id: IdentityDocs) =>
+  id.type === "national-id"
+    ? `National ID (front: ${id.front?.name ?? "missing"}, back: ${id.back?.name ?? "missing"})`
+    : `Passport (${id.passport?.name ?? "missing"})`;
+
 interface Representative {
   prefix: string;
   fullName: string;
   gender: string;
   email: string;
   mobile: string;
+  identity: IdentityDocs;
 }
+
 
 const PREFIXES = [
   "Mr",
@@ -70,6 +86,7 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
   const [reps, setReps] = useState<Representative[]>([]);
   const [primaryPrefix, setPrimaryPrefix] = useState("");
   const [primaryName, setPrimaryName] = useState(user?.name ?? "");
+  const [primaryId, setPrimaryId] = useState<IdentityDocs>(emptyId());
 
   const [willingToTravel, setWillingToTravel] = useState<string>("Yes");
   const [transportationType, setTransportationType] = useState<string>("");
@@ -82,7 +99,7 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
     setReps((prev) => {
       const next = [...prev];
       while (next.length < additionalNeeded) {
-        next.push({ prefix: "", fullName: "", gender: "Male", email: "", mobile: "" });
+        next.push({ prefix: "", fullName: "", gender: "Male", email: "", mobile: "", identity: emptyId() });
       }
       return next.slice(0, additionalNeeded);
     });
@@ -105,6 +122,14 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
   const handlePrimaryPrefixChange = (prefix: string) => {
     setPrimaryPrefix(prefix);
     setPrimaryName((prev) => applyPrefix(prefix, prev));
+  };
+
+  const handleRepIdentityChange = (index: number, identity: IdentityDocs) => {
+    setReps((prev) => {
+      const next = [...prev];
+      if (next[index]) next[index] = { ...next[index], identity };
+      return next;
+    });
   };
 
   const handleRepPrefixChange = (index: number, prefix: string) => {
@@ -140,6 +165,7 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
 
     const userConsiderations = (formData.get("considerations") as string) || "";
     const combinedConsiderations = [
+      `ID: ${idSummary(primaryId)}`,
       transportChoice ? `Transportation: ${transportChoice}` : "",
       userConsiderations,
     ].filter(Boolean).join(" | ");
@@ -309,7 +335,14 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
                 />
               </Field>
             </div>
+
+            <IdentityUpload
+              idPrefix="primary"
+              value={primaryId}
+              onChange={setPrimaryId}
+            />
           </div>
+
 
           {/* Section 2: Number of Representatives & Event Options */}
           <div className="rounded-xl border border-border/80 bg-background/80 p-4 sm:p-5 shadow-xs">
@@ -495,6 +528,12 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
                         />
                       </Field>
                     </div>
+
+                    <IdentityUpload
+                      idPrefix={`rep-${idx}`}
+                      value={rep.identity}
+                      onChange={(v) => handleRepIdentityChange(idx, v)}
+                    />
                   </div>
                 );
               })}
@@ -587,3 +626,84 @@ function Field({
     </label>
   );
 }
+
+function IdentityUpload({
+  idPrefix,
+  value,
+  onChange,
+}: {
+  idPrefix: string;
+  value: IdentityDocs;
+  onChange: (v: IdentityDocs) => void;
+}) {
+  return (
+    <div className="mt-4 rounded-lg border border-border/70 bg-muted/20 p-4">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground">
+        Identification Document
+      </p>
+
+      <div className="mb-3 flex flex-wrap gap-4">
+        <label className="flex items-center gap-2 text-sm text-foreground">
+          <input
+            type="radio"
+            name={`${idPrefix}-idType`}
+            checked={value.type === "national-id"}
+            onChange={() => onChange({ type: "national-id" })}
+            className="h-4 w-4 accent-primary"
+          />
+          National ID
+        </label>
+        <label className="flex items-center gap-2 text-sm text-foreground">
+          <input
+            type="radio"
+            name={`${idPrefix}-idType`}
+            checked={value.type === "passport"}
+            onChange={() => onChange({ type: "passport" })}
+            className="h-4 w-4 accent-primary"
+          />
+          Passport
+        </label>
+      </div>
+
+      {value.type === "national-id" ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="National ID — Front side" required>
+            <input
+              type="file"
+              required
+              accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
+              onChange={(e) => onChange({ ...value, front: e.target.files?.[0] ?? null })}
+              className={fileClass}
+            />
+          </Field>
+          <Field label="National ID — Back side" required>
+            <input
+              type="file"
+              required
+              accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
+              onChange={(e) => onChange({ ...value, back: e.target.files?.[0] ?? null })}
+              className={fileClass}
+            />
+          </Field>
+        </div>
+      ) : (
+        <Field label="Passport copy" required>
+          <input
+            type="file"
+            required
+            accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
+            onChange={(e) => onChange({ ...value, passport: e.target.files?.[0] ?? null })}
+            className={fileClass}
+          />
+        </Field>
+      )}
+
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Accepted formats: JPG, PNG, WebP or PDF.
+      </p>
+    </div>
+  );
+}
+
+const fileClass =
+  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-2xs outline-none file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-primary focus:border-primary focus:ring-2 focus:ring-primary/20";
