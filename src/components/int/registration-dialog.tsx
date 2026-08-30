@@ -102,6 +102,25 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
     });
   };
 
+  const handlePrimaryPrefixChange = (prefix: string) => {
+    setPrimaryPrefix(prefix);
+    setPrimaryName((prev) => applyPrefix(prefix, prev));
+  };
+
+  const handleRepPrefixChange = (index: number, prefix: string) => {
+    setReps((prev) => {
+      const next = [...prev];
+      if (next[index]) {
+        next[index] = {
+          ...next[index],
+          prefix,
+          fullName: applyPrefix(prefix, next[index].fullName),
+        };
+      }
+      return next;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
