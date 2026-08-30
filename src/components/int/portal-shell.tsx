@@ -155,7 +155,7 @@ export function PortalShell({
 
               <SystemCreditButton />
 
-              <NotificationBell />
+              {!isGuest && <NotificationBell />}
 
               {/* User Avatar & Dropdown Menu */}
               {isGuest ? (
