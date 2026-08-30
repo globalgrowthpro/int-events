@@ -54,7 +54,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const payload = await req.json();
-    const kind: "test" | "invitation" = payload.kind === "test" ? "test" : "invitation";
+    const kind: "test" | "invitation" | "pass" =
+      payload.kind === "test" ? "test" : payload.kind === "pass" ? "pass" : "invitation";
 
     const host = payload.host || Deno.env.get("SMTP_HOST") || "";
     const port = Number(payload.port || Deno.env.get("SMTP_PORT") || 465);
@@ -87,7 +88,7 @@ Deno.serve(async (req: Request) => {
           <p style="margin:0 0 6px;"><strong>Recipient:</strong> ${to}</p>
           <p style="margin:0;"><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
         </div>`);
-    } else {
+    } else if (kind === "invitation") {
       const recipientName = payload.recipient_name || "Valued Guest";
       const eventId = payload.event_id || "";
       const eventTitle = payload.event_title || "INT Event";
