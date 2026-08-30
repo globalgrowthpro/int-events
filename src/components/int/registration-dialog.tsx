@@ -11,13 +11,29 @@ type Props = {
   onClose: () => void;
 };
 
+interface IdentityDocs {
+  type: "national-id" | "passport";
+  front?: File | null;
+  back?: File | null;
+  passport?: File | null;
+}
+
+const emptyId = (): IdentityDocs => ({ type: "national-id" });
+
+const idSummary = (id: IdentityDocs) =>
+  id.type === "national-id"
+    ? `National ID (front: ${id.front?.name ?? "missing"}, back: ${id.back?.name ?? "missing"})`
+    : `Passport (${id.passport?.name ?? "missing"})`;
+
 interface Representative {
   prefix: string;
   fullName: string;
   gender: string;
   email: string;
   mobile: string;
+  identity: IdentityDocs;
 }
+
 
 const PREFIXES = [
   "Mr",
