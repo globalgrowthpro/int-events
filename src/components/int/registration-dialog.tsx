@@ -12,11 +12,44 @@ type Props = {
 };
 
 interface Representative {
+  prefix: string;
   fullName: string;
   gender: string;
   email: string;
   mobile: string;
 }
+
+const PREFIXES = [
+  "Mr",
+  "Mrs",
+  "Ms",
+  "Dr",
+  "Eng",
+  "Prof",
+  "Assoc. Prof",
+  "Capt",
+  "Lt. Col",
+  "Col",
+  "Gen",
+  "Sheikh",
+  "Sir",
+];
+
+const stripPrefix = (name: string) =>
+  name
+    .replace(
+      new RegExp(
+        `^(${PREFIXES.map((p) => p.replace(/\./g, "\\.")).join("|")})\\s+`,
+        "i"
+      ),
+      ""
+    )
+    .trim();
+
+const applyPrefix = (prefix: string, name: string) => {
+  const bare = stripPrefix(name);
+  return prefix ? `${prefix} ${bare}`.trim() : bare;
+};
 
 const sectors = [
   "Government",
@@ -35,6 +68,8 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [repCount, setRepCount] = useState<number>(1);
   const [reps, setReps] = useState<Representative[]>([]);
+  const [primaryPrefix, setPrimaryPrefix] = useState("");
+  const [primaryName, setPrimaryName] = useState(user?.name ?? "");
 
   const [willingToTravel, setWillingToTravel] = useState<string>("Yes");
   const [transportationType, setTransportationType] = useState<string>("");
@@ -47,7 +82,7 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
     setReps((prev) => {
       const next = [...prev];
       while (next.length < additionalNeeded) {
-        next.push({ fullName: "", gender: "Male", email: "", mobile: "" });
+        next.push({ prefix: "", fullName: "", gender: "Male", email: "", mobile: "" });
       }
       return next.slice(0, additionalNeeded);
     });
@@ -62,6 +97,25 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
       const next = [...prev];
       if (next[index]) {
         next[index] = { ...next[index], [field]: value };
+      }
+      return next;
+    });
+  };
+
+  const handlePrimaryPrefixChange = (prefix: string) => {
+    setPrimaryPrefix(prefix);
+    setPrimaryName((prev) => applyPrefix(prefix, prev));
+  };
+
+  const handleRepPrefixChange = (index: number, prefix: string) => {
+    setReps((prev) => {
+      const next = [...prev];
+      if (next[index]) {
+        next[index] = {
+          ...next[index],
+          prefix,
+          fullName: applyPrefix(prefix, next[index].fullName),
+        };
       }
       return next;
     });
@@ -179,12 +233,29 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Prefix (Title)">
+                <select
+                  name="prefix"
+                  value={primaryPrefix}
+                  onChange={(e) => handlePrimaryPrefixChange(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">No prefix</option>
+                  {PREFIXES.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
               <Field label="Full Name (as it should be on badge)" required>
                 <input
                   name="fullName"
                   required
-                  defaultValue={user?.name ?? ""}
-                  placeholder="e.g. Ahmed Mohamed"
+                  value={primaryName}
+                  onChange={(e) => setPrimaryName(e.target.value)}
+                  placeholder="e.g. Dr. Ahmed Mohamed"
                   className={inputClass}
                 />
               </Field>
@@ -355,6 +426,21 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Prefix (Title)">
+                        <select
+                          value={rep.prefix}
+                          onChange={(e) => handleRepPrefixChange(idx, e.target.value)}
+                          className={inputClass}
+                        >
+                          <option value="">No prefix</option>
+                          {PREFIXES.map((p) => (
+                            <option key={p} value={p}>
+                              {p}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+
                       <Field label="Full Name (as it should be on badge)" required>
                         <input
                           required
