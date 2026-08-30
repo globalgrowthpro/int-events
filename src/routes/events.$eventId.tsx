@@ -125,7 +125,7 @@ function EventDetail() {
   };
 
   return (
-    <PortalShell>
+    <PortalShell allowGuest>
       {/* Top Header Card */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
         {/* Banner Hero Image */}
