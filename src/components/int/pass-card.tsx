@@ -2,15 +2,11 @@ import { QrCode } from "./qr-code";
 import { CheckCircle2 } from "lucide-react";
 import type { IntEvent, Registration } from "@/lib/int-data";
 
-function partnerInitials(name: string) {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
-
+/**
+ * Official ITS 2026 ticket-style attendance pass.
+ * White card with a dotted brand pattern, big event title, the ITS
+ * showcase logo, the QR payload and an orange access band at the bottom.
+ */
 export function PassCard({
   registration,
   event,
@@ -20,8 +16,6 @@ export function PassCard({
   event: IntEvent;
   compact?: boolean;
 }) {
-  const partner = event.partners[0];
-
   const qrPayload = JSON.stringify({
     t: registration.token,
     a: registration.attendee,
@@ -32,66 +26,65 @@ export function PassCard({
   });
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-elevated">
-      <div className="bg-navy px-5 py-4 text-navy-foreground">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
+    <div className="overflow-hidden rounded-xl border-2 border-muted-foreground/25 bg-white shadow-elevated">
+      <div className="relative px-5 pb-6 pt-7 text-center sm:px-7">
+        {/* Brand dot pattern */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.5]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 25% 25%, rgba(243,112,33,.16) 0 9px, transparent 10px), radial-gradient(circle at 75% 75%, rgba(100,100,100,.13) 0 9px, transparent 10px)",
+            backgroundSize: "72px 72px",
+          }}
+        />
+
+        <div className="relative">
+          <h3 className="text-xl font-black uppercase leading-tight tracking-tight text-[#111] sm:text-2xl">
+            {event.title}
+          </h3>
+
+          <div className="mt-5 flex justify-center">
             <img
-              src="/logo.png"
-              alt="Integrated Technics"
-              className="h-9 w-9 rounded-md bg-white object-contain p-0.5"
+              src="/its-logo.png"
+              alt="Integrated Technics Showcase"
+              className={compact ? "h-14 object-contain" : "h-20 object-contain"}
             />
-            <span className="leading-none">
-              <span className="block text-[10px] font-semibold uppercase tracking-[0.24em] text-navy-foreground/60">
-                Integrated Technics
-              </span>
-              <span className="mt-1 block text-sm font-semibold uppercase tracking-[0.14em]">
-                Event Attendance Pass
-              </span>
-            </span>
           </div>
-          {partner && (
-            <div className="flex flex-col items-center gap-1 text-center">
-              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white/15 text-[11px] font-bold tracking-wide text-navy-foreground ring-1 ring-white/20">
-                {partnerInitials(partner)}
-              </span>
-              <span className="max-w-[88px] text-[9px] font-medium uppercase tracking-[0.12em] text-navy-foreground/70">
-                {partner}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="p-5">
-        <h3 className="text-base font-semibold text-foreground">{event.title}</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {event.dateLabel} · {event.city}
-        </p>
 
-        <dl className="mt-4 grid grid-cols-2 gap-4 border-y border-border py-4 text-sm">
-          <Field label="Attendee" value={registration.attendee} />
-          <Field label="Company" value={registration.company} />
-          <Field label="Role" value={registration.role} />
-          <Field label="Registration ID" value={registration.id} />
-        </dl>
-
-        {/* Structured QR Payload containing Account Name, Event Name, Date and Time */}
-        <div className="mt-5 flex flex-col items-center">
-          <div className="rounded-lg border border-border bg-card p-3 shadow-inner">
-            <QrCode value={qrPayload} size={compact ? 132 : 184} />
+          <div className="mx-auto mt-6 w-fit rounded-xl border border-muted-foreground/20 bg-white p-3 shadow-sm">
+            <QrCode value={qrPayload} size={compact ? 128 : 172} />
           </div>
-          <p className="mt-3 text-xs font-semibold text-muted-foreground">Scan at gate for instant check-in</p>
-          <p className="mt-1 font-mono text-[11px] tracking-wider text-muted-foreground">
+          <p className="mt-2 font-mono text-[11px] tracking-wider text-muted-foreground">
             {registration.token}
           </p>
 
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
+          <dl className="mx-auto mt-5 grid max-w-md grid-cols-2 gap-4 border-t border-muted-foreground/20 pt-4 text-left text-sm">
+            <Field label="Attendee" value={registration.attendee} />
+            <Field label="Company" value={registration.company} />
+            <Field label="Role" value={registration.role} />
+            <Field label="Registration ID" value={registration.id} />
+            <Field label="Date" value={event.dateLabel} />
+            <Field label="Venue" value={event.city} />
+          </dl>
+
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
             <CheckCircle2 className="h-3.5 w-3.5" />
             {registration.state === "checked-in"
               ? `Checked in · ${registration.checkInTime || "Verified"}`
-              : "Registered"}
+              : "Approved · Registered"}
           </div>
         </div>
+      </div>
+
+      <div className="bg-[#f37021] px-5 py-4 text-center italic text-white">
+        <p className="text-sm font-semibold leading-snug sm:text-base">
+          Integrated Technics Showcase Event
+          <br />
+          ITS 2026
+          <br />
+          Full Access Ticket
+        </p>
       </div>
     </div>
   );
@@ -103,7 +96,7 @@ function Field({ label, value }: { label: string; value: string }) {
       <dt className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </dt>
-      <dd className="mt-1 font-medium capitalize text-foreground">{value}</dd>
+      <dd className="mt-1 font-medium capitalize text-[#111]">{value}</dd>
     </div>
   );
 }

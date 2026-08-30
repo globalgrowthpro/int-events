@@ -95,6 +95,42 @@ async function dispatch(
   }
 }
 
+export interface PassEmailPayload {
+  recipient_name: string;
+  recipient_email: string;
+  event_id?: string | undefined;
+  event_title: string;
+  event_date?: string | undefined;
+  event_location?: string | undefined;
+  company?: string | null | undefined;
+  job_title?: string | null | undefined;
+  registration_id: string;
+  token: string;
+  domain?: string | undefined;
+}
+
+/**
+ * Approved-registration pass card email.
+ * Goes straight to the Supabase Edge Function so it works identically on
+ * localhost and on the deployed host.
+ */
+export async function sendPassCardEmail(payload: PassEmailPayload): Promise<SendResult> {
+  try {
+    const { data, error } = await supabase.functions.invoke("send-email", {
+      body: {
+        kind: "pass",
+        domain: typeof window !== "undefined" ? window.location.origin : undefined,
+        ...payload,
+      },
+    });
+    if (error) return { success: false, error: error.message || "Email service unavailable" };
+    if (data?.success === false) return { success: false, error: data.error || "SMTP transmission error" };
+    return { success: true, messageId: data?.messageId };
+  } catch (err) {
+    return { success: false, error: (err as Error)?.message || "Email service unreachable" };
+  }
+}
+
 export async function sendLiveTestEmail(payload: SmtpTestPayload): Promise<SendResult> {
   return dispatch("/api/test-smtp", "test", payload as unknown as Record<string, unknown>);
 }
