@@ -954,18 +954,6 @@ export function AdminRegistrationsPage() {
             </header>
 
             <div className="p-6 text-center space-y-4">
-              <div className="mx-auto flex flex-col items-center justify-center rounded-2xl border border-border bg-white p-4 shadow-inner">
-                <RealQrCode
-                  value={JSON.stringify({
-                    t: previewPass.ticket_token,
-                    a: previewPass.attendee_name,
-                    e: previewPass.event_id,
-                    c: previewPass.company || "Integrated Technics",
-                  })}
-                  size={160}
-                />
-              </div>
-
               <div>
                 <span className="font-mono text-xs font-bold text-primary">
                   {previewPass.ticket_token}
