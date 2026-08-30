@@ -23,7 +23,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { StateBadge } from "@/components/int/status-badge";
-import { QrCode as RealQrCode } from "@/components/int/qr-code";
+
 import { supabase } from "@/lib/supabase";
 import { events } from "@/lib/int-data";
 import { toast } from "sonner";
