@@ -29,7 +29,6 @@ type AccountType = "client" | "vendor" | "employee";
 const types: { id: AccountType; title: string; body: string; icon: typeof IdCard }[] = [
   { id: "client", title: "Client", body: "Register to attend INT events and technology sessions.", icon: IdCard },
   { id: "vendor", title: "Vendor", body: "Join events as a technology partner, vendor or exhibitor.", icon: Building2 },
-  { id: "employee", title: "Employee", body: "Access and register for INT corporate events.", icon: Briefcase },
 ];
 
 const industries = [
