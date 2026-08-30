@@ -162,7 +162,7 @@ export function EventDetailContent({
           </h1>
 
           {/* Quick Fact Cards (Immediate Top Placement) */}
-          <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <dl className="mt-6 grid gap-4 sm:grid-cols-2">
             <Fact
               icon={CalendarDays}
               label="Date & Time"
@@ -176,29 +176,7 @@ export function EventDetailContent({
               subValue={`${event.city}`}
               link={event.mapUrl}
             />
-            <Fact
-              icon={Users}
-              label="Capacity & Seats"
-              value={`${event.registered} / ${event.capacity} Registered`}
-              subValue={seatsLeft > 0 ? `${seatsLeft} seats remaining` : "Fully Booked"}
-            />
           </dl>
-
-          {/* Registration Capacity Progress Bar */}
-          <div className="mt-6">
-            <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground mb-1.5">
-              <span>Registration Status</span>
-              <span>{pct}% filled</span>
-            </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  pct > 90 ? "bg-destructive" : pct > 60 ? "bg-amber-500" : "bg-primary"
-                }`}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          </div>
 
           {/* Call to Action Actions */}
           <div className="mt-6 flex flex-wrap items-center gap-3">
