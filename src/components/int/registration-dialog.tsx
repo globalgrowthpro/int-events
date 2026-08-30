@@ -309,7 +309,14 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
                 />
               </Field>
             </div>
+
+            <IdentityUpload
+              idPrefix="primary"
+              value={primaryId}
+              onChange={setPrimaryId}
+            />
           </div>
+
 
           {/* Section 2: Number of Representatives & Event Options */}
           <div className="rounded-xl border border-border/80 bg-background/80 p-4 sm:p-5 shadow-xs">
