@@ -44,13 +44,6 @@ export function EventCard({
             <MapPin className="h-4 w-4 text-tech" />
             <span>{event.city}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-tech" />
-            <span>
-              {event.registered}/{event.capacity} registered
-              {seatsLeft > 0 ? ` · ${seatsLeft} seats left` : " · full"}
-            </span>
-          </div>
         </dl>
         {isUpcoming && (
           <div className="mt-4">
