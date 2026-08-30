@@ -81,7 +81,7 @@ export function PortalShell({
           <IntLogo subtitle="Participant Portal" />
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {nav.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.to}
               to={item.to}
@@ -100,6 +100,14 @@ export function PortalShell({
           <div>
             <PWAInstallButton variant="outline" className="w-full justify-center text-xs gap-2" />
           </div>
+          {isGuest ? (
+            <Link
+              to="/login"
+              className="flex h-9 w-full items-center justify-center rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-tech transition-colors"
+            >
+              Sign in / Create account
+            </Link>
+          ) : (
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <Avatar className="h-8 w-8 border border-border shrink-0">
@@ -121,6 +129,7 @@ export function PortalShell({
               <LogOut className="h-3.5 w-3.5" />
             </button>
           </div>
+          )}
         </div>
       </aside>
 
@@ -149,6 +158,14 @@ export function PortalShell({
               <NotificationBell />
 
               {/* User Avatar & Dropdown Menu */}
+              {isGuest ? (
+                <Link
+                  to="/login"
+                  className="inline-flex h-9 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-tech transition-colors"
+                >
+                  Sign in
+                </Link>
+              ) : (
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-border py-0.5 pl-0.5 pr-0.5 sm:pr-2.5 transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/20">
                   <Avatar className="h-7 w-7 border border-border">
@@ -193,6 +210,7 @@ export function PortalShell({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              )}
             </div>
           </div>
         </header>
@@ -207,7 +225,7 @@ export function PortalShell({
         </main>
       </div>
 
-      {!fullWidth && <MobileBottomNav variant="portal" />}
+      {!fullWidth && !isGuest && <MobileBottomNav variant="portal" />}
     </div>
   );
 }
