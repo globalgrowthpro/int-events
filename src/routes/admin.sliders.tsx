@@ -655,7 +655,7 @@ export function AdminSlidersPage() {
                         >
                           <option value="">🔗 Select from existing events...</option>
                           {eventsList.map((ev) => (
-                            <option key={ev.id} value={`/events/${ev.id}`}>
+                            <option key={ev.id} value={`/event/${ev.id}`}>
                               {ev.title} ({ev.city})
                             </option>
                           ))}
