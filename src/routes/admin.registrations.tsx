@@ -27,6 +27,7 @@ import { QrCode as RealQrCode } from "@/components/int/qr-code";
 import { supabase } from "@/lib/supabase";
 import { events } from "@/lib/int-data";
 import { toast } from "sonner";
+import { sendPassCardEmail } from "@/lib/email-service";
 
 export const Route = createFileRoute("/admin/registrations")({
   head: () => ({
@@ -54,7 +55,7 @@ interface RegistrationRow {
   job_title: string | null;
   role: string;
   ticket_token: string;
-  state: "registered" | "checked-in" | "cancelled" | "no-show";
+  state: "pending" | "registered" | "checked-in" | "cancelled" | "no-show";
   is_primary: boolean;
   delegation_leader_id: string | null;
   created_at?: string;
@@ -70,7 +71,7 @@ type RegistrationFormData = {
   job_title: string;
   role: "client" | "vendor" | "employee";
   event_id: string;
-  state: "registered" | "checked-in" | "cancelled" | "no-show";
+  state: "pending" | "registered" | "checked-in" | "cancelled" | "no-show";
 };
 
 const initialRegFormData: RegistrationFormData = {
@@ -332,6 +333,45 @@ export function AdminRegistrationsPage() {
     }
   };
 
+  const handleApproval = async (reg: RegistrationRow, approve: boolean) => {
+    const nextState = approve ? "registered" : "cancelled";
+    try {
+      await supabase.from("registrations").update({ state: nextState }).eq("id", reg.id);
+    } catch {
+      /* offline fallback */
+    }
+    setRegistrations((prev) =>
+      prev.map((r) => (r.id === reg.id ? { ...r, state: nextState as any } : r)),
+    );
+
+    if (!approve) {
+      toast.error(`Request from ${reg.attendee_name} was rejected.`);
+      return;
+    }
+
+    const ev = events.find((e) => e.id === reg.event_id);
+    toast.success(`Approved ${reg.attendee_name} — sending ITS pass card…`);
+
+    const result = await sendPassCardEmail({
+      recipient_name: reg.attendee_name,
+      recipient_email: reg.attendee_email,
+      event_id: reg.event_id,
+      event_title: ev?.title || "Integrated Technics Showcase 2026",
+      event_date: ev?.dateLabel,
+      event_location: ev?.venue || ev?.city,
+      company: reg.company,
+      job_title: reg.job_title,
+      registration_id: reg.id,
+      token: reg.ticket_token,
+    });
+
+    if (result.success) {
+      toast.success(`Pass card emailed to ${reg.attendee_email}`);
+    } else {
+      toast.error("Pass card email failed", { description: result.error });
+    }
+  };
+
   const handleAddDelegationMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!delegationTarget || !newMemberData.attendee_name.trim()) return;
@@ -403,6 +443,7 @@ export function AdminRegistrationsPage() {
     toast.success("Exported registrations to CSV!");
   };
 
+  const pendingCount = registrations.filter((r) => r.state === "pending").length;
   const checkedInCount = registrations.filter((r) => r.state === "checked-in").length;
   const primaryCount = registrations.filter((r) => r.is_primary).length;
 
@@ -527,7 +568,8 @@ export function AdminRegistrationsPage() {
           <div className="flex rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
             {[
               { id: "all", label: "All" },
-              { id: "registered", label: "Registered" },
+              { id: "pending", label: "Pending approval" },
+              { id: "registered", label: "Approved" },
               { id: "checked-in", label: "Checked In" },
             ].map((tab) => (
               <button
@@ -644,6 +686,24 @@ export function AdminRegistrationsPage() {
                   </td>
                   <td className="px-5 py-4 text-right">
                     <div className="flex items-center justify-end gap-1">
+                      {r.state === "pending" && (
+                        <>
+                          <button
+                            onClick={() => handleApproval(r, true)}
+                            className="rounded-lg px-2 py-1 text-[11px] font-semibold text-emerald-600 hover:bg-emerald-500/10 transition-colors"
+                            title="Approve & email ITS pass card"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleApproval(r, false)}
+                            className="rounded-lg px-2 py-1 text-[11px] font-semibold text-destructive hover:bg-destructive/10 transition-colors"
+                            title="Reject request"
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
                       <button
                         onClick={() => setPreviewPass(r)}
                         className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
