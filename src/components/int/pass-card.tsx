@@ -1,11 +1,10 @@
-import { QrCode } from "./qr-code";
 import { CheckCircle2 } from "lucide-react";
 import type { IntEvent, Registration } from "@/lib/int-data";
 
 /**
  * Official ITS 2026 ticket-style attendance pass.
  * White card with a dotted brand pattern, big event title, the ITS
- * showcase logo, the QR payload and an orange access band at the bottom.
+ * showcase logo and an orange access band at the bottom.
  */
 export function PassCard({
   registration,
@@ -16,15 +15,6 @@ export function PassCard({
   event: IntEvent;
   compact?: boolean;
 }) {
-  const qrPayload = JSON.stringify({
-    t: registration.token,
-    a: registration.attendee,
-    e: event.title,
-    d: event.dateLabel,
-    tm: event.startTime,
-    c: registration.company,
-  });
-
   return (
     <div className="overflow-hidden rounded-xl border-2 border-muted-foreground/25 bg-white shadow-elevated">
       <div className="relative px-5 pb-6 pt-7 text-center sm:px-7">
@@ -52,10 +42,7 @@ export function PassCard({
             />
           </div>
 
-          <div className="mx-auto mt-6 w-fit rounded-xl border border-muted-foreground/20 bg-white p-3 shadow-sm">
-            <QrCode value={qrPayload} size={compact ? 128 : 172} />
-          </div>
-          <p className="mt-2 font-mono text-[11px] tracking-wider text-muted-foreground">
+          <p className="mt-5 font-mono text-[11px] tracking-wider text-muted-foreground">
             {registration.token}
           </p>
 
