@@ -426,6 +426,21 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Prefix (Title)">
+                        <select
+                          value={rep.prefix}
+                          onChange={(e) => handleRepPrefixChange(idx, e.target.value)}
+                          className={inputClass}
+                        >
+                          <option value="">No prefix</option>
+                          {PREFIXES.map((p) => (
+                            <option key={p} value={p}>
+                              {p}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+
                       <Field label="Full Name (as it should be on badge)" required>
                         <input
                           required
