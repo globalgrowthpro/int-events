@@ -647,7 +647,7 @@ export function AdminSlidersPage() {
                       {/* Pick from events dropdown */}
                       <div className="relative">
                         <select
-                          value={eventsList.some((e) => `/events/${e.id}` === formData.event_link) ? formData.event_link : ""}
+                          value={eventsList.some((e) => `/event/${e.id}` === formData.event_link) ? formData.event_link : ""}
                           onChange={(e) => {
                             if (e.target.value) setFormData({ ...formData, event_link: e.target.value });
                           }}
