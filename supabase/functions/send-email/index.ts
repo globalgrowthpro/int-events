@@ -7,7 +7,6 @@
 //   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM_EMAIL, SMTP_FROM_NAME
 
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
-import QRCode from "https://esm.sh/qrcode@1.5.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -109,27 +108,6 @@ Deno.serve(async (req: Request) => {
 
       const registerUrl = `${baseDomain}/events/${encodeURIComponent(eventId)}?token=${encodeURIComponent(token)}&email=${encodeURIComponent(to)}&name=${encodeURIComponent(recipientName)}#register`;
 
-      const qrDataUrl: string = await QRCode.toDataURL(
-        JSON.stringify({
-          pass_id: token,
-          attendee: recipientName,
-          company: payload.company || "",
-          event_id: eventId,
-          event_title: eventTitle,
-          auth: "INT_OFFICIAL_VERIFIED",
-          checkin_url: registerUrl,
-        }),
-        { width: 260, margin: 1, color: { dark: "#0F172A", light: "#FFFFFF" } },
-      );
-
-      attachments.push({
-        filename: "pass-qr.png",
-        content: qrDataUrl.split(",")[1] ?? "",
-        encoding: "base64",
-        contentType: "image/png",
-        contentID: "passqr",
-      });
-
       subject = `You're invited — ${eventTitle}`;
       html = shell(`
         <p style="margin:0 0 8px;color:${primaryColor};font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">Official Invitation</p>
@@ -143,7 +121,6 @@ Deno.serve(async (req: Request) => {
         <p style="margin:22px 0;text-align:center;">
           <a href="${registerUrl}" style="display:inline-block;padding:13px 26px;background:${primaryColor};color:#fff;border-radius:10px;font-weight:700;text-decoration:none;">${buttonText}</a>
         </p>
-        <p style="text-align:center;margin:0;"><img src="cid:passqr" alt="Invitation QR" width="180" height="180" style="border-radius:12px;background:#fff;padding:8px;" /></p>
         ${payload.custom_note ? `<p style="margin:18px 0 0;color:#94a3b8;">${payload.custom_note}</p>` : ""}`, template);
     }
 
@@ -156,28 +133,6 @@ Deno.serve(async (req: Request) => {
       const token = payload.token || `EVT-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
       const regId = payload.registration_id || token;
       const baseDomain = (payload.domain || "https://events.integratedtechnics.com").replace(/\/+$/, "");
-
-      const qrDataUrl: string = await QRCode.toDataURL(
-        JSON.stringify({
-          t: token,
-          a: recipientName,
-          e: eventTitle,
-          d: eventDate,
-          c: payload.company || "",
-          id: regId,
-          auth: "INT_OFFICIAL_VERIFIED",
-        }),
-        { width: 320, margin: 1, color: { dark: "#111111", light: "#FFFFFF" } },
-      );
-
-      attachments.length = 0;
-      attachments.push({
-        filename: "its-pass-qr.png",
-        content: qrDataUrl.split(",")[1] ?? "",
-        encoding: "base64",
-        contentType: "image/png",
-        contentID: "passqr",
-      });
 
       subject = `Approved — Your ITS 2026 Access Pass (${eventTitle})`;
       html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /></head>
@@ -192,8 +147,7 @@ Deno.serve(async (req: Request) => {
                 <img src="${baseDomain}/its-logo.png" alt="Integrated Technics Showcase" width="260" style="max-width:260px;height:auto;" />
               </td></tr>
               <tr><td style="padding:22px 26px 0;text-align:center;">
-                <img src="cid:passqr" alt="Access QR" width="200" height="200" style="border:1px solid #e2e8f0;border-radius:12px;background:#fff;padding:8px;" />
-                <p style="margin:8px 0 0;font-family:monospace;font-size:12px;color:#64748b;letter-spacing:1px;">${token}</p>
+                <p style="margin:0;font-family:monospace;font-size:12px;color:#64748b;letter-spacing:1px;">${token}</p>
               </td></tr>
               <tr><td style="padding:20px 26px 26px;">
                 <table role="presentation" width="100%" style="border-top:1px solid #e2e8f0;font-size:13px;color:#111;">
