@@ -238,12 +238,12 @@ export async function createRegistrationWithDelegates({
       user_id: userId || null,
       attendee_name: primaryAttendee.fullName,
       attendee_email: primaryAttendee.email.trim(),
-      gender: primaryAttendee.gender as any,
+      gender: (primaryAttendee.gender === "Female" ? "Female" : "Male") as any,
       phone: primaryAttendee.phone,
       company: primaryAttendee.company,
       job_title: primaryAttendee.jobTitle,
       ticket_token: primaryToken,
-      state: "pending" as const,
+      state: "registered" as const,
       is_primary: true,
       dates_attending: meta.datesAttending,
       sector: meta.sector,
@@ -258,12 +258,12 @@ export async function createRegistrationWithDelegates({
       user_id: userId || null,
       attendee_name: d.fullName,
       attendee_email: d.email.trim(),
-      gender: d.gender as any,
+      gender: (d.gender === "Female" ? "Female" : "Male") as any,
       phone: d.phone,
       company: primaryAttendee.company,
       job_title: "Representative",
       ticket_token: `EVT-2026-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-      state: "pending" as const,
+      state: "registered" as const,
       is_primary: false,
       delegation_leader_id: primaryId,
       dates_attending: meta.datesAttending,
@@ -1158,6 +1158,24 @@ export const DEFAULT_SLIDERS: SliderItem[] = [
     is_active: true,
   },
 ];
+
+export async function getActiveSliders(): Promise<SliderItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from("sliders")
+      .select("*")
+      .eq("is_active", true)
+      .order("order_index", { ascending: true })
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      return data as SliderItem[];
+    }
+  } catch (err) {
+    console.warn("getActiveSliders database fetch error:", err);
+  }
+  return [];
+}
 
 export async function getSliders(): Promise<SliderItem[]> {
   try {

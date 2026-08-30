@@ -363,16 +363,10 @@ function EmailTemplatesPage() {
                     <p style={{ margin: 0 }}><strong>Invitation code:</strong> EVT-INV-XXXXXX</p>
                   </div>
 
-                  <p style={{ margin: '22px 0', textAlign: 'center' }}>
+                  <p style={{ margin: '22px 0 0', textAlign: 'center' }}>
                     <a href="#" onClick={e => e.preventDefault()} style={{ display: 'inline-block', padding: '13px 26px', background: config.primaryColor, color: '#fff', borderRadius: '10px', fontWeight: 700, textDecoration: 'none' }}>
                       {config.buttonText}
                     </a>
-                  </p>
-
-                  <p style={{ textAlign: 'center', margin: 0 }}>
-                    <div style={{ width: 180, height: 180, background: '#fff', margin: '0 auto', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: 12, border: '8px solid #fff' }}>
-                      [QR CODE]
-                    </div>
                   </p>
                 </div>
 

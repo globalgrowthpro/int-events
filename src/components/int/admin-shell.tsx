@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Shield,
   Sparkles,
+  CreditCard,
 } from "lucide-react";
 import { IntLogo } from "./logo";
 import { NotificationBell } from "./notification-bell";
@@ -49,6 +50,7 @@ const nav = [
   { to: "/admin/accounts", label: "Accounts", icon: UserCog },
   { to: "/admin/invitations", label: "Invitations & Badges", icon: Mail },
   { to: "/admin/registrations", label: "Registrations", icon: FileText },
+  { to: "/admin/pass-cards", label: "Pass Cards", icon: CreditCard },
   { to: "/admin/attendance", label: "Attendance", icon: CheckSquare },
   { to: "/admin/scanner", label: "Scanner", icon: ScanLine },
   { to: "/admin/chat", label: "Chat Support", icon: MessageSquare },
@@ -142,7 +144,7 @@ export function AdminShell({
       <div className={isFullWidth ? "lg:pl-64 flex flex-col flex-1 h-full min-h-0 overflow-hidden" : "lg:pl-64"}>
         {/* Top Header Bar */}
         <header className="sticky top-0 z-30 shrink-0 border-b border-border bg-card/95 backdrop-blur">
-          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-1.5 px-3 sm:gap-3 sm:px-6">
+          <div className="flex h-16 w-full items-center justify-between gap-1.5 px-4 sm:gap-3 sm:px-6">
             <div className="flex shrink-0 items-center gap-2 sm:gap-4">
               {/* Mobile Hamburger Menu Toggle */}
               <button
@@ -228,7 +230,7 @@ export function AdminShell({
           ))}
         </div>
 
-        <main className={isFullWidth ? "flex-1 min-h-0 w-full overflow-hidden p-0 flex flex-col" : "mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8 md:px-8"}>
+        <main className={isFullWidth ? "flex-1 min-h-0 w-full overflow-hidden p-0 flex flex-col" : "w-full p-4 sm:p-6"}>
           {children}
         </main>
       </div>

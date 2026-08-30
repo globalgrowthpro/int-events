@@ -456,6 +456,153 @@ function smtpServerPlugin(): Plugin {
           return;
         }
 
+        if (req.method === "POST" && req.url === "/api/send-pass") {
+          let body = "";
+          req.on("data", (chunk) => (body += chunk));
+          req.on("end", async () => {
+            try {
+              const data = JSON.parse(body || "{}");
+              const host = data.host || SMTP.host;
+              const port = Number(data.port) || SMTP.port;
+              const user = data.username || SMTP.user;
+              const pass = data.password || SMTP.pass;
+              const fromEmail = data.from_email || SMTP.fromEmail || user;
+              const fromName = data.from_name || SMTP.fromName;
+              const recipientName = data.recipient_name || "Valued Guest";
+              const recipientEmail = data.recipient_email;
+
+              if (!host || !user || !pass) {
+                res.setHeader("Content-Type", "application/json");
+                res.statusCode = 500;
+                res.end(JSON.stringify({ success: false, error: smtpConfigError }));
+                return;
+              }
+
+              if (!recipientEmail) {
+                res.setHeader("Content-Type", "application/json");
+                res.statusCode = 400;
+                res.end(JSON.stringify({ success: false, error: "Missing recipient email" }));
+                return;
+              }
+
+              const eventTitle = data.event_title || "Integrated Technics Showcase 2026";
+              const token = data.token || `EVT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+              const jobTitle = data.job_title || "Participant";
+              const company = data.company || "Integrated Technics";
+              const passImageBase64 = data.pass_image_base64;
+
+              const transporter = nodemailer.createTransport({
+                host,
+                port,
+                secure: port === 465,
+                auth: { user, pass },
+                tls: { rejectUnauthorized: false },
+              });
+
+              const attachments: any[] = [];
+              const safeName = recipientName.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+              if (passImageBase64 && passImageBase64.startsWith("data:image")) {
+                const base64Data = passImageBase64.replace(/^data:image\/\w+;base64,/, "");
+                attachments.push({
+                  filename: `${safeName}_ITS2026_Pass.png`,
+                  content: Buffer.from(base64Data, "base64"),
+                });
+              }
+
+              const domain = data.domain || "https://event.integratedtechnics.com";
+              const logoPath = path.resolve("public/its-logo.png");
+              if (fs.existsSync(logoPath)) {
+                attachments.push({
+                  filename: "its-logo.png",
+                  path: logoPath,
+                  cid: "itslogo",
+                });
+              }
+
+              const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /></head>
+              <body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:32px 12px;background:#f1f5f9;">
+                  <tr><td align="center">
+                    <!-- PASS CARD CONTAINER -->
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:360px;background:#ffffff;border:2px solid #cbd5e1;border-radius:20px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,0.12);text-align:center;">
+                      
+                      <!-- TOP HEADER -->
+                      <tr>
+                        <td style="padding:28px 20px 14px;background:#ffffff;text-align:center;">
+                          <h1 style="margin:0;font-size:19px;font-weight:900;color:#000000;text-transform:uppercase;letter-spacing:-0.4px;line-height:1.2;font-family:Arial,Helvetica,sans-serif;">
+                            INTEGRATED TECHNICS<br/>SHOWCASE 2026
+                          </h1>
+                        </td>
+                      </tr>
+
+                      <!-- CENTER ATTENDEE INFO -->
+                      <tr>
+                        <td style="padding:20px 20px 22px;background:#ffffff;text-align:center;">
+                          <h2 style="margin:0 0 6px;font-size:22px;font-weight:900;color:#111111;text-transform:uppercase;letter-spacing:-0.3px;line-height:1.2;font-family:Arial,Helvetica,sans-serif;">
+                            ${recipientName}
+                          </h2>
+                          <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#555555;text-transform:capitalize;line-height:1.2;font-family:Arial,Helvetica,sans-serif;">
+                            ${jobTitle}
+                          </p>
+                          <p style="margin:0;font-size:14px;font-weight:900;color:#f37021;text-transform:uppercase;letter-spacing:0.8px;line-height:1.2;font-family:Arial,Helvetica,sans-serif;">
+                            ${company}
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- ITS SHOWCASE LOGO -->
+                      <tr>
+                        <td style="padding:10px 20px 24px;background:#ffffff;text-align:center;">
+                          <img src="cid:itslogo" alt="ITS Integrated Technics Showcase" width="160" style="display:inline-block;max-width:160px;height:auto;border:0;" />
+                        </td>
+                      </tr>
+
+                      <!-- ORANGE FOOTER BAND -->
+                      <tr>
+                        <td style="background:#f37021;padding:16px 20px;text-align:center;">
+                          <p style="margin:0;font-style:italic;font-size:13px;font-weight:700;line-height:1.4;color:#ffffff;font-family:Georgia,serif,Arial;">
+                            Integrated Technics Showcase Event<br/>ITS 2026<br/>Full Access Ticket
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- TOKEN & INSTRUCTIONS BELOW CARD -->
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:360px;margin-top:16px;text-align:center;">
+                      <tr><td style="padding:8px;font-size:12px;color:#64748b;">
+                        Ticket Token: <strong style="font-family:monospace;color:#1e293b;font-size:13px;">${token}</strong>
+                      </td></tr>
+                      <tr><td style="padding:4px;font-size:11px;color:#94a3b8;">
+                        Integrated Technics &bull; &lt;/&gt; Developed by Mr. Hafez Rahim
+                      </td></tr>
+                    </table>
+
+                  </td></tr>
+                </table>
+              </body></html>`;
+
+              const info = await transporter.sendMail({
+                from: `"${fromName}" <${fromEmail}>`,
+                to: recipientEmail,
+                subject: `Official Access Pass — ${recipientName} (${eventTitle})`,
+                html,
+                attachments,
+              });
+
+              res.setHeader("Content-Type", "application/json");
+              res.statusCode = 200;
+              res.end(JSON.stringify({ success: true, messageId: info.messageId, accepted: info.accepted }));
+            } catch (err: any) {
+              console.error("Pass Email Error:", err);
+              res.setHeader("Content-Type", "application/json");
+              res.statusCode = 500;
+              res.end(JSON.stringify({ success: false, error: err?.message || "Failed to send pass email" }));
+            }
+          });
+          return;
+        }
+
         next();
       });
     },

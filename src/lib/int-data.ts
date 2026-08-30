@@ -248,11 +248,13 @@ export interface Registration {
   id: string;
   eventId: string;
   attendee: string;
+  gender?: string | null | undefined;
+  jobTitle?: string | null | undefined;
   company: string;
   role: AccountRole;
   token: string;
   state: "registered" | "checked-in" | "cancelled";
-  checkInTime?: string;
+  checkInTime?: string | undefined;
 }
 
 export const currentUser = {
@@ -260,6 +262,7 @@ export const currentUser = {
   company: "ABC Corporation",
   role: "client" as AccountRole,
   email: "ahmed.mohamed@abccorp.com",
+  gender: "Male",
   initials: "AM",
 };
 
@@ -268,6 +271,7 @@ export const myRegistrations: Registration[] = [
     id: "INT-EVT-000248",
     eventId: "security-summit-2026",
     attendee: currentUser.name,
+    gender: currentUser.gender,
     company: currentUser.company,
     role: "client",
     token: "EVT-2026-000248-X7K92",
@@ -277,6 +281,7 @@ export const myRegistrations: Registration[] = [
     id: "INT-EVT-000312",
     eventId: "technology-forum-2026",
     attendee: currentUser.name,
+    gender: currentUser.gender,
     company: currentUser.company,
     role: "client",
     token: "EVT-2026-000312-M4P18",

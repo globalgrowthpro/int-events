@@ -45,8 +45,8 @@ type SendResult = {
  * to the `send-email` Supabase Edge Function which runs in production.
  */
 async function dispatch(
-  endpoint: "/api/test-smtp" | "/api/send-invitation",
-  kind: "test" | "invitation",
+  endpoint: "/api/test-smtp" | "/api/send-invitation" | "/api/send-pass",
+  kind: "test" | "invitation" | "pass",
   payload: Record<string, unknown>,
 ): Promise<SendResult> {
   // 1) Local dev server middleware (only available on localhost).
@@ -106,29 +106,52 @@ export interface PassEmailPayload {
   job_title?: string | null | undefined;
   registration_id: string;
   token: string;
+  pass_image_base64?: string | undefined;
   domain?: string | undefined;
+  host?: string | undefined;
+  port?: number | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  from_name?: string | undefined;
+  from_email?: string | undefined;
 }
 
 /**
  * Approved-registration pass card email.
- * Goes straight to the Supabase Edge Function so it works identically on
- * localhost and on the deployed host.
+ * Uses local dev server SMTP middleware on localhost, falls back to
+ * the Supabase Edge Function on deployed production host.
  */
 export async function sendPassCardEmail(payload: PassEmailPayload): Promise<SendResult> {
+  let smtpConfig: any = null;
   try {
-    const { data, error } = await supabase.functions.invoke("send-email", {
-      body: {
-        kind: "pass",
-        domain: typeof window !== "undefined" ? window.location.origin : undefined,
-        ...payload,
-      },
-    });
-    if (error) return { success: false, error: error.message || "Email service unavailable" };
-    if (data?.success === false) return { success: false, error: data.error || "SMTP transmission error" };
-    return { success: true, messageId: data?.messageId };
-  } catch (err) {
-    return { success: false, error: (err as Error)?.message || "Email service unreachable" };
+    const { data } = await supabase
+      .from("smtp_settings")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+    if (data) {
+      smtpConfig = data;
+    }
+  } catch {
+    /* ignore */
   }
+
+  const finalPayload = {
+    domain: typeof window !== "undefined" ? window.location.origin : undefined,
+    host: payload.host || smtpConfig?.host,
+    port: payload.port || smtpConfig?.port,
+    username: payload.username || smtpConfig?.username,
+    password: payload.password || smtpConfig?.password_encrypted || smtpConfig?.password,
+    from_name: payload.from_name || smtpConfig?.from_name,
+    from_email: payload.from_email || smtpConfig?.from_email,
+    ...payload,
+  };
+
+  return dispatch(
+    "/api/send-pass",
+    "pass",
+    finalPayload as unknown as Record<string, unknown>,
+  );
 }
 
 export async function sendLiveTestEmail(payload: SmtpTestPayload): Promise<SendResult> {

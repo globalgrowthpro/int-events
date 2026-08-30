@@ -14,7 +14,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-            {user ? (
+            {user && (
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   onClick={signOut}
@@ -27,21 +27,6 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                   className="rounded-lg bg-primary px-2.5 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-tech whitespace-nowrap"
                 >
                   {user.role === "admin" ? "Admin" : "Dashboard"}
-                </Link>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <Link
-                  to="/login"
-                  className="rounded-lg border border-border px-2.5 sm:px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground transition-colors hover:bg-secondary"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  to="/register"
-                  className="rounded-lg bg-primary px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-tech whitespace-nowrap"
-                >
-                  Register
                 </Link>
               </div>
             )}

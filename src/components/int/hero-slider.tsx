@@ -1,29 +1,29 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Calendar, ArrowRight, Sparkles } from "lucide-react";
-import { getSliders, type SliderItem, DEFAULT_SLIDERS } from "@/lib/api";
+import { ChevronLeft, ChevronRight, ArrowRight, Sparkles } from "lucide-react";
+import { getActiveSliders, type SliderItem } from "@/lib/api";
 
-export function HeroSlider({ fallbackSliders = DEFAULT_SLIDERS }: { fallbackSliders?: SliderItem[] }) {
-  const [slides, setSlides] = useState<SliderItem[]>(fallbackSliders);
+export function HeroSlider() {
+  const [slides, setSlides] = useState<SliderItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
 
-  // Fetch active sliders from database
+  // Fetch only active, live sliders from Supabase database
   useEffect(() => {
     let active = true;
-    getSliders()
+    getActiveSliders()
       .then((data) => {
         if (active) {
-          const activeOnly = data.filter((s) => s.is_active);
-          if (activeOnly.length > 0) {
-            setSlides(activeOnly);
-          }
+          setSlides(data);
+          setLoading(false);
         }
       })
       .catch((err) => {
-        console.warn("HeroSlider fetch failed, using fallback:", err);
+        console.warn("HeroSlider fetch error:", err);
+        if (active) setLoading(false);
       });
     return () => {
       active = false;
@@ -150,10 +150,10 @@ export function HeroSlider({ fallbackSliders = DEFAULT_SLIDERS }: { fallbackSlid
             )}
 
             <Link
-              to="/register"
-              className="inline-flex h-11 items-center rounded-xl border border-navy-foreground/25 bg-navy-foreground/5 px-6 text-sm font-bold text-navy-foreground backdrop-blur-xs transition-colors hover:bg-navy-foreground/15"
+              to="/events"
+              className="inline-flex h-11 items-center rounded-xl border border-white/25 bg-white/10 px-6 text-sm font-bold text-white backdrop-blur-xs transition-colors hover:bg-white/20"
             >
-              Get Digital Pass
+              All Events
             </Link>
           </div>
         </div>

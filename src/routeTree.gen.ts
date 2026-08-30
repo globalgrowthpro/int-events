@@ -30,6 +30,7 @@ import { Route as AdminEventsRouteImport } from './routes/admin.events'
 import { Route as AdminGalleryRouteImport } from './routes/admin.gallery'
 import { Route as AdminInvitationsRouteImport } from './routes/admin.invitations'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminPassCardsRouteImport } from './routes/admin.pass-cards'
 import { Route as AdminRegistrationsRouteImport } from './routes/admin.registrations'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminScannerRouteImport } from './routes/admin.scanner'
@@ -145,6 +146,11 @@ const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPassCardsRoute = AdminPassCardsRouteImport.update({
+  id: '/pass-cards',
+  path: '/pass-cards',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminRegistrationsRoute = AdminRegistrationsRouteImport.update({
   id: '/registrations',
   path: '/registrations',
@@ -212,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/pass-cards': typeof AdminPassCardsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scanner': typeof AdminScannerRoute
@@ -243,6 +250,7 @@ export interface FileRoutesByTo {
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/pass-cards': typeof AdminPassCardsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scanner': typeof AdminScannerRoute
@@ -276,6 +284,7 @@ export interface FileRoutesById {
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/pass-cards': typeof AdminPassCardsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scanner': typeof AdminScannerRoute
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/admin/gallery'
     | '/admin/invitations'
     | '/admin/notifications'
+    | '/admin/pass-cards'
     | '/admin/registrations'
     | '/admin/reports'
     | '/admin/scanner'
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/admin/gallery'
     | '/admin/invitations'
     | '/admin/notifications'
+    | '/admin/pass-cards'
     | '/admin/registrations'
     | '/admin/reports'
     | '/admin/scanner'
@@ -373,6 +384,7 @@ export interface FileRouteTypes {
     | '/admin/gallery'
     | '/admin/invitations'
     | '/admin/notifications'
+    | '/admin/pass-cards'
     | '/admin/registrations'
     | '/admin/reports'
     | '/admin/scanner'
@@ -550,6 +562,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminNotificationsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/pass-cards': {
+      id: '/admin/pass-cards'
+      path: '/pass-cards'
+      fullPath: '/admin/pass-cards'
+      preLoaderRoute: typeof AdminPassCardsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/registrations': {
       id: '/admin/registrations'
       path: '/registrations'
@@ -627,6 +646,7 @@ interface AdminRouteChildren {
   AdminGalleryRoute: typeof AdminGalleryRoute
   AdminInvitationsRoute: typeof AdminInvitationsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
+  AdminPassCardsRoute: typeof AdminPassCardsRoute
   AdminRegistrationsRoute: typeof AdminRegistrationsRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminScannerRoute: typeof AdminScannerRoute
@@ -647,6 +667,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminGalleryRoute: AdminGalleryRoute,
   AdminInvitationsRoute: AdminInvitationsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
+  AdminPassCardsRoute: AdminPassCardsRoute,
   AdminRegistrationsRoute: AdminRegistrationsRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminScannerRoute: AdminScannerRoute,

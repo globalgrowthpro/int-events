@@ -10,7 +10,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+// Set to true to re-enable PWA install banners and buttons
+export const ENABLE_PWA = false;
+
 export function PWAInstallPrompt() {
+  if (!ENABLE_PWA) {
+    return null;
+  }
+
   const {
     isInstallable,
     isInstalled,
@@ -231,6 +238,10 @@ export function PWAInstallButton({
   className?: string;
   showText?: boolean;
 }) {
+  if (!ENABLE_PWA) {
+    return null;
+  }
+
   const { isInstallable, isInstalled, isIOS, canPromptDirectly, promptInstall } = usePwaInstall();
   const [showIosGuide, setShowIosGuide] = useState(false);
 
