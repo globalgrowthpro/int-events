@@ -647,7 +647,7 @@ export function AdminSlidersPage() {
                       {/* Pick from events dropdown */}
                       <div className="relative">
                         <select
-                          value={eventsList.some((e) => `/events/${e.id}` === formData.event_link) ? formData.event_link : ""}
+                          value={eventsList.some((e) => `/event/${e.id}` === formData.event_link) ? formData.event_link : ""}
                           onChange={(e) => {
                             if (e.target.value) setFormData({ ...formData, event_link: e.target.value });
                           }}
@@ -655,7 +655,7 @@ export function AdminSlidersPage() {
                         >
                           <option value="">🔗 Select from existing events...</option>
                           {eventsList.map((ev) => (
-                            <option key={ev.id} value={`/events/${ev.id}`}>
+                            <option key={ev.id} value={`/event/${ev.id}`}>
                               {ev.title} ({ev.city})
                             </option>
                           ))}
@@ -668,7 +668,7 @@ export function AdminSlidersPage() {
                           type="text"
                           value={formData.event_link}
                           onChange={(e) => setFormData({ ...formData, event_link: e.target.value })}
-                          placeholder="Or type custom path e.g. /events/security-summit-2026"
+                          placeholder="Or type custom path e.g. /event/security-summit-2026"
                           className="h-9 w-full rounded-xl border border-input bg-secondary/20 px-3 text-xs text-foreground outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/60"
                         />
                       </div>

@@ -133,7 +133,7 @@ VALUES
     'INT Security Technology Summit 2026',
     'Cairo, Egypt · September 15, 2026',
     'Join industry leaders, enterprise CTOs, and global tech partners at Egypt''s flagship summit on unified surveillance and smart security infrastructure.',
-    '/events/security-summit-2026',
+    '/event/security-summit-2026',
     1,
     TRUE
   ),
@@ -142,7 +142,7 @@ VALUES
     'INT Technology & ICT Forum',
     'Cairo, Egypt · October 20, 2026',
     'Interactive keynote panels, data center modernisation workshops, and live demonstrations of enterprise infrastructure.',
-    '/events/technology-forum-2026',
+    '/event/technology-forum-2026',
     2,
     TRUE
   ),
@@ -151,7 +151,7 @@ VALUES
     'INT Partner & Sponsor Day',
     'Alexandria, Egypt · November 10, 2026',
     'Exclusive gathering exploring go-to-market strategies, technological roadmaps, and high-level enterprise networking.',
-    '/events/partner-day-2026',
+    '/event/partner-day-2026',
     3,
     TRUE
   )

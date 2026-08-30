@@ -4,7 +4,13 @@ import type { IntEvent } from "@/lib/int-data";
 import { StatusBadge } from "./status-badge";
 import { Countdown, parseEventStart } from "./countdown";
 
-export function EventCard({ event }: { event: IntEvent }) {
+export function EventCard({
+  event,
+  detailsTo = "/events/$eventId",
+}: {
+  event: IntEvent;
+  detailsTo?: "/events/$eventId" | "/event/$eventId";
+}) {
   const seatsLeft = event.capacity - event.registered;
   const isUpcoming = event.status !== "completed" && event.status !== "cancelled";
   return (
@@ -54,7 +60,7 @@ export function EventCard({ event }: { event: IntEvent }) {
       </div>
       <div className="px-5 pb-5 pt-0">
         <Link
-          to="/events/$eventId"
+          to={detailsTo}
           params={{ eventId: event.id }}
           className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
         >

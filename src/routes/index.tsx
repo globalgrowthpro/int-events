@@ -125,7 +125,7 @@ function Landing() {
             .filter((e) => e.status !== "completed")
             .slice(0, 3)
             .map((event) => (
-              <EventCard key={event.id} event={event} />
+              <EventCard key={event.id} event={event} detailsTo="/event/$eventId" />
             ))}
         </div>
       </section>
