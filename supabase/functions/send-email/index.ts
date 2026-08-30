@@ -146,27 +146,123 @@ Deno.serve(async (req: Request) => {
         ${payload.custom_note ? `<p style="margin:18px 0 0;color:#94a3b8;">${payload.custom_note}</p>` : ""}`, template);
     }
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: host,
-        port,
-        tls: port === 465,
-        auth: { username, password },
-      },
-    });
+    // ---- Approved registration → official ITS pass card ----
+    if (kind === "pass") {
+      const recipientName = payload.recipient_name || "Valued Guest";
+      const eventTitle = payload.event_title || "Integrated Technics Showcase 2026";
+      const eventDate = payload.event_date || "";
+      const eventLocation = payload.event_location || "";
+      const token = payload.token || `EVT-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+      const regId = payload.registration_id || token;
+      const baseDomain = (payload.domain || "https://events.integratedtechnics.com").replace(/\/+$/, "");
 
-    await client.send({
-      from: `${fromName} <${fromEmail}>`,
+      const qrDataUrl: string = await QRCode.toDataURL(
+        JSON.stringify({
+          t: token,
+          a: recipientName,
+          e: eventTitle,
+          d: eventDate,
+          c: payload.company || "",
+          id: regId,
+          auth: "INT_OFFICIAL_VERIFIED",
+        }),
+        { width: 320, margin: 1, color: { dark: "#111111", light: "#FFFFFF" } },
+      );
+
+      attachments.length = 0;
+      attachments.push({
+        filename: "its-pass-qr.png",
+        content: qrDataUrl.split(",")[1] ?? "",
+        encoding: "base64",
+        contentType: "image/png",
+        contentID: "passqr",
+      });
+
+      subject = `Approved — Your ITS 2026 Access Pass (${eventTitle})`;
+      html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /></head>
+      <body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:28px 12px;">
+          <tr><td align="center">
+            <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border:2px solid #cbd5e1;border-radius:14px;overflow:hidden;">
+              <tr><td style="padding:28px 26px 8px;text-align:center;">
+                <h1 style="margin:0;color:#111;font-size:26px;font-weight:900;text-transform:uppercase;line-height:1.2;">${eventTitle}</h1>
+              </td></tr>
+              <tr><td style="padding:18px 26px 0;text-align:center;">
+                <img src="${baseDomain}/its-logo.png" alt="Integrated Technics Showcase" width="260" style="max-width:260px;height:auto;" />
+              </td></tr>
+              <tr><td style="padding:22px 26px 0;text-align:center;">
+                <img src="cid:passqr" alt="Access QR" width="200" height="200" style="border:1px solid #e2e8f0;border-radius:12px;background:#fff;padding:8px;" />
+                <p style="margin:8px 0 0;font-family:monospace;font-size:12px;color:#64748b;letter-spacing:1px;">${token}</p>
+              </td></tr>
+              <tr><td style="padding:20px 26px 26px;">
+                <table role="presentation" width="100%" style="border-top:1px solid #e2e8f0;font-size:13px;color:#111;">
+                  <tr><td style="padding:10px 0;"><strong>Attendee</strong></td><td style="padding:10px 0;text-align:right;">${recipientName}</td></tr>
+                  <tr><td style="padding:10px 0;"><strong>Company</strong></td><td style="padding:10px 0;text-align:right;">${payload.company || "—"}</td></tr>
+                  <tr><td style="padding:10px 0;"><strong>Registration ID</strong></td><td style="padding:10px 0;text-align:right;">${regId}</td></tr>
+                  ${eventDate ? `<tr><td style="padding:10px 0;"><strong>Date</strong></td><td style="padding:10px 0;text-align:right;">${eventDate}</td></tr>` : ""}
+                  ${eventLocation ? `<tr><td style="padding:10px 0;"><strong>Venue</strong></td><td style="padding:10px 0;text-align:right;">${eventLocation}</td></tr>` : ""}
+                </table>
+                <p style="margin:16px 0 0;font-size:13px;color:#475569;">Your registration has been <strong style="color:#16a34a;">approved</strong>. Present this QR code at the entrance for instant check-in.</p>
+              </td></tr>
+              <tr><td style="background:#f37021;padding:18px 26px;text-align:center;color:#fff;font-style:italic;font-size:15px;line-height:1.5;">
+                Integrated Technics Showcase Event<br/>ITS 2026<br/>Full Access Ticket
+              </td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </body></html>`;
+    }
+
+    // ---- Delivery: correct sender alignment + TLS/STARTTLS fallback ----
+    const userDomain = username.includes("@") ? username.split("@")[1] : "";
+    const fromDomain = fromEmail.includes("@") ? fromEmail.split("@")[1] : "";
+    // Most shared SMTP relays reject a From header that does not belong to the
+    // authenticated mailbox — that is the usual cause of "works for our domain
+    // but not for gmail/outlook recipients".
+    const safeFrom = userDomain && fromDomain && userDomain !== fromDomain ? username : fromEmail;
+
+    const message = {
+      from: `${fromName} <${safeFrom}>`,
       to,
+      replyTo: fromEmail,
       subject,
       content: "This message requires an HTML capable email client.",
       html,
       attachments,
-    });
-    await client.close();
+      headers: {
+        "X-Mailer": "INT-Events-Platform",
+        "X-Entity-Ref-ID": `INT-${Date.now()}`,
+      },
+    };
 
-    return json({ success: true, messageId: `INT-${Date.now()}` });
+    const attempts: Array<{ port: number; tls: boolean }> = [
+      { port, tls: port === 465 },
+      // Fallback to the other standard submission path.
+      port === 465 ? { port: 587, tls: false } : { port: 465, tls: true },
+    ];
+
+    let lastError = "";
+    for (const attempt of attempts) {
+      try {
+        const client = new SMTPClient({
+          connection: {
+            hostname: host,
+            port: attempt.port,
+            tls: attempt.tls,
+            auth: { username, password },
+          },
+        });
+        await client.send(message);
+        await client.close();
+        return json({ success: true, messageId: `INT-${Date.now()}`, port: attempt.port });
+      } catch (err) {
+        lastError = (err as Error)?.message || "SMTP transmission error";
+      }
+    }
+
+    return json({ success: false, error: lastError || "SMTP transmission error" }, 500);
   } catch (err) {
     return json({ success: false, error: (err as Error)?.message || "SMTP transmission error" }, 500);
   }
 });
+
