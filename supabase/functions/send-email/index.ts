@@ -157,7 +157,7 @@ Deno.serve(async (req: Request) => {
                   ${eventDate ? `<tr><td style="padding:10px 0;"><strong>Date</strong></td><td style="padding:10px 0;text-align:right;">${eventDate}</td></tr>` : ""}
                   ${eventLocation ? `<tr><td style="padding:10px 0;"><strong>Venue</strong></td><td style="padding:10px 0;text-align:right;">${eventLocation}</td></tr>` : ""}
                 </table>
-                <p style="margin:16px 0 0;font-size:13px;color:#475569;">Your registration has been <strong style="color:#16a34a;">approved</strong>. Present this QR code at the entrance for instant check-in.</p>
+                <p style="margin:16px 0 0;font-size:13px;color:#475569;">Your registration has been <strong style="color:#16a34a;">approved</strong>. Present this pass at the entrance for instant check-in.</p>
               </td></tr>
               <tr><td style="background:#f37021;padding:18px 26px;text-align:center;color:#fff;font-style:italic;font-size:15px;line-height:1.5;">
                 Integrated Technics Showcase Event<br/>ITS 2026<br/>Full Access Ticket
