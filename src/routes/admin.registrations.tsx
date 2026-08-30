@@ -502,6 +502,18 @@ export function AdminRegistrationsPage() {
           <p className="mt-0.5 text-xs text-muted-foreground">All active event passes</p>
         </div>
 
+        <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-card to-card p-5 shadow-card">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              Pending Approval
+            </span>
+            <UserCheck className="h-5 w-5 text-amber-600" />
+          </div>
+          <div className="mt-2 text-3xl font-extrabold text-foreground">{pendingCount}</div>
+          <p className="mt-0.5 text-xs text-muted-foreground">Awaiting admin review</p>
+        </div>
+
+
         <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-card to-card p-5 shadow-card">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
