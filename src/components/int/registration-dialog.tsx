@@ -82,7 +82,7 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
     setReps((prev) => {
       const next = [...prev];
       while (next.length < additionalNeeded) {
-        next.push({ fullName: "", gender: "Male", email: "", mobile: "" });
+        next.push({ prefix: "", fullName: "", gender: "Male", email: "", mobile: "" });
       }
       return next.slice(0, additionalNeeded);
     });
