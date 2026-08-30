@@ -1,10 +1,10 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { PortalShell } from "@/components/int/portal-shell";
+import { SiteShell } from "@/components/int/site-shell";
 import { EventDetailContent } from "@/components/int/event-detail";
 import { getEvent } from "@/lib/int-data";
 import { getEventById } from "@/lib/api";
 
-export const Route = createFileRoute("/events/$eventId")({
+export const Route = createFileRoute("/event/$eventId")({
   loader: async ({ params }) => {
     try {
       const realEvent = await getEventById(params.eventId);
@@ -31,16 +31,16 @@ export const Route = createFileRoute("/events/$eventId")({
       ],
     };
   },
-  component: EventDetail,
+  component: PublicEventDetail,
 });
 
-function EventDetail() {
+function PublicEventDetail() {
   const { event } = Route.useLoaderData();
   const { eventId } = Route.useParams();
 
   return (
-    <PortalShell allowGuest>
-      <EventDetailContent event={event} eventId={eventId} backTo="/events" backLabel="Back to all events" />
-    </PortalShell>
+    <SiteShell>
+      <EventDetailContent event={event} eventId={eventId} backTo="/" backLabel="Back to home" />
+    </SiteShell>
   );
 }
