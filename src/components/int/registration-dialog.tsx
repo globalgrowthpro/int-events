@@ -204,8 +204,8 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
       return;
     }
 
-    toast.success("Registration confirmed!", {
-      description: `${repCount} ticket(s) reserved for ${event.title}. Passes are ready in My Passes.`,
+    toast.success("Request submitted — pending approval", {
+      description: `${repCount} request(s) for ${event.title} were sent to the organizers. Once approved, your ITS pass card will be emailed to you.`,
     });
     onClose();
   };
