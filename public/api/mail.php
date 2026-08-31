@@ -45,17 +45,80 @@ if (empty($to)) {
 }
 
 $requestUri = $_SERVER["REQUEST_URI"] ?? "";
-$kind = $data["kind"] ?? "invitation";
-if (strpos($requestUri, "test-smtp") !== false) {
-    $kind = "test";
-} elseif (strpos($requestUri, "send-pass") !== false) {
-    $kind = "pass";
+$redirectUrl = $_SERVER["REDIRECT_URL"] ?? "";
+
+$kind = !empty($data["kind"]) ? $data["kind"] : (!empty($data["type"]) ? $data["type"] : "");
+
+if (empty($kind)) {
+    if (strpos($requestUri, "send-confirmation") !== false || strpos($redirectUrl, "send-confirmation") !== false) {
+        $kind = "confirmation";
+    } elseif (strpos($requestUri, "test-smtp") !== false || strpos($redirectUrl, "test-smtp") !== false) {
+        $kind = "test";
+    } elseif (strpos($requestUri, "send-pass") !== false || strpos($redirectUrl, "send-pass") !== false) {
+        $kind = "pass";
+    } else {
+        $kind = "invitation";
+    }
 }
 
 $subject = "";
 $html = "";
 
-if ($kind === "test") {
+if ($kind === "confirmation") {
+    $recipientName = !empty($data["recipient_name"]) ? htmlspecialchars($data["recipient_name"]) : "Valued Guest";
+    $eventTitle = !empty($data["event_title"]) ? htmlspecialchars($data["event_title"]) : "Integrated Technics Event";
+
+    $subject = "Registration Received — {$eventTitle}";
+
+    $html = <<<HTML
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{$subject}</title></head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 36px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" style="max-width: 580px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);">
+        <tr>
+          <td style="padding: 28px 32px; background: #ffffff; border-bottom: 1px solid #f1f5f9;">
+            <table width="100%" cellspacing="0" cellpadding="0">
+              <tr>
+                <td width="48" style="vertical-align: middle;">
+                  <div style="width: 44px; height: 44px; background: #ea580c; border-radius: 10px; text-align: center; line-height: 44px; color: #ffffff; font-weight: 800; font-size: 16px; letter-spacing: 0.5px;">INT</div>
+                </td>
+                <td style="padding-left: 14px; vertical-align: middle;">
+                  <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800; letter-spacing: -0.2px;">Integrated Technics</h2>
+                  <p style="margin: 2px 0 0 0; color: #ea580c; font-size: 12px; font-weight: 600;">التقنيات المتكاملة &bull; Events Gateway</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 32px 32px 24px; color: #334155; font-size: 15px; line-height: 1.6;">
+            <p style="margin: 0 0 16px 0; font-size: 17px; font-weight: 700; color: #0f172a;">Dear {$recipientName},</p>
+            <p style="margin: 0 0 18px 0; color: #334155; font-size: 15px; line-height: 1.6;">
+              Your registration for <strong style="color: #ea580c;">{$eventTitle}</strong> has been successfully sent, and kindly request to wait for your Badge.
+            </p>
+            <div style="margin: 24px 0 20px; padding: 18px 20px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; border-left: 4px solid #ea580c;">
+              <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #ea580c;">For more info:</p>
+              <p style="margin: 0 0 6px 0; font-size: 14px; color: #0f172a; font-weight: 600;">
+                📞 <a href="tel:+201096626971" style="color: #0f172a; text-decoration: none;">+201096626971</a>
+              </p>
+              <p style="margin: 0; font-size: 14px; color: #ea580c; font-weight: 600;">
+                ✉️ <a href="mailto:Event@integratedtechnics.com" style="color: #ea580c; text-decoration: none;">Event@integratedtechnics.com</a>
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 18px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; color: #64748b; font-size: 12px; text-align: center;">
+            Integrated Technics Events &bull; Official Registration Confirmation
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>
+HTML;
+} elseif ($kind === "test") {
     $subject = "INT Events Platform — SMTP Handshake & Delivery Test";
     $html = <<<HTML
 <!DOCTYPE html>
@@ -215,79 +278,127 @@ HTML;
 HTML;
 }
 
-// Function to send via SMTP socket
-function sendSmtpSocket($host, $port, $username, $password, $fromEmail, $fromName, $to, $subject, $html) {
-    $timeout = 15;
-    $prefix = ($port == 465) ? "ssl://" : "";
-    
-    $socket = @fsockopen($prefix . $host, $port, $errno, $errstr, $timeout);
-    if (!$socket) {
-        // Try without prefix if port 587
-        if ($port != 465) {
-            $socket = @fsockopen($host, $port, $errno, $errstr, $timeout);
+// RFC 5321 compliant SMTP response reader
+function readSmtpResponse($socket, &$logs) {
+    $response = "";
+    while (!feof($socket)) {
+        $line = fgets($socket, 515);
+        if ($line === false) break;
+        $response .= $line;
+        $logs[] = "< " . trim($line);
+        if (strlen($line) >= 4 && substr($line, 3, 1) === " ") {
+            break;
         }
     }
-    
+    return $response;
+}
+
+function sendSmtpSocket($host, $port, $username, $password, $fromEmail, $fromName, $to, $subject, $html) {
+    $timeout = 15;
+    $logs = [];
+    $context = stream_context_create([
+        "ssl" => [
+            "verify_peer" => false,
+            "verify_peer_name" => false,
+            "allow_self_signed" => true,
+        ],
+    ]);
+
+    $hostsToTry = array_unique(array_filter([$host, "box5517.bluehost.com", "localhost", "127.0.0.1"]));
+    $socket = null;
+    $connectedHost = "";
+
+    foreach ($hostsToTry as $targetHost) {
+        $prefix = ($port == 465) ? "ssl://" : "";
+        $target = $prefix . $targetHost . ":" . $port;
+        $logs[] = "Connecting to {$target}...";
+        
+        $socket = @stream_socket_client($target, $errno, $errstr, $timeout, STREAM_CLIENT_CONNECT, $context);
+        if ($socket) {
+            $connectedHost = $target;
+            $logs[] = "Connected to {$target}";
+            break;
+        }
+
+        if ($port != 465) {
+            $tcpTarget = "tcp://" . $targetHost . ":" . $port;
+            $logs[] = "Trying direct TCP to {$tcpTarget}...";
+            $socket = @stream_socket_client($tcpTarget, $errno, $errstr, $timeout, STREAM_CLIENT_CONNECT, $context);
+            if ($socket) {
+                $connectedHost = $tcpTarget;
+                $logs[] = "Connected to {$tcpTarget}";
+                break;
+            }
+        }
+        $logs[] = "Failed connecting to {$targetHost}:{$port} ({$errstr})";
+    }
+
     if (!$socket) {
-        return ["success" => false, "error" => "Could not connect to SMTP server {$host}:{$port} ({$errstr})"];
+        return ["success" => false, "error" => "Could not connect to SMTP server ({$host}:{$port})", "logs" => $logs];
     }
 
-    $response = fgets($socket, 515);
-    if (substr($response, 0, 3) != "220") {
+    stream_set_timeout($socket, 15);
+
+    $banner = readSmtpResponse($socket, $logs);
+    if (substr($banner, 0, 3) !== "220") {
         fclose($socket);
-        return ["success" => false, "error" => "SMTP banner error: {$response}"];
+        return ["success" => false, "error" => "SMTP banner error: " . trim($banner), "logs" => $logs];
     }
 
-    fputs($socket, "EHLO " . ($_SERVER["SERVER_NAME"] ?? "localhost") . "\r\n");
-    $response = "";
-    while ($line = fgets($socket, 515)) {
-        $response .= $line;
-        if (substr($line, 3, 1) == " ") break;
-    }
+    $serverName = !empty($_SERVER["SERVER_NAME"]) ? $_SERVER["SERVER_NAME"] : "integratedtechnics.com";
+    $logs[] = "> EHLO {$serverName}";
+    fputs($socket, "EHLO {$serverName}\r\n");
+    $ehloResp = readSmtpResponse($socket, $logs);
 
+    $logs[] = "> AUTH LOGIN";
     fputs($socket, "AUTH LOGIN\r\n");
-    $response = fgets($socket, 515);
-    if (substr($response, 0, 3) != "334") {
+    $authResp = readSmtpResponse($socket, $logs);
+    if (substr($authResp, 0, 3) !== "334") {
         fclose($socket);
-        return ["success" => false, "error" => "AUTH LOGIN failed: {$response}"];
+        return ["success" => false, "error" => "AUTH LOGIN rejected: " . trim($authResp), "logs" => $logs];
     }
 
+    $logs[] = "> [USERNAME]";
     fputs($socket, base64_encode($username) . "\r\n");
-    $response = fgets($socket, 515);
-    if (substr($response, 0, 3) != "334") {
+    $userResp = readSmtpResponse($socket, $logs);
+    if (substr($userResp, 0, 3) !== "334") {
         fclose($socket);
-        return ["success" => false, "error" => "Username rejected: {$response}"];
+        return ["success" => false, "error" => "Username rejected: " . trim($userResp), "logs" => $logs];
     }
 
+    $logs[] = "> [PASSWORD]";
     fputs($socket, base64_encode($password) . "\r\n");
-    $response = fgets($socket, 515);
-    if (substr($response, 0, 3) != "235") {
+    $passResp = readSmtpResponse($socket, $logs);
+    if (substr($passResp, 0, 3) !== "235") {
         fclose($socket);
-        return ["success" => false, "error" => "Password rejected: {$response}"];
+        return ["success" => false, "error" => "Password rejected: " . trim($passResp), "logs" => $logs];
     }
 
+    $logs[] = "> MAIL FROM: <{$fromEmail}>";
     fputs($socket, "MAIL FROM: <{$fromEmail}>\r\n");
-    $response = fgets($socket, 515);
-    if (substr($response, 0, 3) != "250") {
+    $mailFromResp = readSmtpResponse($socket, $logs);
+    if (substr($mailFromResp, 0, 3) !== "250") {
         fclose($socket);
-        return ["success" => false, "error" => "MAIL FROM rejected: {$response}"];
+        return ["success" => false, "error" => "MAIL FROM rejected: " . trim($mailFromResp), "logs" => $logs];
     }
 
+    $logs[] = "> RCPT TO: <{$to}>";
     fputs($socket, "RCPT TO: <{$to}>\r\n");
-    $response = fgets($socket, 515);
-    if (substr($response, 0, 3) != "250") {
+    $rcptResp = readSmtpResponse($socket, $logs);
+    if (substr($rcptResp, 0, 3) !== "250") {
         fclose($socket);
-        return ["success" => false, "error" => "RCPT TO rejected for {$to}: {$response}"];
+        return ["success" => false, "error" => "RCPT TO rejected for {$to}: " . trim($rcptResp), "logs" => $logs];
     }
 
+    $logs[] = "> DATA";
     fputs($socket, "DATA\r\n");
-    $response = fgets($socket, 515);
-    if (substr($response, 0, 3) != "354") {
+    $dataResp = readSmtpResponse($socket, $logs);
+    if (substr($dataResp, 0, 3) !== "354") {
         fclose($socket);
-        return ["success" => false, "error" => "DATA command rejected: {$response}"];
+        return ["success" => false, "error" => "DATA rejected: " . trim($dataResp), "logs" => $logs];
     }
 
-    $messageId = "INT-" . time() . "-" . bin2hex(random_bytes(4)) . "@" . ($_SERVER["SERVER_NAME"] ?? "integratedtechnics.com");
+    $messageId = "INT-" . time() . "-" . bin2hex(random_bytes(4)) . "@" . $serverName;
 
     $headers  = "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
@@ -297,42 +408,29 @@ function sendSmtpSocket($host, $port, $username, $password, $fromEmail, $fromNam
     $headers .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
     $headers .= "Message-ID: <{$messageId}>\r\n";
     $headers .= "Date: " . date("r") . "\r\n";
-    $headers .= "X-Mailer: INT-Events-Platform\r\n";
+    $headers .= "X-Mailer: INT-Events-Platform (cPanel Bluehost)\r\n";
 
     $mailBody = $headers . "\r\n" . $html . "\r\n.\r\n";
     fputs($socket, $mailBody);
+    $sendResp = readSmtpResponse($socket, $logs);
 
-    $response = fgets($socket, 515);
+    fputs($socket, "QUIT\r\n");
     fclose($socket);
 
-    if (substr($response, 0, 3) == "250") {
-        return ["success" => true, "messageId" => $messageId];
+    if (substr($sendResp, 0, 3) === "250") {
+        return ["success" => true, "messageId" => $messageId, "logs" => $logs];
     } else {
-        return ["success" => false, "error" => "Transmission rejected: {$response}"];
+        return ["success" => false, "error" => "Message transmission rejected: " . trim($sendResp), "logs" => $logs];
     }
 }
 
-// Attempt SMTP dispatch
+// Attempt Authenticated SMTP dispatch
 $result = sendSmtpSocket($host, $port, $username, $password, $fromEmail, $fromName, $to, $subject, $html);
-
-// Fallback to PHP native mail() if socket is blocked by host firewall
-if (!$result["success"]) {
-    $headers  = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $headers .= "From: {$fromName} <{$fromEmail}>\r\n";
-    $headers .= "Reply-To: {$fromEmail}\r\n";
-    $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
-
-    $sent = @mail($to, $subject, $html, $headers);
-    if ($sent) {
-        $result = ["success" => true, "messageId" => "PHPMAIL-" . time()];
-    }
-}
 
 if ($result["success"]) {
     http_response_code(200);
-    echo json_encode(["success" => true, "messageId" => $result["messageId"]]);
+    echo json_encode(["success" => true, "messageId" => $result["messageId"], "logs" => $result["logs"] ?? []]);
 } else {
     http_response_code(500);
-    echo json_encode(["success" => false, "error" => $result["error"]]);
+    echo json_encode(["success" => false, "error" => $result["error"], "logs" => $result["logs"] ?? []]);
 }

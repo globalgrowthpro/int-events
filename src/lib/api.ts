@@ -42,6 +42,7 @@ export async function getEvents(): Promise<IntEvent[]> {
         title: ev.title,
         category: ev.category,
         date: ev.date,
+        endDate: ev.end_date || ev.date,
         dateLabel: ev.date_label,
         startTime: ev.start_time || "09:00 AM",
         endTime: ev.end_time || "05:00 PM",
@@ -82,6 +83,7 @@ export async function createEvent(eventData: Partial<IntEvent>): Promise<IntEven
         title: eventData.title,
         category: eventData.category || "Summit",
         date: eventData.date,
+        end_date: eventData.endDate || eventData.date,
         date_label: eventData.dateLabel,
         start_time: eventData.startTime,
         end_time: eventData.endTime,
@@ -119,6 +121,7 @@ export async function updateEvent(eventId: string, updates: Partial<IntEvent>): 
         title: updates.title,
         category: updates.category,
         date: updates.date,
+        end_date: updates.endDate || updates.date,
         date_label: updates.dateLabel,
         start_time: updates.startTime,
         end_time: updates.endTime,
@@ -179,6 +182,51 @@ export async function checkUserRegistration(eventId: string, email?: string, use
 }
 
 /**
+ * Storage & Identity Document Upload Helper
+ */
+export async function uploadIdentityDocument(
+  file: File,
+  folder = "registrations"
+): Promise<{ url: string; name: string } | null> {
+  if (!file) return null;
+
+  const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const filePath = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${cleanName}`;
+
+  try {
+    const { error: uploadError } = await supabase.storage
+      .from("id_documents")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (!uploadError) {
+      const { data } = supabase.storage.from("id_documents").getPublicUrl(filePath);
+      if (data?.publicUrl) {
+        return { url: data.publicUrl, name: file.name };
+      }
+    } else {
+      console.warn("Storage upload notice:", uploadError.message);
+    }
+  } catch (err) {
+    console.warn("Direct storage upload exception:", err);
+  }
+
+  // Fallback to Base64 Data URL if storage bucket fails
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve({ url: reader.result as string, name: file.name });
+    };
+    reader.onerror = () => {
+      resolve(null);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
  * Registration & Delegate Services
  */
 export async function createRegistrationWithDelegates({
@@ -197,12 +245,26 @@ export async function createRegistrationWithDelegates({
     phone: string;
     company: string;
     jobTitle: string;
+    id_type?: string | null | undefined;
+    id_number?: string | null | undefined;
+    document_url?: string | null | undefined;
+    id_doc_name?: string | null | undefined;
+    national_id_front_url?: string | null | undefined;
+    national_id_back_url?: string | null | undefined;
+    passport_url?: string | null | undefined;
   };
   delegates?: Array<{
     fullName: string;
     email: string;
     gender: string;
     phone: string;
+    id_type?: string | null | undefined;
+    id_number?: string | null | undefined;
+    document_url?: string | null | undefined;
+    id_doc_name?: string | null | undefined;
+    national_id_front_url?: string | null | undefined;
+    national_id_back_url?: string | null | undefined;
+    passport_url?: string | null | undefined;
   }> | undefined;
   meta: {
     datesAttending: string;
@@ -245,6 +307,13 @@ export async function createRegistrationWithDelegates({
       ticket_token: primaryToken,
       state: "registered" as const,
       is_primary: true,
+      id_type: primaryAttendee.id_type || "National ID",
+      id_number: primaryAttendee.id_number || null,
+      document_url: primaryAttendee.document_url || null,
+      id_doc_name: primaryAttendee.id_doc_name || null,
+      national_id_front_url: primaryAttendee.national_id_front_url || null,
+      national_id_back_url: primaryAttendee.national_id_back_url || null,
+      passport_url: primaryAttendee.passport_url || null,
       dates_attending: meta.datesAttending,
       sector: meta.sector,
       travel_required: meta.travelRequired,
@@ -252,7 +321,7 @@ export async function createRegistrationWithDelegates({
       check_out_details: meta.checkOutDetails,
       considerations: meta.considerations,
     },
-    ...delegates.map((d, i) => ({
+    ...delegates.map((d) => ({
       id: `INT-EVT-${Math.floor(100000 + Math.random() * 900000)}`,
       event_id: eventId,
       user_id: userId || null,
@@ -266,6 +335,13 @@ export async function createRegistrationWithDelegates({
       state: "registered" as const,
       is_primary: false,
       delegation_leader_id: primaryId,
+      id_type: d.id_type || "National ID",
+      id_number: d.id_number || null,
+      document_url: d.document_url || null,
+      id_doc_name: d.id_doc_name || null,
+      national_id_front_url: d.national_id_front_url || null,
+      national_id_back_url: d.national_id_back_url || null,
+      passport_url: d.passport_url || null,
       dates_attending: meta.datesAttending,
       sector: meta.sector,
       travel_required: meta.travelRequired,

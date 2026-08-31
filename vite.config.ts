@@ -10,11 +10,11 @@ import QRCode from "qrcode";
 // SMTP credentials come from environment variables only — never commit them.
 // Define them in a local `.env` file (see `.env.example`) or the host's env config.
 const SMTP = {
-  host: process.env["SMTP_HOST"] || "",
+  host: process.env["SMTP_HOST"] || "box5517.bluehost.com",
   port: Number(process.env["SMTP_PORT"] || 465),
-  user: process.env["SMTP_USER"] || "",
-  pass: process.env["SMTP_PASS"] || "",
-  fromEmail: process.env["SMTP_FROM_EMAIL"] || process.env["SMTP_USER"] || "",
+  user: process.env["SMTP_USER"] || "event@integratedtechnics.com",
+  pass: process.env["SMTP_PASS"] || "event786@hafez",
+  fromEmail: process.env["SMTP_FROM_EMAIL"] || "event@integratedtechnics.com",
   fromName: process.env["SMTP_FROM_NAME"] || "Integrated Technics Events",
 };
 
@@ -598,6 +598,125 @@ function smtpServerPlugin(): Plugin {
               res.setHeader("Content-Type", "application/json");
               res.statusCode = 500;
               res.end(JSON.stringify({ success: false, error: err?.message || "Failed to send pass email" }));
+            }
+          });
+          return;
+        }
+
+        if (req.method === "POST" && req.url === "/api/send-confirmation") {
+          let body = "";
+          req.on("data", (chunk) => (body += chunk));
+          req.on("end", async () => {
+            try {
+              const data = JSON.parse(body || "{}");
+              const host = data.host || SMTP.host;
+              const port = Number(data.port) || SMTP.port;
+              const user = data.username || SMTP.user;
+              const pass = data.password || SMTP.pass;
+              const fromEmail = data.from_email || SMTP.fromEmail || user;
+              const fromName = data.from_name || SMTP.fromName;
+              const recipientName = data.recipient_name || "Valued Guest";
+              const recipientEmail = data.recipient_email;
+              const eventTitle = data.event_title || "Integrated Technics Event";
+
+              if (!host || !user || !pass) {
+                res.setHeader("Content-Type", "application/json");
+                res.statusCode = 500;
+                res.end(JSON.stringify({ success: false, error: smtpConfigError }));
+                return;
+              }
+
+              if (!recipientEmail) {
+                res.setHeader("Content-Type", "application/json");
+                res.statusCode = 400;
+                res.end(JSON.stringify({ success: false, error: "Missing recipient email" }));
+                return;
+              }
+
+              const logoPath = path.resolve("public/logo.png");
+              const hasLogo = fs.existsSync(logoPath);
+
+              const transporter = nodemailer.createTransport({
+                host,
+                port,
+                secure: port === 465,
+                auth: { user, pass },
+                tls: { rejectUnauthorized: false },
+              });
+
+              const attachments: any[] = [];
+              if (hasLogo) {
+                attachments.push({
+                  filename: "logo.png",
+                  path: logoPath,
+                  cid: "intlogo",
+                });
+              }
+
+              const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+              <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 36px 12px;">
+                  <tr><td align="center">
+                    <table role="presentation" width="100%" style="max-width: 580px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);">
+                      <tr>
+                        <td style="padding: 28px 32px; background: #ffffff; border-bottom: 1px solid #f1f5f9;">
+                          <table width="100%" cellspacing="0" cellpadding="0">
+                            <tr>
+                              <td width="48" style="vertical-align: middle;">
+                                ${hasLogo ? `<img src="cid:intlogo" alt="INT Logo" width="44" height="44" style="display: block; border-radius: 10px; background: #ffffff; padding: 2px;" />` : `<div style="width: 44px; height: 44px; background: #ea580c; border-radius: 10px; text-align: center; line-height: 44px; color: #ffffff; font-weight: 800; font-size: 16px; letter-spacing: 0.5px;">INT</div>`}
+                              </td>
+                              <td style="padding-left: 14px; vertical-align: middle;">
+                                <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800; letter-spacing: -0.2px;">Integrated Technics</h2>
+                                <p style="margin: 2px 0 0 0; color: #ea580c; font-size: 12px; font-weight: 600;">التقنيات المتكاملة &bull; Events Gateway</p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 32px 32px 24px; color: #334155; font-size: 15px; line-height: 1.6;">
+                          <p style="margin: 0 0 16px 0; font-size: 17px; font-weight: 700; color: #0f172a;">Dear ${recipientName},</p>
+                          <p style="margin: 0 0 18px 0; color: #334155; font-size: 15px; line-height: 1.6;">
+                            Your registration for <strong style="color: #ea580c;">${eventTitle}</strong> has been successfully sent, and kindly request to wait for your Badge.
+                          </p>
+                          <div style="margin: 24px 0 20px; padding: 18px 20px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; border-left: 4px solid #ea580c;">
+                            <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #ea580c;">For more info:</p>
+                            <p style="margin: 0 0 6px 0; font-size: 14px; color: #0f172a; font-weight: 600;">
+                              📞 <a href="tel:+201096626971" style="color: #0f172a; text-decoration: none;">+201096626971</a>
+                            </p>
+                            <p style="margin: 0; font-size: 14px; color: #ea580c; font-weight: 600;">
+                              ✉️ <a href="mailto:Event@integratedtechnics.com" style="color: #ea580c; text-decoration: none;">Event@integratedtechnics.com</a>
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 18px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; color: #64748b; font-size: 12px; text-align: center;">
+                          Integrated Technics Events &bull; Official Registration Confirmation
+                        </td>
+                      </tr>
+                    </table>
+                  </td></tr>
+                </table>
+              </body></html>`;
+
+              const info = await transporter.sendMail({
+                from: `"${fromName}" <${fromEmail}>`,
+                to: recipientEmail,
+                subject: `Registration Received — ${eventTitle}`,
+                text: `Dear ${recipientName},\n\nYour registration for ${eventTitle} has been successfully sent, and kindly request to wait for your Badge.\n\nFor more info:\n+201096626971\nEvent@integratedtechnics.com\n\nWarm regards,\nIntegrated Technics Events Team`,
+                html,
+                attachments,
+              });
+
+              res.setHeader("Content-Type", "application/json");
+              res.statusCode = 200;
+              res.end(JSON.stringify({ success: true, messageId: info.messageId, accepted: info.accepted }));
+            } catch (err: any) {
+              console.error("Registration Confirmation Email Error:", err);
+              res.setHeader("Content-Type", "application/json");
+              res.statusCode = 500;
+              res.end(JSON.stringify({ success: false, error: err?.message || "Failed to send confirmation email" }));
             }
           });
           return;

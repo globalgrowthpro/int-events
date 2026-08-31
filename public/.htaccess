@@ -76,7 +76,7 @@ ServerSignature Off
   RewriteBase /
 
   # Direct API mailer requests on PHP/hPanel hosting to the PHP mailer backend
-  RewriteRule ^api/(test-smtp|send-invitation|send-pass)$ /api/mail.php [L,QSA]
+  RewriteRule ^api/(test-smtp|send-invitation|send-pass|send-confirmation)$ /api/mail.php [L,QSA]
 
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f

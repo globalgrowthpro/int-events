@@ -27,7 +27,8 @@ import {
 } from "lucide-react";
 import { StatusBadge } from "@/components/int/status-badge";
 import { RichTextEditor } from "@/components/int/rich-text-editor";
-import { events as initialEvents, type IntEvent, type Speaker, type AgendaItem } from "@/lib/int-data";
+import { events as initialEvents, type IntEvent, type Speaker, type AgendaItem, formatEventDateRange } from "@/lib/int-data";
+import { toDdMmYyyy } from "@/lib/format";
 import { getEvents, createEvent, updateEvent, deleteEvent } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -514,12 +515,12 @@ export function AdminEventsPage() {
       {viewMode === "table" ? (
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="w-full min-w-[1000px] text-left text-sm">
               <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
                 <tr>
-                  <th className="px-5 py-3.5 font-semibold">Event</th>
+                  <th className="px-5 py-3.5 font-semibold min-w-[260px] max-w-[280px]">Event</th>
                   <th className="px-4 py-3.5 font-semibold">Category</th>
-                  <th className="px-4 py-3.5 font-semibold">Date & Time</th>
+                  <th className="px-5 py-3.5 font-semibold min-w-[220px]">Date & Time</th>
                   <th className="px-4 py-3.5 font-semibold">Venue & Map</th>
                   <th className="px-4 py-3.5 font-semibold">Capacity</th>
                   <th className="px-4 py-3.5 font-semibold">Status</th>
@@ -531,18 +532,18 @@ export function AdminEventsPage() {
                   const percent = Math.min(100, Math.round((ev.registered / ev.capacity) * 100)) || 0;
                   return (
                     <tr key={ev.id} className="transition-colors hover:bg-secondary/40">
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
+                      <td className="px-5 py-4 min-w-[260px] max-w-[280px]">
+                        <div className="flex items-start gap-3">
                           {ev.image ? (
-                            <img src={ev.image} alt={ev.title} className="h-10 w-14 rounded-md object-cover border border-border shrink-0" />
+                            <img src={ev.image} alt={ev.title} className="h-10 w-14 rounded-md object-cover border border-border shrink-0 mt-0.5" />
                           ) : (
-                            <div className="grid h-10 w-14 place-items-center rounded-md bg-secondary text-muted-foreground shrink-0 border border-border">
+                            <div className="grid h-10 w-14 place-items-center rounded-md bg-secondary text-muted-foreground shrink-0 border border-border mt-0.5">
                               <Calendar className="h-4 w-4 text-primary" />
                             </div>
                           )}
-                          <div className="min-w-0">
-                            <p className="font-bold text-foreground text-xs sm:text-sm line-clamp-1">{ev.title}</p>
-                            <p className="text-[11px] font-mono text-muted-foreground">{ev.code}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-foreground text-xs sm:text-sm leading-snug break-words max-w-[195px]">{ev.title}</p>
+                            <p className="text-[11px] font-mono text-muted-foreground mt-0.5">{ev.code}</p>
                           </div>
                         </div>
                       </td>
@@ -553,9 +554,18 @@ export function AdminEventsPage() {
                         </span>
                       </td>
 
-                      <td className="px-4 py-4 text-xs">
-                        <p className="font-semibold text-foreground">{ev.dateLabel}</p>
-                        <p className="text-muted-foreground">{ev.startTime} - {ev.endTime}</p>
+                      <td className="px-5 py-4 text-xs min-w-[220px]">
+                        <p className="font-semibold text-foreground text-sm tracking-tight">
+                          {formatEventDateRange(ev.date, ev.endDate, ev.dateLabel)}
+                        </p>
+                        {ev.endDate && ev.endDate !== ev.date ? (
+                          <div className="flex items-center gap-1.5 text-[11px] font-mono text-primary font-medium mt-1">
+                            <span>Start: {toDdMmYyyy(ev.date)}</span>
+                            <span>&bull;</span>
+                            <span>End: {toDdMmYyyy(ev.endDate)}</span>
+                          </div>
+                        ) : null}
+                        <p className="text-muted-foreground mt-1 font-medium">{ev.startTime} - {ev.endTime}</p>
                       </td>
 
                       <td className="px-4 py-4 text-xs">
@@ -658,8 +668,14 @@ export function AdminEventsPage() {
                 <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{ev.summary}</p>
                 <div className="mt-4 space-y-1.5 text-xs text-muted-foreground border-t border-border pt-3">
                   <p className="flex items-center gap-1.5 font-medium text-foreground">
-                    <Calendar className="h-3.5 w-3.5 text-primary" /> {ev.dateLabel} · {ev.startTime}
+                    <Calendar className="h-3.5 w-3.5 text-primary" />
+                    {formatEventDateRange(ev.date, ev.endDate, ev.dateLabel)} · {ev.startTime}
                   </p>
+                  {ev.endDate && ev.endDate !== ev.date && (
+                    <p className="text-[11px] font-mono text-primary pl-5">
+                      {toDdMmYyyy(ev.date)} → {toDdMmYyyy(ev.endDate)}
+                    </p>
+                  )}
                   <p className="flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5 text-primary" /> {ev.venue}, {ev.city}
                   </p>
@@ -850,7 +866,12 @@ export function AdminEventsPage() {
                         type="date"
                         required
                         value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        onChange={(e) => {
+                          const newStart = e.target.value;
+                          const newEnd = formData.endDate && formData.endDate < newStart ? newStart : (formData.endDate || newStart);
+                          const newLabel = formatEventDateRange(newStart, newEnd);
+                          setFormData({ ...formData, date: newStart, endDate: newEnd, dateLabel: newLabel });
+                        }}
                         className={inputClass}
                       />
                     </div>
@@ -860,13 +881,27 @@ export function AdminEventsPage() {
                       <input
                         type="date"
                         value={formData.endDate}
-                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                        onChange={(e) => {
+                          const newEnd = e.target.value;
+                          const newLabel = formatEventDateRange(formData.date, newEnd);
+                          setFormData({ ...formData, endDate: newEnd, dateLabel: newLabel });
+                        }}
                         className={inputClass}
                       />
                     </div>
                   </div>
 
-                  <input type="hidden" value={formData.dateLabel} />
+                  <div className="rounded-xl border border-border/80 bg-secondary/30 p-3 text-xs flex items-center justify-between">
+                    <div>
+                      <span className="text-muted-foreground">Generated Date Label: </span>
+                      <span className="font-bold text-foreground">{formData.dateLabel || formatEventDateRange(formData.date, formData.endDate)}</span>
+                    </div>
+                    {formData.endDate && formData.endDate !== formData.date ? (
+                      <span className="rounded-md bg-primary/15 text-primary font-semibold px-2 py-0.5 text-[11px]">Multi-day Event</span>
+                    ) : (
+                      <span className="rounded-md bg-secondary text-muted-foreground px-2 py-0.5 text-[11px]">Single-day Event</span>
+                    )}
+                  </div>
 
 
                   <div className="grid gap-4 sm:grid-cols-2">

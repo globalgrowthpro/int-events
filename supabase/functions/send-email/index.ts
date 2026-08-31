@@ -53,8 +53,14 @@ Deno.serve(async (req: Request) => {
 
   try {
     const payload = await req.json();
-    const kind: "test" | "invitation" | "pass" =
-      payload.kind === "test" ? "test" : payload.kind === "pass" ? "pass" : "invitation";
+    const kind: "test" | "invitation" | "pass" | "confirmation" =
+      payload.kind === "test"
+        ? "test"
+        : payload.kind === "pass"
+          ? "pass"
+          : payload.kind === "confirmation"
+            ? "confirmation"
+            : "invitation";
 
     const host = payload.host || Deno.env.get("SMTP_HOST") || "";
     const port = Number(payload.port || Deno.env.get("SMTP_PORT") || 465);
@@ -166,6 +172,25 @@ Deno.serve(async (req: Request) => {
           </td></tr>
         </table>
       </body></html>`;
+    }
+
+    // ---- Registration confirmation email ----
+    if (kind === "confirmation") {
+      const recipientName = payload.recipient_name || "Valued Guest";
+      const eventTitle = payload.event_title || "Integrated Technics Event";
+
+      subject = `Registration Received — ${eventTitle}`;
+      html = shell(`
+        <p style="margin:0 0 16px;font-size:17px;color:#fff;font-weight:700;">Dear ${recipientName},</p>
+        <p style="margin:0 0 18px;color:#cbd5e1;font-size:15px;line-height:1.6;">
+          Your registration for <strong style="color:#f37021;">${eventTitle}</strong> has been successfully sent, and kindly request to wait for your Badge.
+        </p>
+        <div style="padding:18px 20px;background:#1e293b;border-radius:14px;border-left:4px solid #f37021;font-size:13px;margin:24px 0 20px;">
+          <p style="margin:0 0 8px;font-size:12px;font-weight:800;color:#f37021;text-transform:uppercase;letter-spacing:1px;">For more info:</p>
+          <p style="margin:0 0 6px;color:#fff;font-weight:600;font-size:14px;">📞 +201096626971</p>
+          <p style="margin:0;color:#f37021;font-weight:600;font-size:14px;">✉️ <a href="mailto:Event@integratedtechnics.com" style="color:#f37021;text-decoration:none;">Event@integratedtechnics.com</a></p>
+        </div>
+      `);
     }
 
     // ---- Delivery: correct sender alignment + TLS/STARTTLS fallback ----

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { CalendarDays, MapPin, Users } from "lucide-react";
 import type { IntEvent } from "@/lib/int-data";
+import { formatEventDateRange } from "@/lib/int-data";
 import { StatusBadge } from "./status-badge";
 import { Countdown, parseEventStart } from "./countdown";
 
@@ -37,7 +38,7 @@ export function EventCard({
           <div className="flex items-center gap-2">
             <CalendarDays className="h-4 w-4 text-tech" />
             <span>
-              {event.dateLabel} · {event.startTime}
+              {formatEventDateRange(event.date, event.endDate, event.dateLabel)} · {event.startTime}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -57,7 +58,7 @@ export function EventCard({
           params={{ eventId: event.id }}
           className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
         >
-          {event.status === "completed" ? "View Recap & Gallery" : "View Event"}
+          {event.status === "completed" ? "View Recap & Gallery" : "Register Now"}
         </Link>
       </div>
     </article>

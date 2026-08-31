@@ -2,7 +2,8 @@ import { useState } from "react";
 import { X, Users, User, Ticket, Building, MapPin, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { createRegistrationWithDelegates } from "@/lib/api";
+import { createRegistrationWithDelegates, uploadIdentityDocument } from "@/lib/api";
+import { sendRegistrationConfirmationEmail } from "@/lib/email-service";
 import type { IntEvent } from "@/lib/int-data";
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
 
 interface IdentityDocs {
   type: "national-id" | "passport";
+  idNumber?: string;
   front?: File | null;
   back?: File | null;
   passport?: File | null;
@@ -88,9 +90,6 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
   const [primaryName, setPrimaryName] = useState(user?.name ?? "");
   const [primaryId, setPrimaryId] = useState<IdentityDocs>(emptyId());
 
-  const [willingToTravel, setWillingToTravel] = useState<string>("Yes");
-  const [transportationType, setTransportationType] = useState<string>("");
-
   if (!open) return null;
 
   const handleRepCountChange = (count: number) => {
@@ -151,6 +150,43 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
     setSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
+    // Upload primary attendee identity documents
+    let primaryDocUrl: string | null = null;
+    let primaryDocName: string | null = null;
+    let frontUrl: string | null = null;
+    let backUrl: string | null = null;
+    let passportUrl: string | null = null;
+
+    if (primaryId.type === "national-id") {
+      if (primaryId.front) {
+        const res = await uploadIdentityDocument(primaryId.front, "attendees/national_id");
+        if (res) {
+          frontUrl = res.url;
+          primaryDocUrl = res.url;
+          primaryDocName = res.name;
+        }
+      }
+      if (primaryId.back) {
+        const res = await uploadIdentityDocument(primaryId.back, "attendees/national_id");
+        if (res) {
+          backUrl = res.url;
+          if (!primaryDocUrl) {
+            primaryDocUrl = res.url;
+            primaryDocName = res.name;
+          }
+        }
+      }
+    } else if (primaryId.type === "passport") {
+      if (primaryId.passport) {
+        const res = await uploadIdentityDocument(primaryId.passport, "attendees/passport");
+        if (res) {
+          passportUrl = res.url;
+          primaryDocUrl = res.url;
+          primaryDocName = res.name;
+        }
+      }
+    }
+
     const primaryAttendee = {
       fullName: (formData.get("fullName") as string) || user?.name || "Attendee",
       email: (formData.get("email") as string) || user?.email || "attendee@example.com",
@@ -158,33 +194,84 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
       phone: (formData.get("mobile") as string || formData.get("phone") as string) || "",
       company: (formData.get("organization") as string || formData.get("company") as string) || user?.company || "Company",
       jobTitle: (formData.get("jobTitle") as string) || "Director",
+      id_type: primaryId.type === "passport" ? "Passport" : "National ID",
+      id_number: primaryId.idNumber || (formData.get("primary-idNumber") as string) || null,
+      document_url: primaryDocUrl,
+      id_doc_name: primaryDocName,
+      national_id_front_url: frontUrl,
+      national_id_back_url: backUrl,
+      passport_url: passportUrl,
     };
-
-    const isTravel = (formData.get("travel") as string) === "Yes" || willingToTravel === "Yes";
-    const transportChoice = isTravel ? ((formData.get("transportationType") as string) || transportationType) : "";
 
     const userConsiderations = (formData.get("considerations") as string) || "";
     const combinedConsiderations = [
       `ID: ${idSummary(primaryId)}`,
-      transportChoice ? `Transportation: ${transportChoice}` : "",
       userConsiderations,
     ].filter(Boolean).join(" | ");
 
     const meta = {
       datesAttending: (formData.get("dates") as string || formData.get("datesAttending") as string) || "All days",
       sector: (formData.get("sector") as string) || "Enterprise",
-      travelRequired: isTravel,
+      travelRequired: false,
       checkInDetails: (formData.get("checkIn") as string || formData.get("checkInDetails") as string) || "",
       checkOutDetails: (formData.get("checkOut") as string || formData.get("checkOutDetails") as string) || "",
       considerations: combinedConsiderations,
     };
 
-    const delegates = reps.map((r) => ({
-      fullName: r.fullName || "Representative",
-      email: r.email || primaryAttendee.email,
-      gender: r.gender,
-      phone: r.mobile,
-    }));
+    // Upload delegates identity documents in parallel
+    const delegates = await Promise.all(
+      reps.map(async (r, i) => {
+        let repDocUrl: string | null = null;
+        let repDocName: string | null = null;
+        let repFrontUrl: string | null = null;
+        let repBackUrl: string | null = null;
+        let repPassUrl: string | null = null;
+
+        if (r.identity.type === "national-id") {
+          if (r.identity.front) {
+            const res = await uploadIdentityDocument(r.identity.front, "delegates/national_id");
+            if (res) {
+              repFrontUrl = res.url;
+              repDocUrl = res.url;
+              repDocName = res.name;
+            }
+          }
+          if (r.identity.back) {
+            const res = await uploadIdentityDocument(r.identity.back, "delegates/national_id");
+            if (res) {
+              repBackUrl = res.url;
+              if (!repDocUrl) {
+                repDocUrl = res.url;
+                repDocName = res.name;
+              }
+            }
+          }
+        } else if (r.identity.type === "passport") {
+          if (r.identity.passport) {
+            const res = await uploadIdentityDocument(r.identity.passport, "delegates/passport");
+            if (res) {
+              repPassUrl = res.url;
+              repDocUrl = res.url;
+              repDocName = res.name;
+            }
+          }
+        }
+
+        return {
+          fullName: r.fullName || "Representative",
+          email: r.email || primaryAttendee.email,
+          gender: r.gender,
+          phone: r.mobile,
+          id_type: r.identity.type === "passport" ? "Passport" : "National ID",
+          id_number: r.identity.idNumber || (formData.get(`rep-${i}-idNumber`) as string) || null,
+          document_url: repDocUrl,
+          id_doc_name: repDocName,
+          national_id_front_url: repFrontUrl,
+          national_id_back_url: repBackUrl,
+          passport_url: repPassUrl,
+        };
+      })
+    );
 
     const result = await createRegistrationWithDelegates({
       eventId: event.id,
@@ -194,9 +281,8 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
       meta,
     });
 
-    setSubmitting(false);
-
     if (result.duplicate) {
+      setSubmitting(false);
       toast.error("Already Registered", {
         description: `You (${primaryAttendee.email}) are already registered for this event. Check My Passes to view your badge.`,
       });
@@ -204,8 +290,35 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
       return;
     }
 
-    toast.success("Request submitted — pending approval", {
-      description: `${repCount} request(s) for ${event.title} were sent to the organizers. Once approved, your ITS pass card will be emailed to you.`,
+    // Send automated registration confirmation email to primary attendee & delegates
+    try {
+      await sendRegistrationConfirmationEmail({
+        recipient_name: primaryAttendee.fullName,
+        recipient_email: primaryAttendee.email,
+        event_title: event.title,
+        event_id: event.id,
+        company: primaryAttendee.company,
+      });
+
+      for (const delegate of delegates) {
+        if (delegate.email && delegate.email.trim() && delegate.email !== primaryAttendee.email) {
+          await sendRegistrationConfirmationEmail({
+            recipient_name: delegate.fullName,
+            recipient_email: delegate.email,
+            event_title: event.title,
+            event_id: event.id,
+            company: primaryAttendee.company,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("Could not dispatch confirmation email:", err);
+    }
+
+    setSubmitting(false);
+
+    toast.success("Request submitted — confirmation email sent", {
+      description: `A confirmation email was sent to ${primaryAttendee.email}. Once approved, your official ITS pass card will be emailed to you.`,
     });
     onClose();
   };
@@ -385,47 +498,6 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
                   ))}
                 </select>
               </Field>
-
-              <Field label="Are you willing to travel?" required>
-                <select
-                  name="travel"
-                  required
-                  value={willingToTravel}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setWillingToTravel(val);
-                    if (val === "No") {
-                      setTransportationType("");
-                    }
-                  }}
-                  className={inputClass}
-                >
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </Field>
-
-              {willingToTravel === "Yes" && (
-                <Field label="Transportation Requirement" required>
-                  <select
-                    name="transportationType"
-                    required
-                    value={transportationType}
-                    onChange={(e) => setTransportationType(e.target.value)}
-                    className={inputClass}
-                  >
-                    <option value="" disabled>
-                      Select transportation option...
-                    </option>
-                    <option value="I Use my own transportation">
-                      1 - I Use my own transportation
-                    </option>
-                    <option value="I need transportation">
-                      2 - I need transportation
-                    </option>
-                  </select>
-                </Field>
-              )}
             </div>
           </div>
 
@@ -546,7 +618,7 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
               Logistics & Additional Notes (Optional)
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Check-in Details">
+              <Field label="Estimated Check-in Time">
                 <input
                   name="checkIn"
                   placeholder="Expected arrival time / flight"
@@ -554,7 +626,7 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
                 />
               </Field>
 
-              <Field label="Check-out Details">
+              <Field label="Estimated Check-out Time">
                 <input
                   name="checkOut"
                   placeholder="Expected departure time"

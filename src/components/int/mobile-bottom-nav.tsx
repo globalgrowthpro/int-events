@@ -13,6 +13,7 @@ import {
   LogIn,
   UserPlus,
   MessageSquare,
+  FileText,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useNotifications } from "@/lib/notifications";
@@ -41,12 +42,12 @@ export function MobileBottomNav({ variant }: { variant?: "public" | "portal" | "
       { to: "/admin", label: "Overview", icon: Home, exact: true },
       { to: "/admin/events", label: "Events", icon: CalendarDays },
       {
-        to: "/admin/scanner",
-        label: "Gate Scan",
-        icon: ScanLine,
+        to: "/admin/invitations",
+        label: "Invites",
+        icon: Mail,
         isCenterAction: true,
       },
-      { to: "/admin/invitations", label: "Invites", icon: Mail },
+      { to: "/admin/registrations", label: "Registrations", icon: FileText },
       { to: "/admin/settings", label: "Settings", icon: Settings },
     ];
 

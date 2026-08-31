@@ -45,21 +45,29 @@ import { MobileBottomNav } from "./mobile-bottom-nav";
 const nav = [
   { to: "/admin", label: "Dashboard", icon: Home, exact: true },
   { to: "/admin/events", label: "Events", icon: CalendarDays },
-  { to: "/admin/clients", label: "Clients", icon: Users },
-  { to: "/admin/vendors", label: "Vendors", icon: Building2 },
-  { to: "/admin/accounts", label: "Accounts", icon: UserCog },
   { to: "/admin/invitations", label: "Invitations & Badges", icon: Mail },
   { to: "/admin/registrations", label: "Registrations", icon: FileText },
   { to: "/admin/pass-cards", label: "Pass Cards", icon: CreditCard },
   { to: "/admin/attendance", label: "Attendance", icon: CheckSquare },
-  { to: "/admin/scanner", label: "Scanner", icon: ScanLine },
-  { to: "/admin/chat", label: "Chat Support", icon: MessageSquare },
   { to: "/admin/notifications", label: "Reminders & Alerts", icon: BellRing },
   { to: "/admin/sliders", label: "Sliders & Banners", icon: Layers },
   { to: "/admin/gallery", label: "Gallery", icon: Images },
-  { to: "/admin/reports", label: "Reports & Analytics", icon: FileText },
   { to: "/admin/settings", label: "Settings", icon: Settings },
   { to: "/admin/email-templates", label: "Email Templates", icon: Mail },
+
+  /*
+   * =========================================================================
+   * INVISIBLE PAGES FOR CURRENT RELEASE (Documented in invisible_pages.md)
+   * All route files and logic are fully preserved. To re-enable any page,
+   * simply uncomment its entry below:
+   * =========================================================================
+   * { to: "/admin/clients", label: "Clients", icon: Users },
+   * { to: "/admin/vendors", label: "Vendors", icon: Building2 },
+   * { to: "/admin/accounts", label: "Accounts", icon: UserCog },
+   * { to: "/admin/scanner", label: "Scanner", icon: ScanLine },
+   * { to: "/admin/chat", label: "Chat Support", icon: MessageSquare },
+   * { to: "/admin/reports", label: "Reports & Analytics", icon: FileText },
+   */
 ] as const;
 
 export function AdminShell({
