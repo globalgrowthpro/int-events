@@ -682,7 +682,7 @@ function smtpServerPlugin(): Plugin {
                           <div style="margin: 24px 0 20px; padding: 18px 20px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; border-left: 4px solid #ea580c;">
                             <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #ea580c;">For more info:</p>
                             <p style="margin: 0 0 6px 0; font-size: 14px; color: #0f172a; font-weight: 600;">
-                              📞 <a href="tel:+201096626971" style="color: #0f172a; text-decoration: none;">+201096626971</a>
+                              📞 <a href="tel:+201212777570" style="color: #0f172a; text-decoration: none;">+201212777570</a>
                             </p>
                             <p style="margin: 0; font-size: 14px; color: #ea580c; font-weight: 600;">
                               ✉️ <a href="mailto:Event@integratedtechnics.com" style="color: #ea580c; text-decoration: none;">Event@integratedtechnics.com</a>
@@ -704,7 +704,7 @@ function smtpServerPlugin(): Plugin {
                 from: `"${fromName}" <${fromEmail}>`,
                 to: recipientEmail,
                 subject: `Registration Received — ${eventTitle}`,
-                text: `Dear ${recipientName},\n\nYour registration for ${eventTitle} has been successfully sent, and kindly request to wait for your Badge.\n\nFor more info:\n+201096626971\nEvent@integratedtechnics.com\n\nWarm regards,\nIntegrated Technics Events Team`,
+                text: `Dear ${recipientName},\n\nYour registration for ${eventTitle} has been successfully sent, and kindly request to wait for your Badge.\n\nFor more info:\n+201212777570\nEvent@integratedtechnics.com\n\nWarm regards,\nIntegrated Technics Events Team`,
                 html,
                 attachments,
               });

@@ -430,15 +430,15 @@ export function AdminPassCardsPage() {
           ctx.font = `900 ${Math.round(canvas.width * 0.062)}px "Inter", "Segoe UI", Arial, sans-serif`;
           ctx.fillText((row.attendee_name || "Valued Guest").toUpperCase(), centerX, centerY);
 
-          // 2. Position (Medium Gray Capitalize)
+          // 2. Position (Job Title)
           ctx.fillStyle = "#444444";
-          ctx.font = `600 ${Math.round(canvas.width * 0.034)}px "Inter", "Segoe UI", Arial, sans-serif`;
-          ctx.fillText(row.job_title || "Participant", centerX, centerY + canvas.height * 0.046);
+          ctx.font = `800 ${Math.round(canvas.width * 0.058)}px "Inter", "Segoe UI", Arial, sans-serif`;
+          ctx.fillText(row.job_title || "Participant", centerX, centerY + canvas.height * 0.058);
 
           // 3. Organization (Bold Brand Orange Uppercase)
           ctx.fillStyle = "#f37021";
-          ctx.font = `900 ${Math.round(canvas.width * 0.038)}px "Inter", "Segoe UI", Arial, sans-serif`;
-          ctx.fillText((row.company || "Integrated Technics").toUpperCase(), centerX, centerY + canvas.height * 0.088);
+          ctx.font = `900 ${Math.round(canvas.width * 0.060)}px "Inter", "Segoe UI", Arial, sans-serif`;
+          ctx.fillText((row.company || "Integrated Technics").toUpperCase(), centerX, centerY + canvas.height * 0.118);
 
           resolve(canvas.toDataURL("image/png"));
         } catch (err) {

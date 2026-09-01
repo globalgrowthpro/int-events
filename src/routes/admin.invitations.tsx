@@ -34,7 +34,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { events as defaultEvents } from "@/lib/int-data";
+import { events as defaultEvents, formatEventDateRange } from "@/lib/int-data";
 import { toast } from "sonner";
 import { sendLiveInvitationEmail } from "@/lib/email-service";
 import { QrCode as RealQrCode } from "@/components/int/qr-code";
@@ -183,9 +183,9 @@ export function AdminInvitationsPage() {
           evData.map((e: any) => ({
             id: e.id,
             title: e.title,
-            dateLabel: e.date_label || e.date || "2026",
+            dateLabel: formatEventDateRange(e.date, e.end_date || e.endDate, e.date_label || e.dateLabel),
             city: e.city || "Cairo",
-            location: e.location || "Integrated Technics HQ",
+            location: e.venue || e.location || (e.city ? `${e.city}` : "Integrated Technics HQ"),
             capacity: e.capacity || 200,
             registered_count: e.registered_count || 0,
           }))
@@ -196,9 +196,9 @@ export function AdminInvitationsPage() {
           defaultEvents.map((e) => ({
             id: e.id,
             title: e.title,
-            dateLabel: e.dateLabel,
+            dateLabel: formatEventDateRange(e.date, e.endDate, e.dateLabel),
             city: e.city,
-            location: e.venue,
+            location: e.venue || (e.city ? `${e.city}` : "Integrated Technics HQ"),
             capacity: e.capacity,
             registered_count: e.registered,
           }))
@@ -1567,32 +1567,26 @@ export function AdminInvitationsPage() {
 
       {/* EMAIL PREVIEW MODAL */}
       {previewInvitation && (() => {
-        const previewEvent = eventsList.find((e) => e.id === previewInvitation.event_id);
-        const eventTitle = previewInvitation.event_title || previewEvent?.title || "INT Security Technology Summit 2026";
-        const eventDate = previewEvent?.dateLabel || "November 14, 2026 • 09:00 AM";
-        const eventLocation = previewEvent?.location || "Royal Maxim Palace Kempinski, Cairo";
+        const previewEvent = eventsList.find((e) => e.id === previewInvitation.event_id) || defaultEvents.find((e) => e.id === previewInvitation.event_id);
+        const eventTitle = previewInvitation.event_title || previewEvent?.title || "Integrated Technics Event";
+        const eventDate = previewEvent?.dateLabel || (previewEvent?.date ? formatEventDateRange(previewEvent.date, (previewEvent as any).endDate || (previewEvent as any).end_date, previewEvent.dateLabel) : "Event Schedule Announced Soon");
+        const eventLocation = (previewEvent as any)?.location || (previewEvent as any)?.venue || (previewEvent as any)?.city || "Integrated Technics HQ";
         const token = previewInvitation.token || "EVT-INV-8K92X";
         const origin = typeof window !== "undefined" ? window.location.origin : "https://events.integratedtechnics.com";
         const registerUrl = `${origin}/events/${previewInvitation.event_id}?token=${encodeURIComponent(token)}&email=${encodeURIComponent(previewInvitation.recipient_email)}&name=${encodeURIComponent(previewInvitation.recipient_name)}#register`;
-        const qrJson = JSON.stringify({
-          pass_id: token,
-          attendee: previewInvitation.recipient_name,
-          company: previewInvitation.company || "",
-          event: eventTitle,
-          auth: "INT_OFFICIAL_VERIFIED",
-          url: registerUrl,
-        });
 
         const primaryColor = templateConfig?.primaryColor || "#F37021";
         const secondaryColor = templateConfig?.secondaryColor || "#1e293b";
         const bgColor = templateConfig?.backgroundColor || "#0B1120";
         const textColor = templateConfig?.textColor || "#f8fafc";
         const headerText = templateConfig?.headerText || "Integrated Technics";
-        const headerSubtext = templateConfig?.headerSubtext || "التقنيات المتكاملة • Enterprise Summits";
+        const headerSubtext = templateConfig?.headerSubtext || "التقنيات المتكاملة • Events Gateway";
         const logoUrl = templateConfig?.logoUrl || "/logo.png";
-        const bodyTextRaw = templateConfig?.bodyText || "You are cordially invited as a distinguished guest to attend {eventTitle}.";
-        const bodyText = bodyTextRaw.replace('{recipientName}', previewInvitation.recipient_name).replace('{eventTitle}', eventTitle);
-        const btnText = templateConfig?.buttonText || "Confirm Attendance";
+        const bodyTextRaw = templateConfig?.bodyText || "It is our pleasure to extend to you an exclusive VIP invitation to attend {eventTitle}. Step into an exclusive technology experience designed to showcase the latest innovations, emerging technologies, and intelligent solutions.";
+        const formattedRaw = bodyTextRaw.replace(/{recipientName}/g, previewInvitation.recipient_name).replace(/{eventTitle}/g, eventTitle);
+        const cleanBodyText = formattedRaw.replace(/^\s*Dear\s+[^,\n]+,\s*/i, '').trim();
+        const btnText = templateConfig?.buttonText || "Register & Book your seat";
+        const footerText = templateConfig?.footerText || "Integrated Technics Events";
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/70 p-4 backdrop-blur-md overflow-y-auto">
@@ -1603,7 +1597,7 @@ export function AdminInvitationsPage() {
                     <Mail className="h-4 w-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-foreground">VIP Invitation & Digital Pass Preview</h3>
+                    <h3 className="text-sm font-bold text-foreground">VIP Invitation Preview</h3>
                     <p className="text-[11px] text-muted-foreground">Exact template dispatched to recipient</p>
                   </div>
                 </div>
@@ -1626,7 +1620,7 @@ export function AdminInvitationsPage() {
                     <strong className="text-foreground">To:</strong> {previewInvitation.recipient_name} &lt;{previewInvitation.recipient_email}&gt;
                   </p>
                   <p className="text-muted-foreground">
-                    <strong className="text-foreground">Subject:</strong> Official VIP Invitation & Digital Pass: {eventTitle}
+                    <strong className="text-foreground">Subject:</strong> Official VIP Invitation: {eventTitle}
                   </p>
                 </div>
 
@@ -1654,83 +1648,27 @@ export function AdminInvitationsPage() {
                     </span>
                   </div>
 
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: textColor }}>
-                    {bodyText}
-                  </p>
-
-                  <div className="flex justify-center mt-6 mb-2">
-                    <div className="px-6 py-2.5 rounded-lg text-sm font-bold text-white shadow-lg cursor-not-allowed" style={{ backgroundColor: primaryColor }}>
-                      {btnText}
-                    </div>
+                  <div className="space-y-2">
+                    <p className="text-base font-bold text-white">
+                      Dear <strong>{previewInvitation.recipient_name}</strong>,
+                    </p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: textColor }}>
+                      {cleanBodyText}
+                    </p>
                   </div>
 
-                  {/* VIP DIGITAL PASS CARD */}
+                  {/* Event Details Card */}
                   <div 
-                    className="rounded-2xl border-2 p-5 shadow-xl relative overflow-hidden"
-                    style={{ borderColor: primaryColor, background: `linear-gradient(to bottom right, ${secondaryColor}, ${bgColor})` }}
+                    className="rounded-xl border p-4 space-y-2 text-xs"
+                    style={{ borderColor: `${primaryColor}40`, backgroundColor: `${secondaryColor}80` }}
                   >
-                    <div className="absolute top-0 right-0 h-32 w-32 rounded-full blur-2xl pointer-events-none" style={{ backgroundColor: `${primaryColor}20` }} />
-
-                    <div className="flex items-center justify-between border-b border-dashed pb-3 mb-4" style={{ borderColor: `${primaryColor}50` }}>
-                      <div>
-                        <span className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: primaryColor }}>
-                          Delegation Access Pass
-                        </span>
-                        <h5 className="font-bold text-sm" style={{ color: textColor }}>{eventTitle}</h5>
-                      </div>
-                      <span className="rounded px-2.5 py-0.5 text-[10px] font-bold text-white tracking-wider" style={{ backgroundColor: primaryColor }}>
-                        VIP
-                      </span>
+                    <div className="border-b pb-2" style={{ borderColor: `${secondaryColor}` }}>
+                      <span className="font-bold text-sm" style={{ color: textColor }}>{eventTitle}</span>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-                      <div className="sm:col-span-5 flex flex-col items-center justify-center p-3 bg-white rounded-xl shadow-md">
-                        <RealQrCode value={qrJson} size={130} />
-                        <span className="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-600">
-                          Fast Gate Scan
-                        </span>
-                      </div>
-
-                      <div className="sm:col-span-7 space-y-2.5 text-left">
-                        <div>
-                          <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Guest Name</span>
-                          <p className="text-base font-bold" style={{ color: textColor }}>{previewInvitation.recipient_name}</p>
-                          {previewInvitation.job_title && (
-                            <p className="text-xs font-semibold" style={{ color: primaryColor }}>{previewInvitation.job_title}</p>
-                          )}
-                        </div>
-
-                        {previewInvitation.company && (
-                          <div>
-                            <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Organization</span>
-                            <p className="text-xs font-semibold text-slate-200">{previewInvitation.company}</p>
-                          </div>
-                        )}
-
-                        <div>
-                          <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Pass Token ID</span>
-                          <p className="font-mono text-sm font-extrabold text-[#F37021] tracking-wider">{token}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 pt-1">
                       <span>📅 {eventDate}</span>
                       <span>📍 {eventLocation}</span>
                     </div>
-                  </div>
-
-                  {/* VIP DELEGATION PERKS */}
-                  <div className="rounded-xl border border-slate-800 bg-[#131B2C] p-4 text-xs text-slate-300 space-y-1.5">
-                    <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#F37021]">
-                      VIP Delegation Benefits Included:
-                    </span>
-                    <p className="text-[11px] leading-relaxed text-slate-400">
-                      &bull; Priority Fast-Track Gate Entry with Scannable Pass<br />
-                      &bull; Reserved Executive Keynote & Summit Seating<br />
-                      &bull; Executive Networking Lounge & Refreshment Access<br />
-                      &bull; Verified Digital Attendance Certificate & Materials Kit
-                    </p>
                   </div>
 
                   {/* DIRECT REGISTRATION CTA BUTTON */}
@@ -1739,15 +1677,23 @@ export function AdminInvitationsPage() {
                       href={registerUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#F37021] to-[#D95D14] px-6 py-3 text-sm font-bold text-white shadow-lg hover:from-orange-500 hover:to-orange-600 transition-all hover:scale-[1.02]"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:scale-[1.02]"
+                      style={{ backgroundColor: primaryColor }}
                     >
-                      <span>Claim Pass & Confirm Registration</span>
+                      <span>{btnText}</span>
                       <ArrowRight className="h-4 w-4" />
                     </a>
-                    <p className="text-[10px] text-slate-400 break-all">
-                      Redirect Link: <span className="text-[#F37021] underline">{registerUrl}</span>
-                    </p>
                   </div>
+
+                  {/* Template Footer */}
+                  {footerText && (
+                    <div 
+                      className="border-t pt-4 text-center text-xs"
+                      style={{ borderColor: `${secondaryColor}`, color: `${textColor}99` }}
+                    >
+                      <p className="font-semibold">{footerText}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 

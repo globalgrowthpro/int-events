@@ -136,7 +136,7 @@ export function HeroSlider() {
                 to={currentSlide.event_link.replace(/^\/events\//, "/event/")}
                 className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground shadow-md transition-all hover:bg-tech hover:scale-105 active:scale-95"
               >
-                <span>View Event Details</span>
+                <span>Register Now</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             ) : (

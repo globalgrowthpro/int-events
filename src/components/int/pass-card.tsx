@@ -43,13 +43,13 @@ export function PassCard({
             {attendeeName}
           </h2>
 
-          {/* Position */}
-          <p className="text-xs sm:text-sm font-semibold text-[#444] capitalize leading-tight px-1 truncate">
+          {/* Position (Job Title) */}
+          <p className="text-lg sm:text-xl font-bold text-[#444] capitalize leading-tight px-1 truncate">
             {position}
           </p>
 
           {/* Organization */}
-          <p className="text-xs sm:text-sm font-black text-[#f37021] uppercase tracking-wider leading-tight px-1 pt-0.5 truncate">
+          <p className="text-lg sm:text-xl font-black text-[#f37021] uppercase tracking-wider leading-tight px-1 pt-0.5 truncate">
             {organization}
           </p>
         </div>

@@ -34,9 +34,9 @@ export const defaultEmailTemplate: EmailTemplateConfig = {
   textColor: "#f8fafc",
   headerText: "Integrated Technics",
   headerSubtext: "التقنيات المتكاملة • Events Gateway",
-  bodyText: "Dear {recipientName},\n\nYou are cordially invited to attend this Integrated Technics event.",
+  bodyText: "It is our pleasure to extend to you an exclusive VIP invitation to attend {eventTitle}. Step into an exclusive technology experience designed to showcase the latest innovations, emerging technologies, and intelligent solutions.",
   footerText: "Integrated Technics Events",
-  buttonText: "Confirm Attendance",
+  buttonText: "Register & Book your seat",
 };
 
 export function getEmailTemplate(): EmailTemplateConfig {
