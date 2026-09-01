@@ -457,30 +457,16 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
           </div>
 
 
-          {/* Section 2: Number of Representatives & Event Options */}
+          {/* Section 2: Attendance & Event Settings */}
           <div className="rounded-xl border border-border/80 bg-background/80 p-4 sm:p-5 shadow-xs">
             <div className="mb-4 flex items-center gap-2 border-b border-border/60 pb-3">
-              <Users className="h-4 w-4 text-primary" />
+              <Calendar className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
-                Delegation & Attendance Settings
+                Attendance & Event Settings
               </h3>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Number of Representatives who intended to attend" required>
-                <select
-                  value={repCount}
-                  onChange={(e) => handleRepCountChange(parseInt(e.target.value, 10))}
-                  className={inputClass}
-                >
-                  <option value={1}>1 (Primary Attendee only)</option>
-                  <option value={2}>2 Representatives (+1 additional)</option>
-                  <option value={3}>3 Representatives (+2 additional)</option>
-                  <option value={4}>4 Representatives (+3 additional)</option>
-                  <option value={5}>5 Representatives (+4 additional)</option>
-                </select>
-              </Field>
-
               <Field label="Dates to attend" required>
                 <select name="dates" required defaultValue="All days" className={inputClass}>
                   <option value="All days">All days</option>
