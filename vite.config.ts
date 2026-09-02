@@ -243,7 +243,12 @@ function smtpServerPlugin(): Plugin {
               const bodyText = (template.bodyText || 'On behalf of the Executive Committee of <strong>Integrated Technics</strong>, we have the distinct honor of cordially inviting you as our distinguished delegate to attend <strong style="color: ' + primaryColor + ';">${eventTitle}</strong>.').replace('{recipientName}', recipientName);
               const footerText = template.footerText || 'Integrated Technics Events';
               const buttonText = template.buttonText || 'Confirm Attendance';
-              const finalLogoUrl = template.logoUrl || (hasLogo ? "cid:intlogo" : null);
+              let finalLogoUrl = template.logoUrl;
+              if (!finalLogoUrl || finalLogoUrl === "/logo.png") {
+                finalLogoUrl = hasLogo ? "cid:intlogo" : null;
+              } else if (finalLogoUrl.startsWith("/")) {
+                finalLogoUrl = baseDomain.replace(/\/+$/, "") + finalLogoUrl;
+              }
 
               const info = await transporter.sendMail({
                 from: `"${fromName}" <${fromEmail}>`,
@@ -485,11 +490,41 @@ function smtpServerPlugin(): Plugin {
                 return;
               }
 
+              const template = (data.template_config || {}) as any;
+              const primaryColor = template.primaryColor || '#10b981';
+              const secondaryColor = template.secondaryColor || '#1e293b';
+              const bgColor = template.backgroundColor || '#070b14';
+              const textColor = template.textColor || '#f8fafc';
+              const headerText = template.headerText || 'Integrated Technics';
+              const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Events Gateway';
+              const footerText = template.footerText || 'Integrated Technics Events &bull; Official Digital Pass';
+              const buttonText = template.buttonText || 'View Your Digital Badge';
+
               const eventTitle = data.event_title || "Integrated Technics Showcase 2026";
+              const eventDate = data.event_date || "Event Schedule Announced Soon";
+              const eventLocation = data.event_location || "Integrated Technics Operations Center";
               const token = data.token || `EVT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
               const jobTitle = data.job_title || "Participant";
               const company = data.company || "Integrated Technics";
               const passImageBase64 = data.pass_image_base64;
+              const baseDomain = data.domain || "https://events.integratedtechnics.com";
+              const myPassesUrl = `${baseDomain.replace(/\/+$/, "")}/my-passes`;
+
+              let rawBody = template.bodyText || 'Your official event badge and access pass for {eventTitle} is ready, {recipientName}. Please present your digital pass or the attached badge at the entrance for quick access.';
+              if (!rawBody.includes('{eventTitle}') && !rawBody.includes(eventTitle)) {
+                rawBody = rawBody.replace('Your event badge is ready', `Your official event badge for ${eventTitle} is ready`);
+              }
+              const cleanBodyText = rawBody.replace(/{recipientName}/g, recipientName).replace(/{eventTitle}/g, eventTitle).replace(/^\s*Dear\s+[^,\n]+,\s*/i, '').trim().replace(/\n/g, '<br />');
+
+              const logoPath = path.resolve("public/logo.png");
+              const hasLogo = fs.existsSync(logoPath);
+
+              let finalLogoUrl = template.logoUrl;
+              if (!finalLogoUrl || finalLogoUrl === "/logo.png") {
+                finalLogoUrl = hasLogo ? "cid:intlogo" : `${baseDomain.replace(/\/+$/, "")}/logo.png`;
+              } else if (finalLogoUrl.startsWith("/")) {
+                finalLogoUrl = baseDomain.replace(/\/+$/, "") + finalLogoUrl;
+              }
 
               const transporter = nodemailer.createTransport({
                 host,
@@ -502,6 +537,14 @@ function smtpServerPlugin(): Plugin {
               const attachments: any[] = [];
               const safeName = recipientName.replace(/[^a-zA-Z0-9_-]/g, "_");
 
+              if (hasLogo) {
+                attachments.push({
+                  filename: "logo.png",
+                  path: logoPath,
+                  cid: "intlogo",
+                });
+              }
+
               if (passImageBase64 && passImageBase64.startsWith("data:image")) {
                 const base64Data = passImageBase64.replace(/^data:image\/\w+;base64,/, "");
                 attachments.push({
@@ -510,77 +553,125 @@ function smtpServerPlugin(): Plugin {
                 });
               }
 
-              const domain = data.domain || "https://event.integratedtechnics.com";
-              const logoPath = path.resolve("public/its-logo.png");
-              if (fs.existsSync(logoPath)) {
-                attachments.push({
-                  filename: "its-logo.png",
-                  path: logoPath,
-                  cid: "itslogo",
-                });
-              }
+              const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Official Access Pass — ${recipientName} (${eventTitle})</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: ${bgColor}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: ${textColor};">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: ${bgColor}; padding: 32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 640px; background: ${secondaryColor}; border: 1px solid ${secondaryColor}; border-radius: 28px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);">
+          
+          <!-- Top Brand Banner with Logo -->
+          <tr>
+            <td style="padding: 32px 36px 26px 36px; background: linear-gradient(135deg, ${secondaryColor} 0%, ${secondaryColor} 50%, ${primaryColor} 120%); border-bottom: 1px solid ${secondaryColor};">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td width="64" style="vertical-align: middle;">
+                    <div style="background: #ffffff; padding: 4px; border-radius: 14px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); display: inline-block;">
+                      <img src="${finalLogoUrl}" alt="INT Logo" width="56" height="56" style="display: block; border-radius: 10px; object-fit: contain; width: 56px; height: 56px;" />
+                    </div>
+                  </td>
+                  <td style="padding-left: 16px; vertical-align: middle;">
+                    <div style="display: inline-block; padding: 4px 12px; background: ${primaryColor}29; border: 1px solid ${primaryColor}66; border-radius: 100px; color: ${primaryColor}; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+                      ✦ OFFICIAL EVENT BADGE • DIGITAL PASS
+                    </div>
+                    <h1 style="margin: 8px 0 2px 0; color: #ffffff; font-size: 22px; font-weight: 900; line-height: 1.2; letter-spacing: -0.5px;">
+                      ${headerText}
+                    </h1>
+                    <p style="margin: 0; color: ${primaryColor}; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">
+                      ${headerSubtext}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-              const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /></head>
-              <body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;">
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:32px 12px;background:#f1f5f9;">
-                  <tr><td align="center">
-                    <!-- PASS CARD CONTAINER -->
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:360px;background:#ffffff;border:2px solid #cbd5e1;border-radius:20px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,0.12);text-align:center;">
-                      
-                      <!-- TOP HEADER -->
+          <!-- Salutation & Welcome Note -->
+          <tr>
+            <td style="padding: 28px 36px 16px 36px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
+              <p style="margin: 0 0 10px 0; font-size: 16px; color: #ffffff;">Dear <strong>${recipientName}</strong>,</p>
+              <div style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">
+                ${cleanBodyText}
+              </div>
+            </td>
+          </tr>
+
+          <!-- BADGE PASS DETAILS CARD -->
+          <tr>
+            <td style="padding: 8px 36px 20px 36px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: ${bgColor}; border: 1px solid ${primaryColor}40; border-radius: 18px; padding: 20px 24px;">
+                <tr>
+                  <td>
+                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: ${primaryColor}; font-weight: 800; margin-bottom: 6px;">
+                      Event Access Pass
+                    </div>
+                    <div style="color: #ffffff; font-size: 18px; font-weight: 800; margin-bottom: 14px;">
+                      ${eventTitle}
+                    </div>
+
+                    <table width="100%" cellspacing="0" cellpadding="0" style="border-top: 1px solid #334155; padding-top: 14px;">
                       <tr>
-                        <td style="padding:28px 20px 14px;background:#ffffff;text-align:center;">
-                          <h1 style="margin:0;font-size:19px;font-weight:900;color:#000000;text-transform:uppercase;letter-spacing:-0.4px;line-height:1.2;font-family:Arial,Helvetica,sans-serif;">
-                            INTEGRATED TECHNICS<br/>SHOWCASE 2026
-                          </h1>
-                        </td>
+                        <td style="padding: 4px 0; color: #94a3b8; font-size: 13px;">Delegate Name:</td>
+                        <td align="right" style="padding: 4px 0; color: #ffffff; font-weight: 700; font-size: 14px;">${recipientName}</td>
                       </tr>
-
-                      <!-- CENTER ATTENDEE INFO -->
                       <tr>
-                        <td style="padding:20px 20px 22px;background:#ffffff;text-align:center;">
-                          <h2 style="margin:0 0 6px;font-size:22px;font-weight:900;color:#111111;text-transform:uppercase;letter-spacing:-0.3px;line-height:1.2;font-family:Arial,Helvetica,sans-serif;">
-                            ${recipientName}
-                          </h2>
-                          <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#555555;text-transform:capitalize;line-height:1.2;font-family:Arial,Helvetica,sans-serif;">
-                            ${jobTitle}
-                          </p>
-                          <p style="margin:0;font-size:14px;font-weight:900;color:#f37021;text-transform:uppercase;letter-spacing:0.8px;line-height:1.2;font-family:Arial,Helvetica,sans-serif;">
-                            ${company}
-                          </p>
-                        </td>
+                        <td style="padding: 4px 0; color: #94a3b8; font-size: 13px;">Designation &amp; Org:</td>
+                        <td align="right" style="padding: 4px 0; color: #cbd5e1; font-size: 13px;">${jobTitle} &bull; ${company}</td>
                       </tr>
-
-                      <!-- ITS SHOWCASE LOGO -->
                       <tr>
-                        <td style="padding:10px 20px 24px;background:#ffffff;text-align:center;">
-                          <img src="cid:itslogo" alt="ITS Integrated Technics Showcase" width="160" style="display:inline-block;max-width:160px;height:auto;border:0;" />
-                        </td>
+                        <td style="padding: 4px 0; color: #94a3b8; font-size: 13px;">Pass Token:</td>
+                        <td align="right" style="padding: 4px 0; font-family: monospace; color: ${primaryColor}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">${token}</td>
                       </tr>
-
-                      <!-- ORANGE FOOTER BAND -->
                       <tr>
-                        <td style="background:#f37021;padding:16px 20px;text-align:center;">
-                          <p style="margin:0;font-style:italic;font-size:13px;font-weight:700;line-height:1.4;color:#ffffff;font-family:Georgia,serif,Arial;">
-                            Integrated Technics Showcase Event<br/>ITS 2026<br/>Full Access Ticket
-                          </p>
-                        </td>
+                        <td style="padding: 4px 0; color: #94a3b8; font-size: 13px;">Date &amp; Venue:</td>
+                        <td align="right" style="padding: 4px 0; color: #94a3b8; font-size: 12px;">${eventDate} &bull; ${eventLocation}</td>
                       </tr>
                     </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-                    <!-- TOKEN & INSTRUCTIONS BELOW CARD -->
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:360px;margin-top:16px;text-align:center;">
-                      <tr><td style="padding:8px;font-size:12px;color:#64748b;">
-                        Ticket Token: <strong style="font-family:monospace;color:#1e293b;font-size:13px;">${token}</strong>
-                      </td></tr>
-                      <tr><td style="padding:4px;font-size:11px;color:#94a3b8;">
-                        Integrated Technics &bull; &lt;/&gt; Developed by Mr. Hafez Rahim
-                      </td></tr>
-                    </table>
+          <!-- CALL TO ACTION BUTTON -->
+          <tr>
+            <td style="padding: 10px 36px 28px 36px;" align="center">
+              <table cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" style="border-radius: 14px;">
+                    <a href="${myPassesUrl}" style="display: inline-block; padding: 16px 36px; background: ${primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ${primaryColor}80;">
+                      ${buttonText}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 14px 0 0 0; color: #94a3b8; font-size: 12px;">
+                📎 Your printable badge image is also attached to this email.
+              </p>
+            </td>
+          </tr>
 
-                  </td></tr>
-                </table>
-              </body></html>`;
+          <!-- Template Footer -->
+          <tr>
+            <td style="padding: 20px 36px 24px 36px; background-color: #080c16; border-top: 1px solid #1e293b; color: #94a3b8; font-size: 13px; font-weight: 600; text-align: center;">
+              <p style="margin: 0; color: #94a3b8; font-size: 13px;">
+                ${footerText}
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 
               const info = await transporter.sendMail({
                 from: `"${fromName}" <${fromEmail}>`,
@@ -633,8 +724,35 @@ function smtpServerPlugin(): Plugin {
                 return;
               }
 
+              const template = (data.template_config || {}) as any;
+              const primaryColor = template.primaryColor || '#ea580c';
+              const secondaryColor = template.secondaryColor || '#1e293b';
+              const bgColor = template.backgroundColor || '#070b14';
+              const textColor = template.textColor || '#f8fafc';
+              const headerText = template.headerText || 'Integrated Technics';
+              const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Events Gateway';
+              const footerText = template.footerText || 'Integrated Technics Events &bull; Official Registration Confirmation';
+              const buttonText = template.buttonText || 'View Event Details';
+              const baseDomain = data.domain || "https://events.integratedtechnics.com";
+              const buttonUrl = template.buttonUrl || `${baseDomain.replace(/\/+$/, "")}/#events`;
+
+              let rawBody = template.bodyText || 'Thank you for registering for {eventTitle}, {recipientName}. Your registration is confirmed. We look forward to seeing you at the event.';
+              const cleanBodyText = rawBody
+                .replace(/{recipientName}/g, recipientName)
+                .replace(/{eventTitle}/g, eventTitle)
+                .replace(/^\s*Dear\s+[^,\n]+,\s*/i, '')
+                .trim()
+                .replace(/\n/g, '<br />');
+
               const logoPath = path.resolve("public/logo.png");
               const hasLogo = fs.existsSync(logoPath);
+
+              let finalLogoUrl = template.logoUrl;
+              if (!finalLogoUrl || finalLogoUrl === "/logo.png") {
+                finalLogoUrl = hasLogo ? "cid:intlogo" : `${baseDomain.replace(/\/+$/, "")}/logo.png`;
+              } else if (finalLogoUrl.startsWith("/")) {
+                finalLogoUrl = baseDomain.replace(/\/+$/, "") + finalLogoUrl;
+              }
 
               const transporter = nodemailer.createTransport({
                 host,
@@ -645,7 +763,7 @@ function smtpServerPlugin(): Plugin {
               });
 
               const attachments: any[] = [];
-              if (hasLogo) {
+              if (hasLogo && (!template.logoUrl || template.logoUrl === "/logo.png")) {
                 attachments.push({
                   filename: "logo.png",
                   path: logoPath,
@@ -653,52 +771,95 @@ function smtpServerPlugin(): Plugin {
                 });
               }
 
-              const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-              <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 36px 12px;">
-                  <tr><td align="center">
-                    <table role="presentation" width="100%" style="max-width: 580px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);">
-                      <tr>
-                        <td style="padding: 28px 32px; background: #ffffff; border-bottom: 1px solid #f1f5f9;">
-                          <table width="100%" cellspacing="0" cellpadding="0">
-                            <tr>
-                              <td width="48" style="vertical-align: middle;">
-                                ${hasLogo ? `<img src="cid:intlogo" alt="INT Logo" width="44" height="44" style="display: block; border-radius: 10px; background: #ffffff; padding: 2px;" />` : `<div style="width: 44px; height: 44px; background: #ea580c; border-radius: 10px; text-align: center; line-height: 44px; color: #ffffff; font-weight: 800; font-size: 16px; letter-spacing: 0.5px;">INT</div>`}
-                              </td>
-                              <td style="padding-left: 14px; vertical-align: middle;">
-                                <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800; letter-spacing: -0.2px;">Integrated Technics</h2>
-                                <p style="margin: 2px 0 0 0; color: #ea580c; font-size: 12px; font-weight: 600;">التقنيات المتكاملة &bull; Events Gateway</p>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 32px 32px 24px; color: #334155; font-size: 15px; line-height: 1.6;">
-                          <p style="margin: 0 0 16px 0; font-size: 17px; font-weight: 700; color: #0f172a;">Dear ${recipientName},</p>
-                          <p style="margin: 0 0 18px 0; color: #334155; font-size: 15px; line-height: 1.6;">
-                            Your registration for <strong style="color: #ea580c;">${eventTitle}</strong> has been successfully sent, and kindly request to wait for your Badge.
-                          </p>
-                          <div style="margin: 24px 0 20px; padding: 18px 20px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; border-left: 4px solid #ea580c;">
-                            <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #ea580c;">For more info:</p>
-                            <p style="margin: 0 0 6px 0; font-size: 14px; color: #0f172a; font-weight: 600;">
-                              📞 <a href="tel:+201212777570" style="color: #0f172a; text-decoration: none;">+201212777570</a>
-                            </p>
-                            <p style="margin: 0; font-size: 14px; color: #ea580c; font-weight: 600;">
-                              ✉️ <a href="mailto:Event@integratedtechnics.com" style="color: #ea580c; text-decoration: none;">Event@integratedtechnics.com</a>
-                            </p>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 18px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; color: #64748b; font-size: 12px; text-align: center;">
-                          Integrated Technics Events &bull; Official Registration Confirmation
-                        </td>
-                      </tr>
-                    </table>
-                  </td></tr>
-                </table>
-              </body></html>`;
+              const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registration Received — ${eventTitle}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: ${bgColor}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: ${textColor};">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: ${bgColor}; padding: 32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 640px; background: ${secondaryColor}; border: 1px solid ${secondaryColor}; border-radius: 28px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);">
+          
+          <!-- Top Brand Banner with Logo -->
+          <tr>
+            <td style="padding: 32px 36px 26px 36px; background: linear-gradient(135deg, ${secondaryColor} 0%, ${secondaryColor} 50%, ${primaryColor} 120%); border-bottom: 1px solid ${secondaryColor};">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td width="64" style="vertical-align: middle;">
+                    <div style="background: #ffffff; padding: 4px; border-radius: 14px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); display: inline-block;">
+                      <img src="${finalLogoUrl}" alt="INT Logo" width="56" height="56" style="display: block; border-radius: 10px; object-fit: contain; width: 56px; height: 56px;" />
+                    </div>
+                  </td>
+                  <td style="padding-left: 16px; vertical-align: middle;">
+                    <div style="display: inline-block; padding: 4px 12px; background: ${primaryColor}29; border: 1px solid ${primaryColor}66; border-radius: 100px; color: ${primaryColor}; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+                      ✦ REGISTRATION CONFIRMED
+                    </div>
+                    <h1 style="margin: 8px 0 2px 0; color: #ffffff; font-size: 22px; font-weight: 900; line-height: 1.2; letter-spacing: -0.5px;">
+                      ${headerText}
+                    </h1>
+                    <p style="margin: 0; color: ${primaryColor}; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">
+                      ${headerSubtext}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Salutation & Body Content -->
+          <tr>
+            <td style="padding: 28px 36px 16px 36px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
+              <p style="margin: 0 0 10px 0; font-size: 16px; color: #ffffff;">Dear <strong>${recipientName}</strong>,</p>
+              <div style="margin: 0 0 18px 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">
+                ${cleanBodyText}
+              </div>
+
+              <div style="margin: 20px 0 16px; padding: 18px 20px; background-color: ${bgColor}; border: 1px solid ${primaryColor}40; border-radius: 14px; border-left: 4px solid ${primaryColor};">
+                <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: ${primaryColor};">For Inquiries & Support:</p>
+                <p style="margin: 0 0 6px 0; font-size: 13px; color: #ffffff; font-weight: 600;">
+                  📞 <span style="color: #ffffff; text-decoration: none;">+201212777570</span>
+                </p>
+                <p style="margin: 0; font-size: 13px; color: ${primaryColor}; font-weight: 600;">
+                  ✉️ <a href="mailto:Event@integratedtechnics.com" style="color: ${primaryColor}; text-decoration: none;">Event@integratedtechnics.com</a>
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- ACTION BUTTON -->
+          <tr>
+            <td style="padding: 6px 36px 32px 36px;" align="center">
+              <table cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" style="border-radius: 14px;">
+                    <a href="${buttonUrl}" style="display: inline-block; padding: 16px 36px; background: ${primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ${primaryColor}80;">
+                      ${buttonText}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Template Footer -->
+          <tr>
+            <td style="padding: 20px 36px 24px 36px; background-color: #080c16; border-top: 1px solid #1e293b; color: #94a3b8; font-size: 13px; font-weight: 600; text-align: center;">
+              <p style="margin: 0; color: #94a3b8; font-size: 13px;">
+                ${footerText}
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 
               const info = await transporter.sendMail({
                 from: `"${fromName}" <${fromEmail}>`,

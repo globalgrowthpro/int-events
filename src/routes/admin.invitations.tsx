@@ -1569,7 +1569,7 @@ export function AdminInvitationsPage() {
       {previewInvitation && (() => {
         const previewEvent = eventsList.find((e) => e.id === previewInvitation.event_id) || defaultEvents.find((e) => e.id === previewInvitation.event_id);
         const eventTitle = previewInvitation.event_title || previewEvent?.title || "Integrated Technics Event";
-        const eventDate = previewEvent?.dateLabel || (previewEvent?.date ? formatEventDateRange(previewEvent.date, (previewEvent as any).endDate || (previewEvent as any).end_date, previewEvent.dateLabel) : "Event Schedule Announced Soon");
+        const eventDate = (previewEvent as any)?.dateLabel || ((previewEvent as any)?.date ? formatEventDateRange((previewEvent as any).date, (previewEvent as any).endDate || (previewEvent as any).end_date, (previewEvent as any).dateLabel) : "Event Schedule Announced Soon");
         const eventLocation = (previewEvent as any)?.location || (previewEvent as any)?.venue || (previewEvent as any)?.city || "Integrated Technics HQ";
         const token = previewInvitation.token || "EVT-INV-8K92X";
         const origin = typeof window !== "undefined" ? window.location.origin : "https://events.integratedtechnics.com";

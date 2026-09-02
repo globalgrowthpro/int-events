@@ -100,6 +100,9 @@ export function AdminPassCardsPage() {
 
   // Preview Modal
   const [previewItem, setPreviewItem] = useState<AttendeePassRow | null>(null);
+  
+  // Real events from DB
+  const [dbEvents, setDbEvents] = useState<any[]>([]);
 
   // Load registrations & delivery statuses from Supabase
   const loadData = async (showToast = false) => {
@@ -116,6 +119,12 @@ export function AdminPassCardsPage() {
         .from("email_logs")
         .select("recipient_email, status")
         .eq("status", "sent");
+
+      // 3. Load dynamic events to show real event names
+      const { data: eventsData } = await supabase.from("events").select("*");
+      if (eventsData && eventsData.length > 0) {
+        setDbEvents(eventsData);
+      }
 
       const dbStatuses: Record<string, CardDeliveryStatus> = { ...getStoredStatuses() };
       if (logs && logs.length > 0) {
@@ -265,10 +274,18 @@ export function AdminPassCardsPage() {
     }
   };
 
+  const getEventObj = (eventId: string) => {
+    const dbMatch = dbEvents.find((e) => e.id === eventId);
+    if (dbMatch) return dbMatch;
+    const staticMatch = events.find((e) => e.id === eventId);
+    if (staticMatch) return staticMatch;
+    return dbEvents[0] || events[0];
+  };
+
   // Dispatch Pass Card Email
   const handleSendPass = async (row: AttendeePassRow) => {
     setSendingId(row.id);
-    const ev = events.find((e) => e.id === row.event_id) || events[0];
+    const ev = getEventObj(row.event_id);
 
     try {
       toast.loading(`Sending pass card to ${row.attendee_email}...`, { id: `send-${row.id}` });
@@ -280,8 +297,8 @@ export function AdminPassCardsPage() {
         recipient_email: row.attendee_email,
         event_id: row.event_id,
         event_title: ev?.title || "Integrated Technics Showcase 2026",
-        event_date: ev?.dateLabel || "November 2026",
-        event_location: ev?.venue || ev?.city || "Cairo, Egypt",
+        event_date: ev?.dateLabel || ev?.date || (ev?.start_date ? new Date(ev.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "November 2026"),
+        event_location: ev?.venue || ev?.location || ev?.city || "Cairo, Egypt",
         company: row.company,
         job_title: row.job_title,
         registration_id: row.id,
@@ -325,7 +342,7 @@ export function AdminPassCardsPage() {
     let failCount = 0;
 
     for (const row of waitingRows) {
-      const ev = events.find((e) => e.id === row.event_id) || events[0];
+      const ev = getEventObj(row.event_id);
       try {
         const passImageBase64 = await generatePassCardDataUrl(row);
 
@@ -334,8 +351,8 @@ export function AdminPassCardsPage() {
           recipient_email: row.attendee_email,
           event_id: row.event_id,
           event_title: ev?.title || "Integrated Technics Showcase 2026",
-          event_date: ev?.dateLabel,
-          event_location: ev?.venue || ev?.city,
+          event_date: ev?.dateLabel || ev?.date || "November 2026",
+          event_location: ev?.venue || ev?.location || ev?.city || "Cairo, Egypt",
           company: row.company,
           job_title: row.job_title,
           registration_id: row.id,
@@ -385,7 +402,8 @@ export function AdminPassCardsPage() {
 
   // Convert row to Registration object for <PassCard />
   const getPassCardProps = (row: AttendeePassRow): { registration: Registration; event: IntEvent } => {
-    const ev = (events.find((e) => e.id === row.event_id) || events[0]) as IntEvent;
+    // Check dynamic events first, then fallback to dummy data
+    const ev = getEventObj(row.event_id) as IntEvent;
 
     const reg: Registration = {
       id: row.id,
@@ -403,13 +421,52 @@ export function AdminPassCardsPage() {
     return { registration: reg, event: ev };
   };
 
+  // Helper to wrap text on canvas
+  const drawCanvasWrappedText = (
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    x: number,
+    y: number,
+    maxWidth: number,
+    lineHeight: number
+  ) => {
+    const words = text.split(" ");
+    let line = "";
+    const lines: string[] = [];
+
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + " ";
+      const metrics = ctx.measureText(testLine);
+      const testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        lines.push(line.trim());
+        line = words[n] + " ";
+      } else {
+        line = testLine;
+      }
+    }
+    lines.push(line.trim());
+
+    const totalHeight = (lines.length - 1) * lineHeight;
+    const startY = y - totalHeight / 2;
+
+    lines.forEach((lineText, i) => {
+      if (lineText) {
+        ctx.fillText(lineText, x, startY + i * lineHeight);
+      }
+    });
+  };
+
   // Generate high-resolution base64 PNG data URL of the Pass Card
   const generatePassCardDataUrl = (row: AttendeePassRow | null): Promise<string> => {
     if (!row) return Promise.resolve("");
+    const ev = getEventObj(row.event_id);
+    const eventTitle = (ev?.title || "Integrated Technics Showcase 2026").toUpperCase();
+
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.src = "/2.png";
+      img.src = `/2.png?v=${Date.now()}`;
       img.onload = () => {
         try {
           const canvas = document.createElement("canvas");
@@ -418,27 +475,62 @@ export function AdminPassCardsPage() {
           const ctx = canvas.getContext("2d");
           if (!ctx) return resolve("");
 
-          // Draw background template image (2.png)
+          // 1. Draw background template image (2.png)
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
           const centerX = canvas.width / 2;
-          const centerY = canvas.height * 0.42; // Shifted slightly higher up
 
-          // 1. Attendee Name (Bold Black Uppercase - Larger)
+          // 2. Draw DYNAMIC EVENT TITLE directly on the natural card background
           ctx.textAlign = "center";
+          ctx.fillStyle = "#000000";
+          const topFontSize = eventTitle.length > 35 
+            ? Math.round(canvas.width * 0.048) 
+            : Math.round(canvas.width * 0.056);
+          ctx.font = `900 ${topFontSize}px "Inter", "Segoe UI", Arial, sans-serif`;
+          drawCanvasWrappedText(
+            ctx,
+            eventTitle,
+            centerX,
+            canvas.height * 0.125,
+            canvas.width * 0.88,
+            topFontSize * 1.25
+          );
+
+          // 3. Dynamic Attendee Info
+          const centerY = canvas.height * 0.42;
+
+          // Attendee Name (Bold Black Uppercase - Larger)
           ctx.fillStyle = "#111111";
           ctx.font = `900 ${Math.round(canvas.width * 0.062)}px "Inter", "Segoe UI", Arial, sans-serif`;
           ctx.fillText((row.attendee_name || "Valued Guest").toUpperCase(), centerX, centerY);
 
-          // 2. Position (Job Title)
+          // Position (Job Title)
           ctx.fillStyle = "#444444";
           ctx.font = `800 ${Math.round(canvas.width * 0.058)}px "Inter", "Segoe UI", Arial, sans-serif`;
           ctx.fillText(row.job_title || "Participant", centerX, centerY + canvas.height * 0.058);
 
-          // 3. Organization (Bold Brand Orange Uppercase)
+          // Organization (Bold Brand Orange Uppercase)
           ctx.fillStyle = "#f37021";
           ctx.font = `900 ${Math.round(canvas.width * 0.060)}px "Inter", "Segoe UI", Arial, sans-serif`;
           ctx.fillText((row.company || "Integrated Technics").toUpperCase(), centerX, centerY + canvas.height * 0.118);
+
+          // 4. Bottom Orange Footer Band (Dynamic Event Title)
+          ctx.fillStyle = "#f37021";
+          ctx.fillRect(0, canvas.height * 0.84, canvas.width, canvas.height * 0.16);
+
+          ctx.fillStyle = "#ffffff";
+          ctx.font = `italic 700 ${Math.round(canvas.width * 0.036)}px Georgia, serif, Arial`;
+          drawCanvasWrappedText(
+            ctx,
+            ev?.title || "Integrated Technics Showcase Event",
+            centerX,
+            canvas.height * 0.892,
+            canvas.width * 0.90,
+            canvas.width * 0.044
+          );
+
+          ctx.font = `italic 800 ${Math.round(canvas.width * 0.040)}px Georgia, serif, Arial`;
+          ctx.fillText("Full Access Ticket", centerX, canvas.height * 0.95);
 
           resolve(canvas.toDataURL("image/png"));
         } catch (err) {
@@ -634,7 +726,7 @@ export function AdminPassCardsPage() {
               className="h-10 text-xs bg-background border border-input rounded-xl px-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               <option value="all">All Events</option>
-              {events.map((e) => (
+              {(dbEvents.length > 0 ? dbEvents : events).map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.title}
                 </option>
@@ -674,7 +766,7 @@ export function AdminPassCardsPage() {
                 filteredRows.map((row) => {
                   const status = getStatus(row);
                   const isSending = sendingId === row.id;
-                  const ev = events.find((e) => e.id === row.event_id);
+                  const ev = getEventObj(row.event_id);
 
                   return (
                     <tr key={row.id} className="hover:bg-accent/40 transition-colors">
@@ -731,7 +823,7 @@ export function AdminPassCardsPage() {
                       {/* Event & Pass Token */}
                       <td className="py-3.5 px-4 sm:px-6">
                         <div className="space-y-1">
-                          <span className="inline-block px-2 py-0.5 rounded-md bg-secondary text-[11px] font-medium text-foreground truncate max-w-[170px]">
+                          <span className="inline-block px-2 py-0.5 rounded-md bg-secondary text-[11px] font-medium text-foreground whitespace-normal break-words max-w-[200px]">
                             {ev?.title || "Integrated Technics Showcase"}
                           </span>
                           <div className="flex items-center gap-1">

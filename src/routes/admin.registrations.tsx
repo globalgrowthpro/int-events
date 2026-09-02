@@ -111,6 +111,7 @@ const initialRegFormData: RegistrationFormData = {
 
 export function AdminRegistrationsPage() {
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
+  const [allEvents, setAllEvents] = useState<any[]>(events);
   const [search, setSearch] = useState("");
   const [eventFilter, setEventFilter] = useState("all");
   const [stateFilter, setStateFilter] = useState("all");
@@ -148,7 +149,7 @@ export function AdminRegistrationsPage() {
       toast.error("No email address found for this attendee");
       return;
     }
-    const eventObj = events.find((e) => e.id === r.event_id);
+    const eventObj = allEvents.find((e) => e.id === r.event_id);
     const eventTitle = eventObj?.title || r.event_id || "Integrated Technics Event";
 
     setSendingEmailId(r.id);
@@ -177,6 +178,25 @@ export function AdminRegistrationsPage() {
   const loadRegistrations = async (showToast = false) => {
     if (showToast) setRefreshing(true);
     try {
+      const { data: evData } = await supabase
+        .from("events")
+        .select("*");
+      if (evData && evData.length > 0) {
+        const evMap = new Map();
+        events.forEach((e) => evMap.set(e.id, e));
+        evData.forEach((e: any) => {
+          evMap.set(e.id, {
+            id: e.id,
+            title: e.title,
+            dateLabel: e.date || (e.start_date ? new Date(e.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "TBA"),
+            venue: e.location || e.venue || "Cairo, Egypt",
+            city: e.city || "Cairo",
+            capacity: e.capacity || 500,
+          });
+        });
+        setAllEvents(Array.from(evMap.values()));
+      }
+
       const { data, error } = await supabase
         .from("registrations")
         .select("*")
@@ -527,7 +547,7 @@ export function AdminRegistrationsPage() {
       return;
     }
 
-    const ev = events.find((e) => e.id === reg.event_id);
+    const ev = allEvents.find((e) => e.id === reg.event_id);
     toast.success(`Approved ${reg.attendee_name} — sending ITS pass card…`);
 
     const result = await sendPassCardEmail({
@@ -733,7 +753,7 @@ export function AdminRegistrationsPage() {
             <Filter className="h-5 w-5 text-purple-600" />
           </div>
           <p className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            {events.length}
+            {allEvents.length}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">Upcoming summits & forums</p>
         </div>
@@ -759,7 +779,7 @@ export function AdminRegistrationsPage() {
             className="h-9 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground outline-none shadow-2xs"
           >
             <option value="all">All Events</option>
-            {events.map((e) => (
+            {allEvents.map((e) => (
               <option key={e.id} value={e.id}>
                 {e.title}
               </option>

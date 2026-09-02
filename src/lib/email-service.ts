@@ -119,6 +119,7 @@ export interface PassEmailPayload {
   registration_id: string;
   token: string;
   pass_image_base64?: string | undefined;
+  template_config?: Record<string, string> | undefined;
   domain?: string | undefined;
   host?: string | undefined;
   port?: number | undefined;
@@ -134,6 +135,24 @@ export interface PassEmailPayload {
  * the Supabase Edge Function on deployed production host.
  */
 export async function sendPassCardEmail(payload: PassEmailPayload): Promise<SendResult> {
+  let templateConfig;
+  try {
+    const { data } = await supabase
+      .from("email_templates")
+      .select("config")
+      .eq("id", "badge")
+      .maybeSingle();
+
+    if (data?.config) {
+      templateConfig = data.config;
+    } else {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("int_email_template_badge") : null;
+      if (saved) templateConfig = JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error("Error parsing badge template config", e);
+  }
+
   let smtpConfig: any = null;
   try {
     const { data } = await supabase
@@ -150,6 +169,7 @@ export async function sendPassCardEmail(payload: PassEmailPayload): Promise<Send
 
   const finalPayload = {
     ...payload,
+    template_config: payload.template_config || templateConfig,
     domain: typeof window !== "undefined" ? window.location.origin : undefined,
     host: payload.host || smtpConfig?.host,
     port: payload.port || smtpConfig?.port,
@@ -207,7 +227,7 @@ export async function sendLiveInvitationEmail(
 
   const finalPayload = {
     ...payload,
-    template_config: templateConfig,
+    template_config: payload.template_config || templateConfig,
     domain: typeof window !== "undefined" ? window.location.origin : undefined,
     host: payload.host || smtpConfig?.host,
     port: payload.port || smtpConfig?.port,
@@ -230,6 +250,7 @@ export interface RegistrationConfirmationPayload {
   event_title: string;
   event_id?: string | undefined;
   company?: string | null | undefined;
+  template_config?: Record<string, string> | undefined;
   host?: string | undefined;
   port?: number | undefined;
   username?: string | undefined;
@@ -241,6 +262,24 @@ export interface RegistrationConfirmationPayload {
 export async function sendRegistrationConfirmationEmail(
   payload: RegistrationConfirmationPayload,
 ): Promise<SendResult> {
+  let templateConfig;
+  try {
+    const { data } = await supabase
+      .from("email_templates")
+      .select("config")
+      .eq("id", "registration")
+      .maybeSingle();
+
+    if (data?.config) {
+      templateConfig = data.config;
+    } else {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("int_email_template_registration") : null;
+      if (saved) templateConfig = JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error("Error parsing registration template config", e);
+  }
+
   let smtpConfig: any = null;
   try {
     const { data } = await supabase
@@ -257,6 +296,7 @@ export async function sendRegistrationConfirmationEmail(
 
   const finalPayload = {
     ...payload,
+    template_config: payload.template_config || templateConfig,
     domain: typeof window !== "undefined" ? window.location.origin : undefined,
     host: payload.host || smtpConfig?.host,
     port: payload.port || smtpConfig?.port,
