@@ -32,7 +32,6 @@ import {
   Legend,
 } from "recharts";
 import { toast } from "sonner";
-import { events } from "@/lib/int-data";
 
 export const Route = createFileRoute("/admin/reports")({
   head: () => ({
@@ -88,13 +87,6 @@ const genderData = [
   { name: "Male", value: 810 },
   { name: "Female", value: 438 },
 ];
-
-const eventComparisonData = events.map((ev) => ({
-  name: ev.title.replace("INT ", "").replace(" 2026", ""),
-  capacity: ev.capacity,
-  registered: ev.registered,
-  attended: Math.round(ev.registered * 0.86),
-}));
 
 export function ReportsPage() {
   const [trendView, setTrendView] = useState<"area" | "bar">("area");

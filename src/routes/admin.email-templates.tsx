@@ -5,6 +5,9 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { sendRegistrationConfirmationEmail, sendLiveInvitationEmail, sendPassCardEmail } from "@/lib/email-service";
+import { generatePassCardPng } from "@/lib/pass-card-renderer";
+import { generateA4PassCardPdf } from "@/lib/pass-card-pdf";
+import { uploadPassCardPdf } from "@/lib/pass-storage";
 
 export const Route = createFileRoute("/admin/email-templates")({
   head: () => ({
@@ -191,6 +194,35 @@ function EmailTemplatesPage() {
           template_config: config as any,
         });
       } else if (activeTemplateId === "badge") {
+        let passImageBase64: string | undefined = undefined;
+        let passPdfBase64: string | undefined = undefined;
+        let passPdfUrl: string | undefined = undefined;
+        try {
+          passImageBase64 = await generatePassCardPng({
+            attendee_name: "MR. VALUED GUEST",
+            job_title: "Executive Director",
+            company: "Integrated Technics",
+            event_title: "Integrated Technics Showcase Event 2026",
+          });
+          if (passImageBase64) {
+            const pdfRes = generateA4PassCardPdf(passImageBase64, {
+              attendeeName: "MR. VALUED GUEST",
+              quadrant: "top-left",
+              showCutGuides: true,
+            });
+            passPdfBase64 = pdfRes.dataUri;
+
+            const uploadedUrl = await uploadPassCardPdf(pdfRes.blob, {
+              eventId: "test-event",
+              registrationId: "test-reg-id",
+              attendeeName: "Valued Guest (Test)",
+            });
+            if (uploadedUrl) passPdfUrl = uploadedUrl;
+          }
+        } catch (err) {
+          console.warn("Test badge pass card generation error:", err);
+        }
+
         res = await sendPassCardEmail({
           registration_id: "test-reg-id",
           token: "TEST-BADGE-TOKEN",
@@ -202,6 +234,9 @@ function EmailTemplatesPage() {
           job_title: "Executive Director",
           company: "Integrated Technics",
           template_config: config as any,
+          pass_image_base64: passImageBase64 || undefined,
+          pass_pdf_base64: passPdfBase64 || undefined,
+          pass_pdf_url: passPdfUrl || undefined,
         });
       } else {
         res = await sendLiveInvitationEmail({

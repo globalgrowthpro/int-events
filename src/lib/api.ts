@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { events as defaultEvents, type IntEvent, type Registration } from "./int-data";
+import { type IntEvent, type Registration } from "./int-data";
 import { getCompanyLogo, getUserAvatar } from "./logos";
 
 /**
@@ -13,7 +13,7 @@ export async function getEvents(): Promise<IntEvent[]> {
       .order("date", { ascending: true });
 
     if (evError || !eventsData || eventsData.length === 0) {
-      return defaultEvents;
+      return [];
     }
 
     // Query real registration counts per event
@@ -32,7 +32,6 @@ export async function getEvents(): Promise<IntEvent[]> {
     }
 
     return eventsData.map((ev) => {
-      const defaultEv = defaultEvents.find((d) => d.id === ev.id);
       const liveReg = countsMap[ev.id]?.registered ?? ev.registered_count ?? 0;
       const liveCheck = countsMap[ev.id]?.checkedIn ?? ev.checked_in_count ?? 0;
 
@@ -49,28 +48,34 @@ export async function getEvents(): Promise<IntEvent[]> {
         city: ev.city,
         venue: ev.venue,
         mapUrl: ev.map_url || "",
-        image: ev.image_url || defaultEv?.image || defaultEvents[0]?.image || "",
+        image: ev.image_url || "",
         capacity: ev.capacity || 250,
         registered: liveReg,
         checkedIn: liveCheck,
         status: ev.status === "open" ? "registration-open" : (ev.status as any),
         organizer: ev.organizer || "Integrated Technics",
-        summary: ev.summary || defaultEv?.summary || "",
-        description: ev.description || defaultEv?.description || [],
-        speakers: ev.speakers || defaultEv?.speakers || [],
-        agenda: ev.agenda || defaultEv?.agenda || [],
-        partners: ev.partners || defaultEv?.partners || [],
+        summary: ev.summary || "",
+        description: ev.description || [],
+        speakers: ev.speakers || [],
+        agenda: ev.agenda || [],
+        partners: ev.partners || [],
         partnerList: ev.partner_list || [],
       };
     });
   } catch {
-    return defaultEvents;
+    return [];
   }
 }
 
 export async function getEventById(eventId: string): Promise<IntEvent | undefined> {
   const all = await getEvents();
-  return all.find((e) => e.id === eventId);
+  const normalized = (eventId || "").toLowerCase().trim();
+  return all.find((e) => {
+    if (e.id.toLowerCase() === normalized) return true;
+    if (e.code.toLowerCase() === normalized) return true;
+    if (normalized === "security-summit-2026" && e.id === "integrated-technics-showcase-event-its2026") return true;
+    return false;
+  });
 }
 
 export async function createEvent(eventData: Partial<IntEvent>): Promise<IntEvent | null> {
@@ -1202,38 +1207,7 @@ export interface SliderItem {
   updated_at?: string;
 }
 
-export const DEFAULT_SLIDERS: SliderItem[] = [
-  {
-    id: "slide-1",
-    image_url: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1600&auto=format&fit=crop&q=80",
-    title: "INT Security Technology Summit 2026",
-    subtitle: "Cairo, Egypt · September 15, 2026",
-    description: "Join industry leaders, enterprise CTOs, and global tech partners at Egypt's flagship summit on unified surveillance and smart security infrastructure.",
-    event_link: "/event/security-summit-2026",
-    order_index: 1,
-    is_active: true,
-  },
-  {
-    id: "slide-2",
-    image_url: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=1600&auto=format&fit=crop&q=80",
-    title: "INT Technology & ICT Forum",
-    subtitle: "Cairo, Egypt · October 20, 2026",
-    description: "Interactive keynote panels, data center modernisation workshops, and live demonstrations of enterprise infrastructure.",
-    event_link: "/event/technology-forum-2026",
-    order_index: 2,
-    is_active: true,
-  },
-  {
-    id: "slide-3",
-    image_url: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=1600&auto=format&fit=crop&q=80",
-    title: "INT Partner & Sponsor Day",
-    subtitle: "Alexandria, Egypt · November 10, 2026",
-    description: "Exclusive gathering exploring go-to-market strategies, technological roadmaps, and high-level enterprise networking.",
-    event_link: "/event/partner-day-2026",
-    order_index: 3,
-    is_active: true,
-  },
-];
+export const DEFAULT_SLIDERS: SliderItem[] = [];
 
 export async function getActiveSliders(): Promise<SliderItem[]> {
   try {
@@ -1261,13 +1235,13 @@ export async function getSliders(): Promise<SliderItem[]> {
       .order("order_index", { ascending: true })
       .order("created_at", { ascending: false });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       return data as SliderItem[];
     }
   } catch (err) {
     console.warn("getSliders database fetch fallback:", err);
   }
-  return DEFAULT_SLIDERS;
+  return [];
 }
 
 export async function createSlider(sliderData: Omit<SliderItem, "id" | "created_at" | "updated_at">): Promise<SliderItem | null> {
@@ -1350,63 +1324,7 @@ export interface ScheduledReminder {
   updated_at: string;
 }
 
-const DEFAULT_REMINDERS: ScheduledReminder[] = [
-  {
-    id: "rem-1",
-    title: "Summit Starts in 24 Hours: Access Your Digital Pass",
-    message: "Welcome to INT Security Technology Summit 2026! Please ensure your digital pass and QR code are ready for fast-track entry at Gate 3, Cairo ICT Centre.",
-    reminder_type: "event_countdown",
-    event_id: "security-summit-2026",
-    target_audience: "registered_event",
-    timing_mode: "event_relative",
-    relative_offset: "24h_before",
-    scheduled_time: "2026-09-14T09:00:00Z",
-    send_email: true,
-    send_browser_push: true,
-    send_in_app: true,
-    status: "scheduled",
-    recipient_count: 320,
-    delivered_count: 0,
-    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-    updated_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-  },
-  {
-    id: "rem-2",
-    title: "Badge Printing & National ID Verification Reminder",
-    message: "To receive your official summit laminate badge, please make sure your National ID or Passport is verified in your account profile.",
-    reminder_type: "badge_ready",
-    event_id: null,
-    target_audience: "unverified_attendees",
-    timing_mode: "scheduled",
-    scheduled_time: "2026-09-01T10:00:00Z",
-    send_email: true,
-    send_browser_push: true,
-    send_in_app: true,
-    status: "scheduled",
-    recipient_count: 85,
-    delivered_count: 0,
-    created_at: new Date(Date.now() - 86400000 * 4).toISOString(),
-    updated_at: new Date(Date.now() - 86400000 * 4).toISOString(),
-  },
-  {
-    id: "rem-3",
-    title: "Keynote Announcement: AI in Video Surveillance",
-    message: "Live Keynote with Genetec and Cisco engineering leadership starting in Hall A. Reserved seats available for registered enterprise delegates.",
-    reminder_type: "speaker_alert",
-    event_id: "security-summit-2026",
-    target_audience: "all_attendees",
-    timing_mode: "immediate",
-    scheduled_time: new Date(Date.now() - 3600000 * 5).toISOString(),
-    send_email: true,
-    send_browser_push: true,
-    send_in_app: true,
-    status: "sent",
-    recipient_count: 450,
-    delivered_count: 442,
-    created_at: new Date(Date.now() - 3600000 * 6).toISOString(),
-    updated_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-  },
-];
+const DEFAULT_REMINDERS: ScheduledReminder[] = [];
 
 const REMINDERS_STORAGE_KEY = "int_scheduled_reminders_v1";
 
@@ -1417,7 +1335,7 @@ export async function getScheduledReminders(): Promise<ScheduledReminder[]> {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       return data as ScheduledReminder[];
     }
   } catch (err) {
@@ -1428,10 +1346,9 @@ export async function getScheduledReminders(): Promise<ScheduledReminder[]> {
     try {
       const stored = localStorage.getItem(REMINDERS_STORAGE_KEY);
       if (stored) return JSON.parse(stored);
-      localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(DEFAULT_REMINDERS));
     } catch {}
   }
-  return DEFAULT_REMINDERS;
+  return [];
 }
 
 export async function createScheduledReminder(
@@ -1604,35 +1521,15 @@ export const GALLERY_ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg", "
 
 const GALLERY_STORAGE_KEY = "int-event-galleries";
 
-/** Demo gallery shown for a completed event until real galleries are added. */
-const SEED_GALLERIES: EventGallery[] = [
-  {
-    id: "gal-seed-smart-infrastructure",
-    event_id: "smart-infrastructure-workshop",
-    title: "Workshop Highlights & Results",
-    results:
-      "<p><strong>60 engineers</strong> completed the hands-on programme, with <strong>54 verified check-ins</strong> across the full day.</p><ul><li>4 live integration labs covering BMS, ELV and access control commissioning</li><li>Certificates of completion issued to all attending engineers</li><li>Satisfaction score of 4.7 / 5 from the post-event survey</li></ul><p>Follow-up technical clinics with Honeywell and Schneider Electric are scheduled for the next quarter.</p>",
-    images: [
-      "/gallery/smart-infrastructure-workshop-1.jpg",
-      "/gallery/smart-infrastructure-workshop-2.jpg",
-      "/gallery/smart-infrastructure-workshop-3.jpg",
-      "/gallery/smart-infrastructure-workshop-4.jpg",
-    ],
-    is_published: true,
-    created_at: "2026-06-05T10:00:00.000Z",
-    updated_at: "2026-06-05T10:00:00.000Z",
-  },
-];
+const SEED_GALLERIES: EventGallery[] = [];
 
 function readLocalGalleries(): EventGallery[] {
-  if (typeof window === "undefined") return SEED_GALLERIES;
+  if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(GALLERY_STORAGE_KEY);
-    const stored = raw ? (JSON.parse(raw) as EventGallery[]) : [];
-    const seeds = SEED_GALLERIES.filter((s) => !stored.some((g) => g.id === s.id));
-    return [...stored, ...seeds];
+    return raw ? (JSON.parse(raw) as EventGallery[]) : [];
   } catch {
-    return SEED_GALLERIES;
+    return [];
   }
 }
 

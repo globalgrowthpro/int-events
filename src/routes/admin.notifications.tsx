@@ -142,8 +142,8 @@ function AdminNotifications() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Events list
-  const [eventsList, setEventsList] = useState<IntEvent[]>(events);
-  const [selectedLifecycleEventId, setSelectedLifecycleEventId] = useState<string>(events[0]?.id || "security-summit-2026");
+  const [eventsList, setEventsList] = useState<IntEvent[]>([]);
+  const [selectedLifecycleEventId, setSelectedLifecycleEventId] = useState<string>("");
 
   // Browser push permission status
   const [pushPermission, setPushPermission] = useState<NotificationPermission>("default");
@@ -191,7 +191,7 @@ function AdminNotifications() {
     title: "Summit Starts in 24 Hours: Access Your Digital Pass",
     message: "Welcome to {event_title}! Please ensure your digital pass and QR code are ready for fast-track entry at Gate 3, {venue}.",
     reminder_type: "event_countdown",
-    event_id: events[0]?.id || "security-summit-2026",
+    event_id: "",
     target_audience: "registered_event",
     timing_mode: "event_relative",
     scheduled_time: new Date(Date.now() + 86400000).toISOString().slice(0, 16),
@@ -252,7 +252,7 @@ function AdminNotifications() {
       title: "Summit Starts in 24 Hours: Access Your Digital Pass",
       message: "Welcome to {event_title}! Please ensure your digital pass and QR code are ready for fast-track entry at Gate 3, {venue}.",
       reminder_type: "event_countdown",
-      event_id: eventsList[0]?.id || "security-summit-2026",
+      event_id: eventsList[0]?.id || "",
       target_audience: "registered_event",
       timing_mode: "event_relative",
       scheduled_time: new Date(Date.now() + 86400000).toISOString().slice(0, 16),

@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { StatusBadge } from "@/components/int/status-badge";
 import { RichTextEditor } from "@/components/int/rich-text-editor";
-import { events as initialEvents, type IntEvent, type Speaker, type AgendaItem, formatEventDateRange } from "@/lib/int-data";
+import { type IntEvent, type Speaker, type AgendaItem, formatEventDateRange } from "@/lib/int-data";
 import { toDdMmYyyy } from "@/lib/format";
 import { getEvents, createEvent, updateEvent, deleteEvent } from "@/lib/api";
 import { toast } from "sonner";
@@ -80,33 +80,25 @@ const defaultFormValues: EventFormValues = {
   category: "Summit",
   date: new Date().toISOString().split("T")[0]!,
   endDate: new Date().toISOString().split("T")[0]!,
-  dateLabel: "15 September 2026",
+  dateLabel: "",
   startTime: "09:00 AM",
   endTime: "05:00 PM",
   city: "Cairo, Egypt",
-  venue: "INT Headquarters, Grand Hall",
-  mapUrl: "https://maps.google.com/?q=Cairo,Egypt",
+  venue: "",
+  mapUrl: "",
   image: "",
   capacity: 250,
   registered: 0,
   status: "open",
-  summary: "Comprehensive executive summit focusing on integrated infrastructure and unified security.",
-  partners: "Genetec, Axis Communications, Cisco",
-  partnerList: [
-    { name: "Genetec", category: "Unified Security Partner", logo: "" },
-    { name: "Axis Communications", category: "Network Video Sponsor", logo: "" },
-  ],
-  speakers: [
-    { name: "Eng. Karim Nabil", position: "CTO", company: "Integrated Technics", bio: "Leads INT technology strategy." },
-  ],
-  agenda: [
-    { time: "09:00 AM", title: "Registration & Welcome Coffee", detail: "Badge issuance at main entrance" },
-    { time: "10:00 AM", title: "Keynote: Next-Gen Infrastructure", detail: "Main Ballroom stage" },
-  ],
+  summary: "",
+  partners: "",
+  partnerList: [],
+  speakers: [],
+  agenda: [],
 };
 
 export function AdminEventsPage() {
-  const [eventsList, setEventsList] = useState<IntEvent[]>(initialEvents);
+  const [eventsList, setEventsList] = useState<IntEvent[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");

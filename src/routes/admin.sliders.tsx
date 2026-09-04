@@ -668,7 +668,7 @@ export function AdminSlidersPage() {
                           type="text"
                           value={formData.event_link}
                           onChange={(e) => setFormData({ ...formData, event_link: e.target.value })}
-                          placeholder="Or type custom path e.g. /event/security-summit-2026"
+                          placeholder="Or type custom path e.g. /events or /event/my-event"
                           className="h-9 w-full rounded-xl border border-input bg-secondary/20 px-3 text-xs text-foreground outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/60"
                         />
                       </div>

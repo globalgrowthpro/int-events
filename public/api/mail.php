@@ -252,8 +252,25 @@ HTML;
     $logoUrl = "{$domain}/" . ltrim($logoUrl, "/");
   }
 
+  $passPdfUrl = !empty($data["pass_pdf_url"]) ? htmlspecialchars($data["pass_pdf_url"]) : "";
   $myPassesUrl = !empty($template["buttonUrl"]) ? $template["buttonUrl"] : "{$domain}/my-passes";
   $subject = "Official Access Pass — {$recipientName} ({$eventTitle})";
+
+  $downloadButtonHtml = "";
+  $badgeButtonPadding = "16px 36px";
+  $badgeButtonBg = $primaryColor;
+  $badgeButtonBorder = "";
+  $badgeButtonShadow = "box-shadow: 0 10px 20px -5px {$primaryColor}80;";
+  $badgeHint = "📎 Your printable badge image is also attached to this email.";
+
+  if (!empty($passPdfUrl)) {
+    $downloadButtonHtml = '<table cellspacing="0" cellpadding="0" style="margin-bottom: 12px;"><tr><td align="center" style="border-radius: 14px;"><a href="' . $passPdfUrl . '" target="_blank" download style="display: inline-block; padding: 16px 36px; background: ' . $primaryColor . '; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ' . $primaryColor . '80;">📥 Download Official A4 Pass Card (PDF)</a></td></tr></table>';
+    $badgeButtonPadding = "13px 30px";
+    $badgeButtonBg = "transparent";
+    $badgeButtonBorder = "border: 1px solid #475569;";
+    $badgeButtonShadow = "";
+    $badgeHint = "📄 Click above to view and download your official high-resolution A4 Pass Card (PDF).";
+  }
 
   $html = <<<HTML
 <!DOCTYPE html>
@@ -345,17 +362,18 @@ HTML;
           <!-- CALL TO ACTION BUTTON -->
           <tr>
             <td style="padding: 10px 36px 28px 36px;" align="center">
+              {$downloadButtonHtml}
               <table cellspacing="0" cellpadding="0">
                 <tr>
                   <td align="center" style="border-radius: 14px;">
-                    <a href="{$myPassesUrl}" style="display: inline-block; padding: 16px 36px; background: {$primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px {$primaryColor}80;">
+                    <a href="{$myPassesUrl}" style="display: inline-block; padding: {$badgeButtonPadding}; background: {$badgeButtonBg}; color: #ffffff; {$badgeButtonBorder} font-size: 14px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; {$badgeButtonShadow}">
                       {$buttonText}
                     </a>
                   </td>
                 </tr>
               </table>
               <p style="margin: 14px 0 0 0; color: #94a3b8; font-size: 12px;">
-                📎 Your printable badge image is also attached to this email.
+                {$badgeHint}
               </p>
             </td>
           </tr>

@@ -19,11 +19,12 @@ import {
   Copy,
   Check,
   AlertCircle,
+  FileText,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { events, type IntEvent, type Registration } from "@/lib/int-data";
+import { type IntEvent, type Registration } from "@/lib/int-data";
 import { sendPassCardEmail } from "@/lib/email-service";
 import { PassCard } from "@/components/int/pass-card";
 import {
@@ -34,6 +35,14 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { PaginationControl, usePagination } from "@/components/int/pagination-control";
+import {
+  A4PassCardTestDialog,
+  type A4PassCardTestAttendee,
+} from "@/components/int/a4-pass-card-test-dialog";
+import { generateA4PassCardPdf } from "@/lib/pass-card-pdf";
+import { generatePassCardPng } from "@/lib/pass-card-renderer";
+import { uploadPassCardPdf } from "@/lib/pass-storage";
 
 export const Route = createFileRoute("/admin/pass-cards")({
   head: () => ({
@@ -100,6 +109,7 @@ export function AdminPassCardsPage() {
 
   // Preview Modal
   const [previewItem, setPreviewItem] = useState<AttendeePassRow | null>(null);
+  const [testingA4Attendee, setTestingA4Attendee] = useState<A4PassCardTestAttendee | null>(null);
   
   // Real events from DB
   const [dbEvents, setDbEvents] = useState<any[]>([]);
@@ -141,89 +151,7 @@ export function AdminPassCardsPage() {
         setRows(data as AttendeePassRow[]);
         if (showToast) toast.success(`Loaded ${data.length} pass records from database.`);
       } else {
-        // Fallback demo attendee passes
-        const fallbackRows: AttendeePassRow[] = [
-          {
-            id: "REG-2026-001",
-            event_id: "security-summit-2026",
-            attendee_name: "Eng. Tarek Mansour",
-            attendee_email: "tarek.mansour@telecom.eg",
-            phone: "+20 100 458 9123",
-            company: "Telecom Egypt",
-            job_title: "Chief Information Security Officer",
-            role: "client",
-            ticket_token: "ITS-PASS-884920",
-            state: "registered",
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: "REG-2026-002",
-            event_id: "security-summit-2026",
-            attendee_name: "Dr. Sarah Al-Husseini",
-            attendee_email: "sarah.husseini@nbe.com.eg",
-            phone: "+20 111 884 1002",
-            company: "National Bank of Egypt",
-            job_title: "VP of Enterprise Infrastructure",
-            role: "client",
-            ticket_token: "ITS-PASS-991204",
-            state: "checked-in",
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: "REG-2026-003",
-            event_id: "cloud-forum-2026",
-            attendee_name: "Ahmed Mostafa",
-            attendee_email: "a.mostafa@vodafone.com",
-            phone: "+20 122 345 6789",
-            company: "Vodafone Egypt",
-            job_title: "Lead Cloud Architect",
-            role: "client",
-            ticket_token: "ITS-PASS-471029",
-            state: "registered",
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: "REG-2026-004",
-            event_id: "security-summit-2026",
-            attendee_name: "Mariam Youssef",
-            attendee_email: "mariam.y@cib.com.eg",
-            phone: "+20 109 876 5432",
-            company: "CIB Egypt",
-            job_title: "Head of Network Security",
-            role: "client",
-            ticket_token: "ITS-PASS-662810",
-            state: "registered",
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: "REG-2026-005",
-            event_id: "ai-vision-2026",
-            attendee_name: "Karim Abdelrahman",
-            attendee_email: "karim.abdelrahman@orange.com",
-            phone: "+20 114 556 7890",
-            company: "Orange Business",
-            job_title: "Principal AI Consultant",
-            role: "vendor",
-            ticket_token: "ITS-PASS-331908",
-            state: "registered",
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: "REG-2026-006",
-            event_id: "infra-expo-2026",
-            attendee_name: "Nouran El-Sayed",
-            attendee_email: "nouran.elsayed@banquemisr.com",
-            phone: "+20 102 334 5566",
-            company: "Banque Misr",
-            job_title: "IT Operations Director",
-            role: "client",
-            ticket_token: "ITS-PASS-774192",
-            state: "registered",
-            created_at: new Date().toISOString(),
-          },
-        ];
-        setRows(fallbackRows);
-        if (showToast) toast.info("Loaded demo pass card records.");
+        setRows([]);
       }
     } catch {
       toast.error("Failed to connect to database. Displaying local cache.");
@@ -275,11 +203,9 @@ export function AdminPassCardsPage() {
   };
 
   const getEventObj = (eventId: string) => {
-    const dbMatch = dbEvents.find((e) => e.id === eventId);
+    const dbMatch = dbEvents.find((e: any) => e.id === eventId);
     if (dbMatch) return dbMatch;
-    const staticMatch = events.find((e) => e.id === eventId);
-    if (staticMatch) return staticMatch;
-    return dbEvents[0] || events[0];
+    return dbEvents[0] || null;
   };
 
   // Dispatch Pass Card Email
@@ -291,6 +217,28 @@ export function AdminPassCardsPage() {
       toast.loading(`Sending pass card to ${row.attendee_email}...`, { id: `send-${row.id}` });
       
       const passImageBase64 = await generatePassCardDataUrl(row);
+      let passPdfUrl: string | undefined = undefined;
+      if (passImageBase64) {
+        try {
+          const pdfRes = generateA4PassCardPdf(passImageBase64, {
+            attendeeName: row.attendee_name,
+            quadrant: "top-left",
+            showCutGuides: true,
+          });
+          passPdfBase64 = pdfRes.dataUri;
+
+          const uploadedUrl = await uploadPassCardPdf(pdfRes.blob, {
+            eventId: row.event_id,
+            registrationId: row.id,
+            attendeeName: row.attendee_name,
+          });
+          if (uploadedUrl) {
+            passPdfUrl = uploadedUrl;
+          }
+        } catch (pdfErr) {
+          console.warn("Failed generating A4 PDF attachment or uploading to storage:", pdfErr);
+        }
+      }
 
       const result = await sendPassCardEmail({
         recipient_name: row.attendee_name,
@@ -304,6 +252,8 @@ export function AdminPassCardsPage() {
         registration_id: row.id,
         token: row.ticket_token,
         pass_image_base64: passImageBase64 || undefined,
+        pass_pdf_base64: passPdfBase64 || undefined,
+        pass_pdf_url: passPdfUrl || undefined,
       });
 
       if (result.success) {
@@ -345,6 +295,28 @@ export function AdminPassCardsPage() {
       const ev = getEventObj(row.event_id);
       try {
         const passImageBase64 = await generatePassCardDataUrl(row);
+        let passPdfUrl: string | undefined = undefined;
+        if (passImageBase64) {
+          try {
+            const pdfRes = generateA4PassCardPdf(passImageBase64, {
+              attendeeName: row.attendee_name,
+              quadrant: "top-left",
+              showCutGuides: true,
+            });
+            passPdfBase64 = pdfRes.dataUri;
+
+            const uploadedUrl = await uploadPassCardPdf(pdfRes.blob, {
+              eventId: row.event_id,
+              registrationId: row.id,
+              attendeeName: row.attendee_name,
+            });
+            if (uploadedUrl) {
+              passPdfUrl = uploadedUrl;
+            }
+          } catch (pdfErr) {
+            console.warn("Failed generating A4 PDF attachment or uploading to storage:", pdfErr);
+          }
+        }
 
         const res = await sendPassCardEmail({
           recipient_name: row.attendee_name,
@@ -358,6 +330,8 @@ export function AdminPassCardsPage() {
           registration_id: row.id,
           token: row.ticket_token,
           pass_image_base64: passImageBase64 || undefined,
+          pass_pdf_base64: passPdfBase64 || undefined,
+          pass_pdf_url: passPdfUrl || undefined,
         });
 
         if (res.success) {
@@ -393,6 +367,17 @@ export function AdminPassCardsPage() {
       );
     });
   }, [rows, deliveryStatuses, search, statusFilter, eventFilter]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    paginatedItems: paginatedRows,
+    resetPage,
+  } = usePagination(filteredRows, 15);
+
+  useEffect(() => {
+    resetPage();
+  }, [search, statusFilter, eventFilter, resetPage]);
 
   // Statistics
   const totalCount = rows.length;
@@ -461,84 +446,11 @@ export function AdminPassCardsPage() {
   const generatePassCardDataUrl = (row: AttendeePassRow | null): Promise<string> => {
     if (!row) return Promise.resolve("");
     const ev = getEventObj(row.event_id);
-    const eventTitle = (ev?.title || "Integrated Technics Showcase 2026").toUpperCase();
-
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = `/2.png?v=${Date.now()}`;
-      img.onload = () => {
-        try {
-          const canvas = document.createElement("canvas");
-          canvas.width = img.width || 1200;
-          canvas.height = img.height || 1697;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return resolve("");
-
-          // 1. Draw background template image (2.png)
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-          const centerX = canvas.width / 2;
-
-          // 2. Draw DYNAMIC EVENT TITLE directly on the natural card background
-          ctx.textAlign = "center";
-          ctx.fillStyle = "#000000";
-          const topFontSize = eventTitle.length > 35 
-            ? Math.round(canvas.width * 0.048) 
-            : Math.round(canvas.width * 0.056);
-          ctx.font = `900 ${topFontSize}px "Inter", "Segoe UI", Arial, sans-serif`;
-          drawCanvasWrappedText(
-            ctx,
-            eventTitle,
-            centerX,
-            canvas.height * 0.125,
-            canvas.width * 0.88,
-            topFontSize * 1.25
-          );
-
-          // 3. Dynamic Attendee Info
-          const centerY = canvas.height * 0.42;
-
-          // Attendee Name (Bold Black Uppercase - Larger)
-          ctx.fillStyle = "#111111";
-          ctx.font = `900 ${Math.round(canvas.width * 0.062)}px "Inter", "Segoe UI", Arial, sans-serif`;
-          ctx.fillText((row.attendee_name || "Valued Guest").toUpperCase(), centerX, centerY);
-
-          // Position (Job Title)
-          ctx.fillStyle = "#444444";
-          ctx.font = `800 ${Math.round(canvas.width * 0.058)}px "Inter", "Segoe UI", Arial, sans-serif`;
-          ctx.fillText(row.job_title || "Participant", centerX, centerY + canvas.height * 0.058);
-
-          // Organization (Bold Brand Orange Uppercase)
-          ctx.fillStyle = "#f37021";
-          ctx.font = `900 ${Math.round(canvas.width * 0.060)}px "Inter", "Segoe UI", Arial, sans-serif`;
-          ctx.fillText((row.company || "Integrated Technics").toUpperCase(), centerX, centerY + canvas.height * 0.118);
-
-          // 4. Bottom Orange Footer Band (Dynamic Event Title)
-          ctx.fillStyle = "#f37021";
-          ctx.fillRect(0, canvas.height * 0.84, canvas.width, canvas.height * 0.16);
-
-          ctx.fillStyle = "#ffffff";
-          ctx.font = `italic 700 ${Math.round(canvas.width * 0.036)}px Georgia, serif, Arial`;
-          drawCanvasWrappedText(
-            ctx,
-            ev?.title || "Integrated Technics Showcase Event",
-            centerX,
-            canvas.height * 0.892,
-            canvas.width * 0.90,
-            canvas.width * 0.044
-          );
-
-          ctx.font = `italic 800 ${Math.round(canvas.width * 0.040)}px Georgia, serif, Arial`;
-          ctx.fillText("Full Access Ticket", centerX, canvas.height * 0.95);
-
-          resolve(canvas.toDataURL("image/png"));
-        } catch (err) {
-          console.warn("Canvas pass card generation error:", err);
-          resolve("");
-        }
-      };
-      img.onerror = () => resolve("");
+    return generatePassCardPng({
+      attendee_name: row.attendee_name,
+      job_title: row.job_title || "Participant",
+      company: row.company || "Integrated Technics",
+      event_title: ev?.title || "Integrated Technics Showcase 2026",
     });
   };
 
@@ -598,6 +510,25 @@ export function AdminPassCardsPage() {
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
             Refresh
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              setTestingA4Attendee({
+                attendee_name: "MR HAFEZ RAHIM",
+                job_title: "Developer",
+                company: "INTEGRATED TECHNICS",
+                event_title: "INTEGRATED TECHNICS SHOWCASE EVENT ITS2026",
+              })
+            }
+            className="h-9 gap-1.5 border-primary/40 text-primary bg-primary/5 hover:bg-primary/10 text-xs font-semibold shadow-xs"
+            title="Test and preview A4 PDF pass card sheet divided into 4 cards"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Test A4 PDF (4 Cards)</span>
+            <span className="sm:hidden">A4 PDF</span>
           </Button>
 
           <Button
@@ -726,7 +657,7 @@ export function AdminPassCardsPage() {
               className="h-10 text-xs bg-background border border-input rounded-xl px-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               <option value="all">All Events</option>
-              {(dbEvents.length > 0 ? dbEvents : events).map((e) => (
+              {dbEvents.map((e: any) => (
                 <option key={e.id} value={e.id}>
                   {e.title}
                 </option>
@@ -763,7 +694,7 @@ export function AdminPassCardsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredRows.map((row) => {
+                paginatedRows.map((row) => {
                   const status = getStatus(row);
                   const isSending = sendingId === row.id;
                   const ev = getEventObj(row.event_id);
@@ -823,8 +754,16 @@ export function AdminPassCardsPage() {
                       {/* Event & Pass Token */}
                       <td className="py-3.5 px-4 sm:px-6">
                         <div className="space-y-1">
-                          <span className="inline-block px-2 py-0.5 rounded-md bg-secondary text-[11px] font-medium text-foreground whitespace-normal break-words max-w-[200px]">
-                            {ev?.title || "Integrated Technics Showcase"}
+                          <span className="inline-block px-2 py-0.5 rounded-md bg-secondary text-[11px] font-medium text-foreground max-w-[160px] whitespace-pre-line leading-tight">
+                            {(ev?.title || "Integrated Technics Showcase")
+                              .split(" ")
+                              .reduce((lines: string[], word: string, i: number) => {
+                                const lineIdx = Math.floor(i / 3);
+                                if (!lines[lineIdx]) lines[lineIdx] = word;
+                                else lines[lineIdx] += " " + word;
+                                return lines;
+                              }, [])
+                              .join("\n")}
                           </span>
                           <div className="flex items-center gap-1">
                             <span className="font-mono text-[10px] text-muted-foreground">
@@ -910,6 +849,28 @@ export function AdminPassCardsPage() {
                             <Eye className="h-3.5 w-3.5" />
                             <span className="hidden md:inline">View</span>
                           </Button>
+
+                          {/* Test A4 PDF Sheet Button */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setTestingA4Attendee({
+                                attendee_name: row.attendee_name,
+                                attendee_email: row.attendee_email,
+                                job_title: row.job_title,
+                                company: row.company,
+                                event_title:
+                                  getEventObj(row.event_id)?.title ||
+                                  "INTEGRATED TECHNICS SHOWCASE EVENT ITS2026",
+                              })
+                            }
+                            className="h-8 gap-1 px-2 text-xs font-medium border-primary/30 text-primary hover:bg-primary/10"
+                            title="Test & Preview A4 Printable PDF Sheet"
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                            <span className="hidden xl:inline">A4 PDF</span>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -919,6 +880,14 @@ export function AdminPassCardsPage() {
             </tbody>
           </table>
         </div>
+
+        <PaginationControl
+          currentPage={currentPage}
+          totalItems={filteredRows.length}
+          pageSize={15}
+          onPageChange={setCurrentPage}
+          itemLabel="pass cards"
+        />
       </div>
 
       {/* View Pass Card Dialog Modal */}
@@ -1002,6 +971,62 @@ export function AdminPassCardsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* A4 Printable Pass Card Sheet Test Dialog */}
+      <A4PassCardTestDialog
+        isOpen={!!testingA4Attendee}
+        onClose={() => setTestingA4Attendee(null)}
+        attendee={testingA4Attendee}
+        onSendEmail={async (pdfDataUri, att) => {
+          if (!att.attendee_email) return;
+          // Find the matching row to get all send details
+          const matchRow = rows.find(
+            (r) => r.attendee_email === att.attendee_email
+          ) || rows.find((r) => r.attendee_name === att.attendee_name);
+          if (!matchRow) return;
+          setSendingId(matchRow.id);
+          try {
+            const ev = getEventObj(matchRow.event_id);
+            let passPdfUrl: string | undefined = undefined;
+            if (pdfDataUri) {
+              const uploadedUrl = await uploadPassCardPdf(pdfDataUri, {
+                eventId: matchRow.event_id,
+                registrationId: matchRow.id,
+                attendeeName: matchRow.attendee_name,
+              });
+              if (uploadedUrl) passPdfUrl = uploadedUrl;
+            }
+
+            const result = await sendPassCardEmail({
+              recipient_name: matchRow.attendee_name,
+              recipient_email: matchRow.attendee_email,
+              event_id: matchRow.event_id,
+              event_title: ev?.title || att.event_title || "Integrated Technics Showcase 2026",
+              event_date: ev?.dateLabel || ev?.date || "November 2026",
+              event_location: ev?.venue || ev?.location || ev?.city || "Cairo, Egypt",
+              company: matchRow.company,
+              job_title: matchRow.job_title,
+              registration_id: matchRow.id,
+              token: matchRow.ticket_token,
+              pass_pdf_base64: pdfDataUri,
+              pass_pdf_url: passPdfUrl || undefined,
+            });
+            if (result.success) {
+              await updateStatus(matchRow, "sent");
+              toast.success(`A4 PDF pass card sent to ${matchRow.attendee_name}!`, {
+                id: `a4-send-${matchRow.id}`,
+                description: `Delivered to ${att.attendee_email}`,
+              });
+            } else {
+              toast.error(`Failed: ${result.error || "SMTP error"}`, { id: `a4-send-${matchRow.id}` });
+            }
+          } catch (err: any) {
+            toast.error(`Error: ${err.message}`, { id: `a4-send-${matchRow.id}` });
+          } finally {
+            setSendingId(null);
+          }
+        }}
+      />
     </div>
   );
 }

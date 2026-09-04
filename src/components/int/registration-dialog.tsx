@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Users, User, Ticket, Building, MapPin, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -29,7 +29,8 @@ const idSummary = (id: IdentityDocs) =>
 
 interface Representative {
   prefix: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   gender: string;
   email: string;
   mobile: string;
@@ -53,20 +54,51 @@ const PREFIXES = [
   "Sir",
 ];
 
-const stripPrefix = (name: string) =>
-  name
+// Sort prefixes longest first so "Assoc. Prof" matches before "Prof", "Lt. Col" before "Col", etc.
+const SORTED_PREFIXES = [...PREFIXES].sort((a, b) => b.length - a.length);
+
+const extractPrefix = (name: string): { prefix: string; bareName: string } => {
+  if (!name) return { prefix: "", bareName: "" };
+  const trimmed = name.trim();
+  for (const p of SORTED_PREFIXES) {
+    const escaped = p.replace(/\./g, "\\.");
+    const regex = new RegExp(`^${escaped}\\.?\\s+`, "i");
+    if (regex.test(trimmed)) {
+      return { prefix: p, bareName: trimmed.replace(regex, "").trim() };
+    }
+  }
+  return { prefix: "", bareName: trimmed };
+};
+
+const stripPrefix = (name: string) => {
+  if (!name) return "";
+  return name
     .replace(
       new RegExp(
-        `^(${PREFIXES.map((p) => p.replace(/\./g, "\\.")).join("|")})\\s+`,
+        `^(${SORTED_PREFIXES.map((p) => p.replace(/\./g, "\\.")).join("|")})\\.?\\s+`,
         "i"
       ),
       ""
     )
     .trim();
+};
 
 const applyPrefix = (prefix: string, name: string) => {
-  const bare = stripPrefix(name);
-  return prefix ? `${prefix} ${bare}`.trim() : bare;
+  const trimmed = name ? name.trim() : "";
+  if (!prefix) return trimmed;
+  const bare = stripPrefix(trimmed);
+  return bare ? `${prefix} ${bare}`.trim() : prefix;
+};
+
+const splitName = (name: string): { firstName: string; lastName: string } => {
+  if (!name) return { firstName: "", lastName: "" };
+  const parts = name.trim().split(/\s+/);
+  if (parts.length <= 1) {
+    return { firstName: parts[0] || "", lastName: "" };
+  }
+  const firstName = parts[0]!;
+  const lastName = parts.slice(1).join(" ");
+  return { firstName, lastName };
 };
 
 const sectors = [
@@ -86,9 +118,26 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [repCount, setRepCount] = useState<number>(1);
   const [reps, setReps] = useState<Representative[]>([]);
-  const [primaryPrefix, setPrimaryPrefix] = useState("");
-  const [primaryName, setPrimaryName] = useState(user?.name ?? "");
+  const [primaryPrefix, setPrimaryPrefix] = useState(() => extractPrefix(user?.name ?? "").prefix);
+  const [primaryFirstName, setPrimaryFirstName] = useState(() => {
+    const bare = extractPrefix(user?.name ?? "").bareName;
+    return splitName(bare).firstName;
+  });
+  const [primaryLastName, setPrimaryLastName] = useState(() => {
+    const bare = extractPrefix(user?.name ?? "").bareName;
+    return splitName(bare).lastName;
+  });
   const [primaryId, setPrimaryId] = useState<IdentityDocs>(emptyId());
+
+  useEffect(() => {
+    if (open) {
+      const parsed = extractPrefix(user?.name ?? "");
+      setPrimaryPrefix(parsed.prefix);
+      const split = splitName(parsed.bareName);
+      setPrimaryFirstName(split.firstName);
+      setPrimaryLastName(split.lastName);
+    }
+  }, [open, user?.name]);
 
   if (!open) return null;
 
@@ -98,7 +147,7 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
     setReps((prev) => {
       const next = [...prev];
       while (next.length < additionalNeeded) {
-        next.push({ prefix: "", fullName: "", gender: "Male", email: "", mobile: "", identity: emptyId() });
+        next.push({ prefix: "", firstName: "", lastName: "", gender: "Male", email: "", mobile: "", identity: emptyId() });
       }
       return next.slice(0, additionalNeeded);
     });
@@ -120,7 +169,7 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
 
   const handlePrimaryPrefixChange = (prefix: string) => {
     setPrimaryPrefix(prefix);
-    setPrimaryName((prev) => applyPrefix(prefix, prev));
+    // Do not place prefix in full name input field
   };
 
   const handleRepIdentityChange = (index: number, identity: IdentityDocs) => {
@@ -138,7 +187,7 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
         next[index] = {
           ...next[index],
           prefix,
-          fullName: applyPrefix(prefix, next[index].fullName),
+          // Do not place prefix in full name input field
         };
       }
       return next;
@@ -187,8 +236,12 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
       }
     }
 
+    const formFirstName = ((formData.get("firstName") as string) || primaryFirstName).trim();
+    const formLastName = ((formData.get("lastName") as string) || primaryLastName).trim();
+    const combinedName = [formFirstName, formLastName].filter(Boolean).join(" ");
+    const rawPrimaryName = combinedName || user?.name || "Attendee";
     const primaryAttendee = {
-      fullName: (formData.get("fullName") as string) || user?.name || "Attendee",
+      fullName: applyPrefix(primaryPrefix, rawPrimaryName),
       email: (formData.get("email") as string) || user?.email || "attendee@example.com",
       gender: (formData.get("gender") as string) || "Male",
       phone: (formData.get("mobile") as string || formData.get("phone") as string) || "",
@@ -257,8 +310,10 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
           }
         }
 
+        const repCombined = [r.firstName?.trim(), r.lastName?.trim()].filter(Boolean).join(" ");
+        const repRaw = repCombined || `Representative #${i + 2}`;
         return {
-          fullName: r.fullName || "Representative",
+          fullName: applyPrefix(r.prefix, repRaw),
           email: r.email || primaryAttendee.email,
           gender: r.gender,
           phone: r.mobile,
@@ -388,22 +443,33 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
                 </select>
               </Field>
 
-              <Field label="Full Name (as it should be on badge)" required>
-                <input
-                  name="fullName"
-                  required
-                  value={primaryName}
-                  onChange={(e) => setPrimaryName(e.target.value)}
-                  placeholder="e.g. Dr. Ahmed Mohamed"
-                  className={inputClass}
-                />
-              </Field>
-
               <Field label="Gender" required>
                 <select name="gender" required defaultValue="Male" className={inputClass}>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                 </select>
+              </Field>
+
+              <Field label="First Name" required>
+                <input
+                  name="firstName"
+                  required
+                  value={primaryFirstName}
+                  onChange={(e) => setPrimaryFirstName(e.target.value)}
+                  placeholder="e.g. Ahmed"
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Last Name" required>
+                <input
+                  name="lastName"
+                  required
+                  value={primaryLastName}
+                  onChange={(e) => setPrimaryLastName(e.target.value)}
+                  placeholder="e.g. Mohamed"
+                  className={inputClass}
+                />
               </Field>
 
               <Field label="Email" required>
@@ -532,18 +598,6 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
                         </select>
                       </Field>
 
-                      <Field label="Full Name (as it should be on badge)" required>
-                        <input
-                          required
-                          value={rep.fullName}
-                          onChange={(e) =>
-                            handleRepFieldChange(idx, "fullName", e.target.value)
-                          }
-                          placeholder={`Representative #${ticketNum} full name`}
-                          className={inputClass}
-                        />
-                      </Field>
-
                       <Field label="Gender" required>
                         <select
                           required
@@ -556,6 +610,30 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
                           <option value="Male">Male</option>
                           <option value="Female">Female</option>
                         </select>
+                      </Field>
+
+                      <Field label="First Name" required>
+                        <input
+                          required
+                          value={rep.firstName}
+                          onChange={(e) =>
+                            handleRepFieldChange(idx, "firstName", e.target.value)
+                          }
+                          placeholder="First name"
+                          className={inputClass}
+                        />
+                      </Field>
+
+                      <Field label="Last Name" required>
+                        <input
+                          required
+                          value={rep.lastName}
+                          onChange={(e) =>
+                            handleRepFieldChange(idx, "lastName", e.target.value)
+                          }
+                          placeholder="Last name"
+                          className={inputClass}
+                        />
                       </Field>
 
                       <Field label="Email" required>

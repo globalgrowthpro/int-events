@@ -1,19 +1,27 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 import { SiteShell } from "@/components/int/site-shell";
 import { EventDetailContent } from "@/components/int/event-detail";
-import { getEvent } from "@/lib/int-data";
 import { getEventById } from "@/lib/api";
 
 export const Route = createFileRoute("/event/$eventId")({
   loader: async ({ params }) => {
+    let realEvent;
     try {
-      const realEvent = await getEventById(params.eventId);
-      if (realEvent) return { event: realEvent };
+      realEvent = await getEventById(params.eventId);
     } catch {}
 
-    const fallback = getEvent(params.eventId);
-    if (!fallback) throw notFound();
-    return { event: fallback };
+    if (realEvent) {
+      if (params.eventId !== realEvent.id) {
+        throw redirect({
+          to: "/event/$eventId",
+          params: { eventId: realEvent.id },
+          replace: true,
+        });
+      }
+      return { event: realEvent };
+    }
+
+    throw notFound();
   },
   head: ({ loaderData }) => {
     if (!loaderData) {

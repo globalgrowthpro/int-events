@@ -462,11 +462,14 @@ function smtpServerPlugin(): Plugin {
         }
 
         if (req.method === "POST" && req.url === "/api/send-pass") {
-          let body = "";
-          req.on("data", (chunk) => (body += chunk));
+          const chunks: Buffer[] = [];
+          req.on("data", (chunk: Buffer) => chunks.push(chunk));
           req.on("end", async () => {
             try {
-              const data = JSON.parse(body || "{}");
+              const parsedBodyStr = Buffer.concat(chunks).toString("utf8");
+              const data = JSON.parse(parsedBodyStr || "{}");
+              console.log(`[send-pass] Body size: ${parsedBodyStr.length} bytes | has_pdf=${!!data.pass_pdf_base64} | pdf_len=${data.pass_pdf_base64?.length ?? 0}`);
+
               const host = data.host || SMTP.host;
               const port = Number(data.port) || SMTP.port;
               const user = data.username || SMTP.user;
@@ -507,6 +510,7 @@ function smtpServerPlugin(): Plugin {
               const jobTitle = data.job_title || "Participant";
               const company = data.company || "Integrated Technics";
               const passImageBase64 = data.pass_image_base64;
+              const passPdfUrl = data.pass_pdf_url;
               const baseDomain = data.domain || "https://events.integratedtechnics.com";
               const myPassesUrl = `${baseDomain.replace(/\/+$/, "")}/my-passes`;
 
@@ -545,8 +549,19 @@ function smtpServerPlugin(): Plugin {
                 });
               }
 
-              if (passImageBase64 && passImageBase64.startsWith("data:image")) {
-                const base64Data = passImageBase64.replace(/^data:image\/\w+;base64,/, "");
+              if (data.pass_pdf_base64) {
+                const pdfBase64 = data.pass_pdf_base64.includes("base64,")
+                  ? data.pass_pdf_base64.split("base64,")[1]
+                  : data.pass_pdf_base64;
+                attachments.push({
+                  filename: `${safeName}_ITS2026_Pass_A4.pdf`,
+                  content: Buffer.from(pdfBase64, "base64"),
+                  contentType: "application/pdf",
+                });
+              } else if (passImageBase64 && passImageBase64.startsWith("data:image")) {
+                const base64Data = passImageBase64.includes("base64,")
+                  ? passImageBase64.split("base64,")[1]
+                  : passImageBase64;
                 attachments.push({
                   filename: `${safeName}_ITS2026_Pass.png`,
                   content: Buffer.from(base64Data, "base64"),
@@ -642,17 +657,28 @@ function smtpServerPlugin(): Plugin {
           <!-- CALL TO ACTION BUTTON -->
           <tr>
             <td style="padding: 10px 36px 28px 36px;" align="center">
+              ${passPdfUrl ? `
+              <table cellspacing="0" cellpadding="0" style="margin-bottom: 12px;">
+                <tr>
+                  <td align="center" style="border-radius: 14px;">
+                    <a href="${passPdfUrl}" target="_blank" download style="display: inline-block; padding: 16px 36px; background: ${primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ${primaryColor}80;">
+                      📥 Download Official A4 Pass Card (PDF)
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              ` : ''}
               <table cellspacing="0" cellpadding="0">
                 <tr>
                   <td align="center" style="border-radius: 14px;">
-                    <a href="${myPassesUrl}" style="display: inline-block; padding: 16px 36px; background: ${primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ${primaryColor}80;">
+                    <a href="${myPassesUrl}" style="display: inline-block; padding: ${passPdfUrl ? '13px 30px' : '16px 36px'}; background: ${passPdfUrl ? 'transparent' : primaryColor}; color: #ffffff; ${passPdfUrl ? 'border: 1px solid #475569;' : ''} font-size: 14px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; ${passPdfUrl ? '' : `box-shadow: 0 10px 20px -5px ${primaryColor}80;`}">
                       ${buttonText}
                     </a>
                   </td>
                 </tr>
               </table>
               <p style="margin: 14px 0 0 0; color: #94a3b8; font-size: 12px;">
-                📎 Your printable badge image is also attached to this email.
+                ${passPdfUrl ? '📄 Click above to view and download your official high-resolution A4 Pass Card (PDF).' : '📎 Your printable badge image is also attached to this email.'}
               </p>
             </td>
           </tr>

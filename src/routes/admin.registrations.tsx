@@ -31,6 +31,10 @@ import { supabase } from "@/lib/supabase";
 import { events } from "@/lib/int-data";
 import { toast } from "sonner";
 import { sendPassCardEmail, sendRegistrationConfirmationEmail } from "@/lib/email-service";
+import { PaginationControl, usePagination } from "@/components/int/pagination-control";
+import { generatePassCardPng } from "@/lib/pass-card-renderer";
+import { generateA4PassCardPdf } from "@/lib/pass-card-pdf";
+import { uploadPassCardPdf } from "@/lib/pass-storage";
 
 export const Route = createFileRoute("/admin/registrations")({
   head: () => ({
@@ -101,7 +105,7 @@ const initialRegFormData: RegistrationFormData = {
   company: "",
   job_title: "",
   role: "client",
-  event_id: "security-summit-2026",
+  event_id: "",
   state: "registered",
   id_type: "National ID",
   id_number: "",
@@ -111,7 +115,7 @@ const initialRegFormData: RegistrationFormData = {
 
 export function AdminRegistrationsPage() {
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
-  const [allEvents, setAllEvents] = useState<any[]>(events);
+  const [allEvents, setAllEvents] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [eventFilter, setEventFilter] = useState("all");
   const [stateFilter, setStateFilter] = useState("all");
@@ -232,113 +236,7 @@ export function AdminRegistrationsPage() {
         });
         setRegistrations(enriched as RegistrationRow[]);
       } else {
-        setRegistrations([
-          {
-            id: "INT-EVT-161186",
-            event_id: "security-summit-2026",
-            attendee_name: "Amr maher",
-            attendee_email: "amr.maher@bdc.com.eg",
-            gender: "Male",
-            phone: "+20 100 887 1923",
-            company: "Banqe du caire",
-            job_title: "Head of security systems",
-            role: "client",
-            ticket_token: "EVT-2026-J68W10",
-            state: "registered",
-            is_primary: true,
-            delegation_leader_id: null,
-            id_type: "National ID",
-            id_number: "28904120102938",
-            id_doc_name: "National_ID_AmrMaher.pdf",
-            national_id_front_url: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&auto=format&fit=crop&q=80",
-            national_id_back_url: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1200&auto=format&fit=crop&q=80",
-            document_url: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&auto=format&fit=crop&q=80",
-          },
-          {
-            id: "INT-EVT-521965",
-            event_id: "security-summit-2026",
-            attendee_name: "Ms Aya El-Sherbiny",
-            attendee_email: "ayaelsherbiny2018@gmail.com",
-            gender: "Female",
-            phone: "+20 111 948 2741",
-            company: "INT",
-            job_title: "manager",
-            role: "client",
-            ticket_token: "EVT-2026-F6JS5W",
-            state: "registered",
-            is_primary: true,
-            delegation_leader_id: null,
-            id_type: "National ID",
-            id_number: "29608150104821",
-            id_doc_name: "National_ID_AyaElSherbiny.jpg",
-            national_id_front_url: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1200&auto=format&fit=crop&q=80",
-            national_id_back_url: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&auto=format&fit=crop&q=80",
-            document_url: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1200&auto=format&fit=crop&q=80",
-          },
-          {
-            id: "INT-EVT-603416",
-            event_id: "security-summit-2026",
-            attendee_name: "Mr. Hafez Rahim",
-            attendee_email: "h.rahim@integratedtechnics.com",
-            gender: "Male",
-            phone: "+20 100 482 9102",
-            company: "Integrated Technics",
-            job_title: "Developer",
-            role: "employee",
-            ticket_token: "EVT-2026-85DD8W",
-            state: "registered",
-            is_primary: true,
-            delegation_leader_id: null,
-            id_type: "Passport",
-            id_number: "A28491023",
-            id_doc_name: "Passport_HafezRahim.pdf",
-            passport_url: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&auto=format&fit=crop&q=80",
-            document_url: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&auto=format&fit=crop&q=80",
-          },
-          {
-            id: "INT-EVT-896436",
-            event_id: "security-summit-2026",
-            attendee_name: "Mr TEST",
-            attendee_email: "info@odooteams.com",
-            gender: "Male",
-            phone: "+20 102 938 4710",
-            company: "INT",
-            job_title: "Dev",
-            role: "client",
-            ticket_token: "EVT-2026-U9SNNI",
-            state: "registered",
-            is_primary: true,
-            delegation_leader_id: null,
-            id_type: "National ID",
-            id_number: "29402190103948",
-            id_doc_name: "ID_Card_Test.pdf",
-            national_id_front_url: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1200&auto=format&fit=crop&q=80",
-            national_id_back_url: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&auto=format&fit=crop&q=80",
-            document_url: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1200&auto=format&fit=crop&q=80",
-          },
-          {
-            id: "INT-EVT-000248",
-            event_id: "security-summit-2026",
-            attendee_name: "Ahmed Mohamed",
-            attendee_email: "ahmed.mohamed@abccorp.com",
-            gender: "Male",
-            phone: "+20 100 123 4567",
-            company: "ABC Corporation",
-            job_title: "IT Director",
-            role: "client",
-            ticket_token: "EVT-2026-000248-X7K92",
-            state: "checked-in",
-            is_primary: true,
-            delegation_leader_id: null,
-            check_in_time: new Date().toISOString(),
-            id_type: "National ID",
-            id_number: "29103040103847",
-            id_doc_name: "National_ID_AhmedMohamed.pdf",
-            national_id_front_url: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&auto=format&fit=crop&q=80",
-            national_id_back_url: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1200&auto=format&fit=crop&q=80",
-            document_url: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&auto=format&fit=crop&q=80",
-          },
-        ]);
+        setRegistrations([]);
       }
       if (showToast) toast.success("Registrations synced with Supabase!");
     } catch {
@@ -372,6 +270,17 @@ export function AdminRegistrationsPage() {
       return matchesSearch && matchesEvent && matchesState;
     });
   }, [registrations, search, eventFilter, stateFilter]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    paginatedItems: paginatedRegistrations,
+    resetPage,
+  } = usePagination(filtered, 15);
+
+  useEffect(() => {
+    resetPage();
+  }, [search, eventFilter, stateFilter, resetPage]);
 
   const openCreate = () => {
     setEditingPass(null);
@@ -550,6 +459,37 @@ export function AdminRegistrationsPage() {
     const ev = allEvents.find((e) => e.id === reg.event_id);
     toast.success(`Approved ${reg.attendee_name} — sending ITS pass card…`);
 
+    let passImageBase64: string | undefined = undefined;
+    let passPdfBase64: string | undefined = undefined;
+
+    try {
+      passImageBase64 = await generatePassCardPng({
+        attendee_name: reg.attendee_name,
+        job_title: reg.job_title || "Participant",
+        company: reg.company || "Integrated Technics",
+        event_title: ev?.title || "INTEGRATED TECHNICS SHOWCASE EVENT ITS2026",
+      });
+
+      let passPdfUrl: string | undefined = undefined;
+      if (passImageBase64) {
+        const pdfRes = generateA4PassCardPdf(passImageBase64, {
+          attendeeName: reg.attendee_name,
+          quadrant: "top-left",
+          showCutGuides: true,
+        });
+        passPdfBase64 = pdfRes.dataUri;
+
+        const uploadedUrl = await uploadPassCardPdf(pdfRes.blob, {
+          eventId: reg.event_id,
+          registrationId: reg.id,
+          attendeeName: reg.attendee_name,
+        });
+        if (uploadedUrl) passPdfUrl = uploadedUrl;
+      }
+    } catch (renderErr) {
+      console.warn("Could not generate A4 pass card PDF:", renderErr);
+    }
+
     const result = await sendPassCardEmail({
       recipient_name: reg.attendee_name,
       recipient_email: reg.attendee_email,
@@ -561,6 +501,9 @@ export function AdminRegistrationsPage() {
       job_title: reg.job_title,
       registration_id: reg.id,
       token: reg.ticket_token,
+      pass_image_base64: passImageBase64 || undefined,
+      pass_pdf_base64: passPdfBase64 || undefined,
+      pass_pdf_url: passPdfUrl || undefined,
     });
 
     if (result.success) {
@@ -826,7 +769,7 @@ export function AdminRegistrationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.map((r) => {
+              {paginatedRegistrations.map((r) => {
                 const accompanying = registrations.filter(
                   (x) =>
                     x.id !== r.id &&
@@ -1074,6 +1017,14 @@ export function AdminRegistrationsPage() {
             </tbody>
           </table>
         </div>
+
+        <PaginationControl
+          currentPage={currentPage}
+          totalItems={filtered.length}
+          pageSize={15}
+          onPageChange={setCurrentPage}
+          itemLabel="registrations"
+        />
       </div>
       {/* CREATE & EDIT PASS MODAL */}
       {isFormOpen && (

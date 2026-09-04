@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { StateBadge } from "@/components/int/status-badge";
 import { supabase } from "@/lib/supabase";
-import { events } from "@/lib/int-data";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/attendees")({
@@ -67,7 +66,7 @@ const initialFormData: AttendeeFormData = {
   company: "",
   job_title: "",
   role: "client",
-  event_id: "security-summit-2026",
+  event_id: "",
   state: "registered",
 };
 
@@ -96,47 +95,7 @@ function AdminAttendees() {
       if (!error && data && data.length > 0) {
         setAttendeesList(data as Attendee[]);
       } else {
-        setAttendeesList([
-          {
-            id: "INT-EVT-000248",
-            attendee_name: "Ahmed Mohamed",
-            attendee_email: "ahmed.mohamed@abccorp.com",
-            phone: "+20 100 123 4567",
-            gender: "Male",
-            company: "ABC Corporation",
-            job_title: "IT Director",
-            role: "client",
-            event_id: "security-summit-2026",
-            state: "checked-in",
-            ticket_token: "EVT-2026-000248-X7K92",
-          },
-          {
-            id: "INT-EVT-000249",
-            attendee_name: "John Smith",
-            attendee_email: "jsmith@genetec.com",
-            phone: "+20 100 234 5678",
-            gender: "Male",
-            company: "Genetec",
-            job_title: "Solutions Architect",
-            role: "vendor",
-            event_id: "security-summit-2026",
-            state: "checked-in",
-            ticket_token: "EVT-2026-000249-G8K11",
-          },
-          {
-            id: "INT-EVT-000250",
-            attendee_name: "Omar Ali",
-            attendee_email: "omar.ali@integratedtechnics.com",
-            phone: "+20 100 345 6789",
-            gender: "Male",
-            company: "Integrated Technics",
-            job_title: "Field Operations Lead",
-            role: "employee",
-            event_id: "security-summit-2026",
-            state: "checked-in",
-            ticket_token: "EVT-2026-000250-T2P90",
-          },
-        ]);
+        setAttendeesList([]);
       }
       if (showToast) toast.success("Attendees synced with Supabase!");
     } catch {

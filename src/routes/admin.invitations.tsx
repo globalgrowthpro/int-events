@@ -33,8 +33,9 @@ import {
   Pencil,
   AlertTriangle,
 } from "lucide-react";
+import { PaginationControl, usePagination } from "@/components/int/pagination-control";
 import { supabase } from "@/lib/supabase";
-import { events as defaultEvents, formatEventDateRange } from "@/lib/int-data";
+import { formatEventDateRange } from "@/lib/int-data";
 import { toast } from "sonner";
 import { sendLiveInvitationEmail } from "@/lib/email-service";
 import { QrCode as RealQrCode } from "@/components/int/qr-code";
@@ -192,18 +193,7 @@ export function AdminInvitationsPage() {
         );
         if (!targetEventId && evData[0]?.id) setTargetEventId(evData[0].id);
       } else {
-        setEventsList(
-          defaultEvents.map((e) => ({
-            id: e.id,
-            title: e.title,
-            dateLabel: formatEventDateRange(e.date, e.endDate, e.dateLabel),
-            city: e.city,
-            location: e.venue || (e.city ? `${e.city}` : "Integrated Technics HQ"),
-            capacity: e.capacity,
-            registered_count: e.registered,
-          }))
-        );
-        if (!targetEventId && defaultEvents[0]?.id) setTargetEventId(defaultEvents[0].id);
+        setEventsList([]);
       }
 
       // 2. Accounts
@@ -245,37 +235,7 @@ export function AdminInvitationsPage() {
       if (!invError && invData && invData.length > 0) {
         setInvitations(invData as InvitationRow[]);
       } else {
-        // Sample baseline invitations
-        setInvitations([
-          {
-            id: "INV-2026-00192",
-            event_id: "security-summit-2026",
-            event_title: "INT Security Technology Summit 2026",
-            recipient_name: "Karim Mansour",
-            recipient_email: "kmansour@egypt-infra.com",
-            company: "Egypt Infrastructure Authority",
-            job_title: "Head of Digital Systems",
-            phone: "+20 100 888 9999",
-            source: "excel",
-            status: "sent",
-            sent_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-            created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-          },
-          {
-            id: "INV-2026-00193",
-            event_id: "security-summit-2026",
-            event_title: "INT Security Technology Summit 2026",
-            recipient_name: "Ahmed Mohamed",
-            recipient_email: "ahmed.mohamed@abccorp.com",
-            company: "ABC Corporation",
-            job_title: "IT Director",
-            phone: "+20 100 123 4567",
-            source: "accounts",
-            status: "sent",
-            sent_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-            created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-          },
-        ]);
+        setInvitations([]);
       }
 
       if (showToast) toast.success("Invitations and accounts synchronized!");
@@ -312,6 +272,17 @@ export function AdminInvitationsPage() {
       return matchesSearch && matchesEvent && matchesStatus && matchesSource;
     });
   }, [invitations, search, selectedEventFilter, selectedStatusFilter, selectedSourceFilter]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    paginatedItems: paginatedInvitations,
+    resetPage,
+  } = usePagination(filteredInvitations, 15);
+
+  useEffect(() => {
+    resetPage();
+  }, [search, selectedEventFilter, selectedStatusFilter, selectedSourceFilter, resetPage]);
 
   // Filtered accounts in Wizard
   const filteredAccountsInWizard = useMemo(() => {
@@ -697,9 +668,9 @@ export function AdminInvitationsPage() {
     e.preventDefault();
     if (!singleFormData.recipient_name || !singleFormData.recipient_email) return;
 
-    const eventId = singleFormData.event_id || targetEventId || (eventsList[0]?.id ?? "security-summit-2026");
+    const eventId = singleFormData.event_id || targetEventId || (eventsList[0]?.id ?? "");
     const eventObj = eventsList.find((ev) => ev.id === eventId);
-    const eventTitle = eventObj?.title || "INT Security Technology Summit 2026";
+    const eventTitle = eventObj?.title || "Integrated Technics Event";
     const invId = `INV-2026-${Math.floor(10000 + Math.random() * 90000)}`;
     const invToken = `EVT-INV-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
 
@@ -898,7 +869,7 @@ export function AdminInvitationsPage() {
           <button
             onClick={() => {
               setSingleFormData({
-                event_id: targetEventId || (eventsList[0]?.id ?? "security-summit-2026"),
+                event_id: targetEventId || (eventsList[0]?.id ?? ""),
                 recipient_name: "",
                 recipient_email: "",
                 company: "",
@@ -1057,7 +1028,7 @@ export function AdminInvitationsPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredInvitations.map((inv) => (
+                  paginatedInvitations.map((inv) => (
                     <tr key={inv.id} className="transition-colors hover:bg-secondary/40">
                       <td className="px-5 py-4 font-mono text-xs font-semibold text-primary">
                         {inv.id}
@@ -1134,6 +1105,14 @@ export function AdminInvitationsPage() {
               </tbody>
             </table>
           </div>
+
+          <PaginationControl
+            currentPage={currentPage}
+            totalItems={filteredInvitations.length}
+            pageSize={15}
+            onPageChange={setCurrentPage}
+            itemLabel="invitations"
+          />
         </div>
       </div>
 
@@ -1567,7 +1546,7 @@ export function AdminInvitationsPage() {
 
       {/* EMAIL PREVIEW MODAL */}
       {previewInvitation && (() => {
-        const previewEvent = eventsList.find((e) => e.id === previewInvitation.event_id) || defaultEvents.find((e) => e.id === previewInvitation.event_id);
+        const previewEvent = eventsList.find((e) => e.id === previewInvitation.event_id);
         const eventTitle = previewInvitation.event_title || previewEvent?.title || "Integrated Technics Event";
         const eventDate = (previewEvent as any)?.dateLabel || ((previewEvent as any)?.date ? formatEventDateRange((previewEvent as any).date, (previewEvent as any).endDate || (previewEvent as any).end_date, (previewEvent as any).dateLabel) : "Event Schedule Announced Soon");
         const eventLocation = (previewEvent as any)?.location || (previewEvent as any)?.venue || (previewEvent as any)?.city || "Integrated Technics HQ";

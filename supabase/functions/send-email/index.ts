@@ -262,6 +262,7 @@ Deno.serve(async (req: Request) => {
       const company = payload.company || "Integrated Technics";
       const baseDomain = (payload.domain || "https://events.integratedtechnics.com").replace(/\/+$/, "");
       const template = payload.template_config || {};
+      const passPdfUrl = payload.pass_pdf_url;
       const myPassesUrl = template.buttonUrl || `${baseDomain}/my-passes`;
 
       const primaryColor = template.primaryColor || '#10b981';
@@ -286,13 +287,40 @@ Deno.serve(async (req: Request) => {
       }
       const cleanBodyText = rawBody.replace(/{recipientName}/g, recipientName).replace(/{eventTitle}/g, eventTitle).replace(/^\s*Dear\s+[^,\n]+,\s*/i, '').trim().replace(/\n/g, '<br />');
 
-      if (payload.pass_image_base64 && payload.pass_image_base64.startsWith("data:image")) {
-        const base64Data = payload.pass_image_base64.replace(/^data:image\/\w+;base64,/, "");
+      if (payload.pass_pdf_base64) {
+        const base64Data = payload.pass_pdf_base64.includes("base64,")
+          ? payload.pass_pdf_base64.split("base64,")[1]
+          : payload.pass_pdf_base64;
+        
+        const binaryStr = atob(base64Data);
+        const len = binaryStr.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+
+        const safeName = recipientName.replace(/[^a-zA-Z0-9_-]/g, "_");
+        attachments.push({
+          filename: `${safeName}_ITS2026_Pass_A4.pdf`,
+          content: bytes,
+          contentType: "application/pdf",
+        });
+      } else if (payload.pass_image_base64 && payload.pass_image_base64.startsWith("data:image")) {
+        const base64Data = payload.pass_image_base64.includes("base64,")
+          ? payload.pass_image_base64.split("base64,")[1]
+          : payload.pass_image_base64;
+        
+        const binaryStr = atob(base64Data);
+        const len = binaryStr.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+
         const safeName = recipientName.replace(/[^a-zA-Z0-9_-]/g, "_");
         attachments.push({
           filename: `${safeName}_ITS2026_Pass.png`,
-          content: base64Data,
-          encoding: "base64",
+          content: bytes,
           contentType: "image/png",
         });
       }
@@ -387,17 +415,28 @@ Deno.serve(async (req: Request) => {
           <!-- CALL TO ACTION BUTTON -->
           <tr>
             <td style="padding: 10px 36px 28px 36px;" align="center">
+              ${passPdfUrl ? `
+              <table cellspacing="0" cellpadding="0" style="margin-bottom: 12px;">
+                <tr>
+                  <td align="center" style="border-radius: 14px;">
+                    <a href="${passPdfUrl}" target="_blank" download style="display: inline-block; padding: 16px 36px; background: ${primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ${primaryColor}80;">
+                      📥 Download Official A4 Pass Card (PDF)
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              ` : ''}
               <table cellspacing="0" cellpadding="0">
                 <tr>
                   <td align="center" style="border-radius: 14px;">
-                    <a href="${myPassesUrl}" style="display: inline-block; padding: 16px 36px; background: ${primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ${primaryColor}80;">
+                    <a href="${myPassesUrl}" style="display: inline-block; padding: ${passPdfUrl ? '13px 30px' : '16px 36px'}; background: ${passPdfUrl ? 'transparent' : primaryColor}; color: #ffffff; ${passPdfUrl ? 'border: 1px solid #475569;' : ''} font-size: 14px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; ${passPdfUrl ? '' : `box-shadow: 0 10px 20px -5px ${primaryColor}80;`}">
                       ${buttonText}
                     </a>
                   </td>
                 </tr>
               </table>
               <p style="margin: 14px 0 0 0; color: #94a3b8; font-size: 12px;">
-                📎 Your printable badge image is also attached to this email.
+                ${passPdfUrl ? '📄 Click above to view and download your official high-resolution A4 Pass Card (PDF).' : '📎 Your printable badge image is also attached to this email.'}
               </p>
             </td>
           </tr>

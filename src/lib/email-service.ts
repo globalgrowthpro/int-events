@@ -119,6 +119,8 @@ export interface PassEmailPayload {
   registration_id: string;
   token: string;
   pass_image_base64?: string | undefined;
+  pass_pdf_base64?: string | undefined;
+  pass_pdf_url?: string | undefined;
   template_config?: Record<string, string> | undefined;
   domain?: string | undefined;
   host?: string | undefined;
