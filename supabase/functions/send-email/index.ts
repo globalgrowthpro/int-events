@@ -273,7 +273,7 @@ Deno.serve(async (req: Request) => {
       const headerText = template.headerText || 'Integrated Technics';
       const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Events Gateway';
       const footerText = template.footerText || 'Integrated Technics Events &bull; Official Digital Pass';
-      const buttonText = (template.buttonText || '').trim();
+      const buttonText = (template.buttonText && template.buttonText !== 'View Your Digital Badge' && template.buttonText !== 'View Digital Badge' ? template.buttonText : '').trim();
 
       let logoUrl = template.logoUrl;
       if (!logoUrl || logoUrl === "/logo.png") {

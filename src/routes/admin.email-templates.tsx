@@ -76,7 +76,7 @@ export const defaultBadgeTemplate: EmailTemplateConfig = {
   headerSubtext: "التقنيات المتكاملة • Events Gateway",
   bodyText: "Your official event badge for {eventTitle} is ready, {recipientName}. Please present your digital pass or the attached badge at the entrance for quick access.",
   footerText: "Integrated Technics Events",
-  buttonText: "View Digital Badge",
+  buttonText: "",
   buttonUrl: "",
   backgroundImageUrl: "",
   designMode: "color",

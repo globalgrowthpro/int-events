@@ -242,7 +242,7 @@ function smtpServerPlugin(): Plugin {
               const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Enterprise Technology Summits';
               const bodyText = (template.bodyText || 'On behalf of the Executive Committee of <strong>Integrated Technics</strong>, we have the distinct honor of cordially inviting you as our distinguished delegate to attend <strong style="color: ' + primaryColor + ';">${eventTitle}</strong>.').replace('{recipientName}', recipientName);
               const footerText = template.footerText || 'Integrated Technics Events';
-              const buttonText = template.buttonText || 'Confirm Attendance';
+              const buttonText = (template.buttonText || '').trim();
               let finalLogoUrl = template.logoUrl;
               if (!finalLogoUrl || finalLogoUrl === "/logo.png") {
                 finalLogoUrl = hasLogo ? "cid:intlogo" : null;
@@ -407,22 +407,24 @@ function smtpServerPlugin(): Plugin {
                             </tr>
 
                             <!-- CALL TO ACTION: DIRECT PASS ACTIVATION & REGISTRATION -->
-                            <tr>
-                              <td style="padding: 8px 36px 32px 36px;" align="center">
-                                <table cellspacing="0" cellpadding="0">
-                                  <tr>
-                                    <td align="center" style="border-radius: 14px;">
-                                      <a href="${registerUrl}" style="display: inline-block; padding: 18px 36px; background: ${primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ${primaryColor}80;">
-                                        ${buttonText}
-                                      </a>
-                                    </td>
-                                  </tr>
-                                </table>
-                                <p style="margin: 14px 0 0 0; color: #64748b; font-size: 11px; word-break: break-all;">
-                                  Direct Link: <a href="${registerUrl}" style="color: ${primaryColor}; text-decoration: underline;">${registerUrl}</a>
-                                </p>
-                              </td>
-                            </tr>
+                            ${buttonText ? `
+                             <tr>
+                               <td style="padding: 8px 36px 32px 36px;" align="center">
+                                 <table cellspacing="0" cellpadding="0">
+                                   <tr>
+                                     <td align="center" style="border-radius: 14px;">
+                                       <a href="${registerUrl}" style="display: inline-block; padding: 18px 36px; background: ${primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ${primaryColor}80;">
+                                         ${buttonText}
+                                       </a>
+                                     </td>
+                                   </tr>
+                                 </table>
+                                 <p style="margin: 14px 0 0 0; color: #64748b; font-size: 11px; word-break: break-all;">
+                                   Direct Link: <a href="${registerUrl}" style="color: ${primaryColor}; text-decoration: underline;">${registerUrl}</a>
+                                 </p>
+                               </td>
+                             </tr>
+                             ` : ''}
 
                             <!-- Enterprise Footer -->
                             <tr>
@@ -501,7 +503,7 @@ function smtpServerPlugin(): Plugin {
               const headerText = template.headerText || 'Integrated Technics';
               const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Events Gateway';
               const footerText = template.footerText || 'Integrated Technics Events &bull; Official Digital Pass';
-              const buttonText = template.buttonText || 'View Your Digital Badge';
+              const buttonText = (template.buttonText && template.buttonText !== 'View Your Digital Badge' && template.buttonText !== 'View Digital Badge' ? template.buttonText : '').trim();
 
               const eventTitle = data.event_title || "Integrated Technics Showcase 2026";
               const eventDate = data.event_date || "Event Schedule Announced Soon";
@@ -668,6 +670,7 @@ function smtpServerPlugin(): Plugin {
                 </tr>
               </table>
               ` : ''}
+              ${buttonText ? `
               <table cellspacing="0" cellpadding="0">
                 <tr>
                   <td align="center" style="border-radius: 14px;">
@@ -677,6 +680,7 @@ function smtpServerPlugin(): Plugin {
                   </td>
                 </tr>
               </table>
+              ` : ''}
               <p style="margin: 14px 0 0 0; color: #94a3b8; font-size: 12px;">
                 ${passPdfUrl ? '📄 Click above to view and download your official high-resolution A4 Pass Card (PDF).' : '📎 Your printable badge image is also attached to this email.'}
               </p>
@@ -758,7 +762,7 @@ function smtpServerPlugin(): Plugin {
               const headerText = template.headerText || 'Integrated Technics';
               const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Events Gateway';
               const footerText = template.footerText || 'Integrated Technics Events &bull; Official Registration Confirmation';
-              const buttonText = template.buttonText || 'View Event Details';
+              const buttonText = (template.buttonText || '').trim();
               const baseDomain = data.domain || "https://events.integratedtechnics.com";
               const buttonUrl = template.buttonUrl || `${baseDomain.replace(/\/+$/, "")}/#events`;
 
@@ -857,6 +861,7 @@ function smtpServerPlugin(): Plugin {
           </tr>
 
           <!-- ACTION BUTTON -->
+          ${buttonText ? `
           <tr>
             <td style="padding: 6px 36px 32px 36px;" align="center">
               <table cellspacing="0" cellpadding="0">
@@ -870,6 +875,7 @@ function smtpServerPlugin(): Plugin {
               </table>
             </td>
           </tr>
+          ` : ''}
 
           <!-- Template Footer -->
           <tr>

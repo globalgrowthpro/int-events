@@ -236,7 +236,7 @@ HTML;
   $headerText = !empty($template["headerText"]) ? $template["headerText"] : "Integrated Technics";
   $headerSubtext = !empty($template["headerSubtext"]) ? $template["headerSubtext"] : "التقنيات المتكاملة &bull; Events Gateway";
   $footerText = !empty($template["footerText"]) ? $template["footerText"] : "Integrated Technics Events &bull; Official Digital Pass";
-  $buttonText = !empty($template["buttonText"]) ? $template["buttonText"] : "View Your Digital Badge";
+  $buttonText = !empty($template["buttonText"]) && $template["buttonText"] !== "View Your Digital Badge" && $template["buttonText"] !== "View Digital Badge" ? trim($template["buttonText"]) : "";
 
   $rawBody = !empty($template["bodyText"]) ? $template["bodyText"] : "Your official event badge and access pass for {eventTitle} is ready, {recipientName}. Please present your digital pass or the attached badge at the entrance for quick access.";
   if (strpos($rawBody, "{eventTitle}") === false && strpos($rawBody, $eventTitle) === false) {
@@ -270,6 +270,20 @@ HTML;
     $badgeButtonBorder = "border: 1px solid #475569;";
     $badgeButtonShadow = "";
     $badgeHint = "📄 Click above to view and download your official high-resolution A4 Pass Card (PDF).";
+  }
+
+  $badgeButtonHtml = "";
+  if (!empty($buttonText)) {
+    $badgeButtonHtml = '
+              <table cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" style="border-radius: 14px;">
+                    <a href="' . $myPassesUrl . '" style="display: inline-block; padding: ' . $badgeButtonPadding . '; background: ' . $badgeButtonBg . '; color: #ffffff; ' . $badgeButtonBorder . ' font-size: 14px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; ' . $badgeButtonShadow . '">
+                      ' . $buttonText . '
+                    </a>
+                  </td>
+                </tr>
+              </table>';
   }
 
   $html = <<<HTML
@@ -363,15 +377,7 @@ HTML;
           <tr>
             <td style="padding: 10px 36px 28px 36px;" align="center">
               {$downloadButtonHtml}
-              <table cellspacing="0" cellpadding="0">
-                <tr>
-                  <td align="center" style="border-radius: 14px;">
-                    <a href="{$myPassesUrl}" style="display: inline-block; padding: {$badgeButtonPadding}; background: {$badgeButtonBg}; color: #ffffff; {$badgeButtonBorder} font-size: 14px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; {$badgeButtonShadow}">
-                      {$buttonText}
-                    </a>
-                  </td>
-                </tr>
-              </table>
+              {$badgeButtonHtml}
               <p style="margin: 14px 0 0 0; color: #94a3b8; font-size: 12px;">
                 {$badgeHint}
               </p>
