@@ -88,6 +88,13 @@ const genderData = [
   { name: "Female", value: 438 },
 ];
 
+const eventComparisonData = [
+  { name: "Security Summit", capacity: 500, registered: 412, attended: 388 },
+  { name: "Partner Day", capacity: 200, registered: 178, attended: 165 },
+  { name: "Smart Infra WS", capacity: 150, registered: 132, attended: 121 },
+  { name: "Tech Forum", capacity: 300, registered: 245, attended: 210 },
+];
+
 export function ReportsPage() {
   const [trendView, setTrendView] = useState<"area" | "bar">("area");
   const [timeRange, setTimeRange] = useState("This Quarter");

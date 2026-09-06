@@ -461,6 +461,7 @@ export function AdminRegistrationsPage() {
 
     let passImageBase64: string | undefined = undefined;
     let passPdfBase64: string | undefined = undefined;
+    let passPdfUrl: string | undefined = undefined;
 
     try {
       passImageBase64 = await generatePassCardPng({
@@ -470,7 +471,6 @@ export function AdminRegistrationsPage() {
         event_title: ev?.title || "INTEGRATED TECHNICS SHOWCASE EVENT ITS2026",
       });
 
-      let passPdfUrl: string | undefined = undefined;
       if (passImageBase64) {
         const pdfRes = generateA4PassCardPdf(passImageBase64, {
           attendeeName: reg.attendee_name,
