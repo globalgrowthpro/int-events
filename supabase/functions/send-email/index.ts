@@ -130,7 +130,7 @@ Deno.serve(async (req: Request) => {
       const rawBody = (template.bodyText || `It is our pleasure to extend to you an exclusive VIP invitation to attend ${eventTitle}. Step into an exclusive technology experience designed to showcase the latest innovations, emerging technologies, and intelligent solutions.`).replace(/{recipientName}/g, recipientName).replace(/{eventTitle}/g, eventTitle);
       const cleanBodyText = rawBody.replace(/^\s*Dear\s+[^,\n]+,\s*/i, '').trim().replace(/\n/g, '<br />');
 
-      const buttonText = template.buttonText || 'Register & Book your seat';
+      const buttonText = (template.buttonText || '').trim();
       const footerText = template.footerText || 'Integrated Technics Events';
       let logoUrl = template.logoUrl;
       if (!logoUrl || logoUrl === "/logo.png") {
@@ -220,6 +220,7 @@ Deno.serve(async (req: Request) => {
           </tr>
 
           <!-- DIRECT REGISTRATION BUTTON -->
+          ${buttonText ? `
           <tr>
             <td style="padding: 10px 36px 32px 36px;" align="center">
               <table cellspacing="0" cellpadding="0">
@@ -232,7 +233,7 @@ Deno.serve(async (req: Request) => {
                 </tr>
               </table>
             </td>
-          </tr>
+          </tr>` : ''}
 
           <!-- Template Footer -->
           <tr>
@@ -272,7 +273,7 @@ Deno.serve(async (req: Request) => {
       const headerText = template.headerText || 'Integrated Technics';
       const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Events Gateway';
       const footerText = template.footerText || 'Integrated Technics Events &bull; Official Digital Pass';
-      const buttonText = template.buttonText || 'View Your Digital Badge';
+      const buttonText = (template.buttonText || '').trim();
 
       let logoUrl = template.logoUrl;
       if (!logoUrl || logoUrl === "/logo.png") {
@@ -426,6 +427,7 @@ Deno.serve(async (req: Request) => {
                 </tr>
               </table>
               ` : ''}
+              ${buttonText ? `
               <table cellspacing="0" cellpadding="0">
                 <tr>
                   <td align="center" style="border-radius: 14px;">
@@ -434,7 +436,7 @@ Deno.serve(async (req: Request) => {
                     </a>
                   </td>
                 </tr>
-              </table>
+              </table>` : ''}
               <p style="margin: 14px 0 0 0; color: #94a3b8; font-size: 12px;">
                 ${passPdfUrl ? '📄 Click above to view and download your official high-resolution A4 Pass Card (PDF).' : '📎 Your printable badge image is also attached to this email.'}
               </p>
@@ -472,7 +474,7 @@ Deno.serve(async (req: Request) => {
       const headerText = template.headerText || 'Integrated Technics';
       const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Events Gateway';
       const footerText = template.footerText || 'Integrated Technics Events &bull; Official Registration Confirmation';
-      const buttonText = template.buttonText || "View Event Details";
+      const buttonText = (template.buttonText || '').trim();
       const buttonUrl = template.buttonUrl || `${baseDomain}/#events`;
 
       let logoUrl = template.logoUrl;
@@ -551,6 +553,7 @@ Deno.serve(async (req: Request) => {
           </tr>
 
           <!-- ACTION BUTTON -->
+          ${buttonText ? `
           <tr>
             <td style="padding: 6px 36px 32px 36px;" align="center">
               <table cellspacing="0" cellpadding="0">
@@ -563,7 +566,7 @@ Deno.serve(async (req: Request) => {
                 </tr>
               </table>
             </td>
-          </tr>
+          </tr>` : ''}
 
           <!-- Template Footer -->
           <tr>
