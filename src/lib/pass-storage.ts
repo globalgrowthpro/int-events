@@ -18,7 +18,8 @@ export async function uploadPassCardPdf(
   try {
     let blob: Blob;
     if (typeof input === "string") {
-      const rawBase64 = input.includes("base64,") ? input.split("base64,")[1] : input;
+      const splitIdx = input.indexOf("base64,");
+      const rawBase64 = splitIdx >= 0 ? input.slice(splitIdx + "base64,".length) : input;
       const binary = atob(rawBase64);
       const bytes = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) {

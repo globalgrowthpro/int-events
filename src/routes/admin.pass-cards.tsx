@@ -217,6 +217,7 @@ export function AdminPassCardsPage() {
       toast.loading(`Sending pass card to ${row.attendee_email}...`, { id: `send-${row.id}` });
       
       const passImageBase64 = await generatePassCardDataUrl(row);
+      let passPdfBase64: string | undefined = undefined;
       let passPdfUrl: string | undefined = undefined;
       if (passImageBase64) {
         try {
@@ -295,6 +296,7 @@ export function AdminPassCardsPage() {
       const ev = getEventObj(row.event_id);
       try {
         const passImageBase64 = await generatePassCardDataUrl(row);
+        let passPdfBase64: string | undefined = undefined;
         let passPdfUrl: string | undefined = undefined;
         if (passImageBase64) {
           try {
