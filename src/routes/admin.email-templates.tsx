@@ -626,11 +626,13 @@ function EmailTemplatesPage() {
                     )}
                   </div>
 
-                  <p style={{ margin: '22px 0 0', textAlign: 'center' }}>
-                    <a href="#" onClick={e => e.preventDefault()} style={{ display: 'inline-block', padding: '13px 26px', background: config.primaryColor, color: '#fff', borderRadius: '10px', fontWeight: 700, textDecoration: 'none' }}>
-                      {config.buttonText}
-                    </a>
-                  </p>
+                  {config.buttonText?.trim() && (
+                    <p style={{ margin: '22px 0 0', textAlign: 'center' }}>
+                      <a href="#" onClick={e => e.preventDefault()} style={{ display: 'inline-block', padding: '13px 26px', background: config.primaryColor, color: '#fff', borderRadius: '10px', fontWeight: 700, textDecoration: 'none' }}>
+                        {config.buttonText}
+                      </a>
+                    </p>
+                  )}
                 </div>
 
                   <div style={{ padding: '18px 28px', background: '#090e1a', borderTop: '1px solid #1e293b', color: '#64748b', fontSize: '11px', textAlign: 'center' }}>
