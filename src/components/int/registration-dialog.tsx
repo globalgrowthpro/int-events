@@ -256,11 +256,7 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
       passport_url: passportUrl,
     };
 
-    const userConsiderations = (formData.get("considerations") as string) || "";
-    const combinedConsiderations = [
-      `ID: ${idSummary(primaryId)}`,
-      userConsiderations,
-    ].filter(Boolean).join(" | ");
+    const userConsiderations = (formData.get("considerations") as string)?.trim() || "";
 
     const meta = {
       datesAttending: (formData.get("dates") as string || formData.get("datesAttending") as string) || "All days",
@@ -268,7 +264,7 @@ export function RegistrationDialog({ event, open, onClose }: Props) {
       travelRequired: false,
       checkInDetails: (formData.get("checkIn") as string || formData.get("checkInDetails") as string) || "",
       checkOutDetails: (formData.get("checkOut") as string || formData.get("checkOutDetails") as string) || "",
-      considerations: combinedConsiderations,
+      ...(userConsiderations ? { considerations: userConsiderations } : {}),
     };
 
     // Upload delegates identity documents in parallel

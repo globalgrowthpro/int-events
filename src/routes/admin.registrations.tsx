@@ -24,6 +24,8 @@ import {
   UserCheck,
   FileText,
   ExternalLink,
+  AlertCircle,
+  Info,
 } from "lucide-react";
 import { StateBadge } from "@/components/int/status-badge";
 
@@ -95,6 +97,7 @@ type RegistrationFormData = {
   national_id_front_url?: string;
   national_id_back_url?: string;
   passport_url?: string;
+  considerations?: string;
 };
 
 const initialRegFormData: RegistrationFormData = {
@@ -111,7 +114,25 @@ const initialRegFormData: RegistrationFormData = {
   id_number: "",
   document_url: "",
   id_doc_name: "",
+  considerations: "",
 };
+
+export function cleanConsiderations(text?: string | null): string {
+  if (!text) return "";
+  let cleaned = text.trim();
+  // Strip "ID: ... | " if present
+  if (/^ID:\s*[^|]+\|\s*/i.test(cleaned)) {
+    cleaned = cleaned.replace(/^ID:\s*[^|]+\|\s*/i, "");
+  }
+  // If what remains is just the legacy ID string with no user notes
+  if (
+    /^ID:\s*(?:National ID|Passport|Identity)/i.test(cleaned) ||
+    /^ID:\s*[^|]*(?:front:|back:|doc:|missing)/i.test(cleaned)
+  ) {
+    return "";
+  }
+  return cleaned.trim();
+}
 
 export function AdminRegistrationsPage() {
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
@@ -144,6 +165,7 @@ export function AdminRegistrationsPage() {
     job_title: "Representative",
     id_type: "National ID",
     id_number: "",
+    considerations: "",
   });
   const [formData, setFormData] = useState<RegistrationFormData>(initialRegFormData);
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
@@ -232,6 +254,7 @@ export function AdminRegistrationsPage() {
             national_id_back_url: r.national_id_back_url || p?.national_id_back_url || null,
             passport_url: r.passport_url || p?.passport_url || null,
             gender: r.gender || p?.gender || "Male",
+            considerations: cleanConsiderations(r.considerations) || null,
           };
         });
         setRegistrations(enriched as RegistrationRow[]);
@@ -307,6 +330,7 @@ export function AdminRegistrationsPage() {
       national_id_front_url: pass.national_id_front_url || "",
       national_id_back_url: pass.national_id_back_url || "",
       passport_url: pass.passport_url || "",
+      considerations: cleanConsiderations(pass.considerations) || "",
     });
     setIsFormOpen(true);
   };
@@ -340,6 +364,7 @@ export function AdminRegistrationsPage() {
             national_id_front_url: formData.national_id_front_url || null,
             national_id_back_url: formData.national_id_back_url || null,
             passport_url: formData.passport_url || null,
+            considerations: formData.considerations || null,
           })
           .eq("id", editingPass.id);
 
@@ -376,6 +401,7 @@ export function AdminRegistrationsPage() {
         national_id_front_url: formData.national_id_front_url || null,
         national_id_back_url: formData.national_id_back_url || null,
         passport_url: formData.passport_url || null,
+        considerations: formData.considerations || null,
       };
 
       try {
@@ -399,6 +425,7 @@ export function AdminRegistrationsPage() {
           national_id_front_url: newPass.national_id_front_url,
           national_id_back_url: newPass.national_id_back_url,
           passport_url: newPass.passport_url,
+          considerations: newPass.considerations,
         });
       } catch {
         /* proceed */
@@ -536,6 +563,7 @@ export function AdminRegistrationsPage() {
       delegation_leader_id: delegationTarget.id,
       id_type: newMemberData.id_type,
       id_number: newMemberData.id_number.trim() || null,
+      considerations: newMemberData.considerations.trim() || null,
       created_at: new Date().toISOString(),
     };
 
@@ -551,6 +579,7 @@ export function AdminRegistrationsPage() {
         job_title: "Representative",
         id_type: "National ID",
         id_number: "",
+        considerations: "",
       });
       setIsAddingMember(false);
     } catch {
@@ -573,10 +602,51 @@ export function AdminRegistrationsPage() {
   };
 
   const handleExportCsv = () => {
-    let csv = "ID,Attendee Name,Email,Gender,Company,Job Title,Role,Event ID,QR Token,ID Type,ID Number,Status\n";
+    const escapeCsv = (val: string | null | undefined) => {
+      if (!val) return '""';
+      return `"${String(val).replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
+    };
+
+    const headers = [
+      "ID",
+      "Attendee Name",
+      "Email",
+      "Phone",
+      "Gender",
+      "Company",
+      "Job Title",
+      "Role",
+      "Event ID",
+      "QR Token",
+      "ID Type",
+      "ID Number",
+      "Special Considerations or Requests",
+      "Status",
+      "Is Primary",
+    ];
+    let csv = "\uFEFF" + headers.join(",") + "\n";
+
     filtered.forEach((r) => {
-      csv += `"${r.id}","${r.attendee_name}","${r.attendee_email}","${r.gender || ""}","${r.company || ""}","${r.job_title || ""}","${r.role}","${r.event_id}","${r.ticket_token}","${r.id_type || ""}","${r.id_number || ""}","${r.state}"\n`;
+      const row = [
+        escapeCsv(r.id),
+        escapeCsv(r.attendee_name),
+        escapeCsv(r.attendee_email),
+        escapeCsv(r.phone),
+        escapeCsv(r.gender),
+        escapeCsv(r.company),
+        escapeCsv(r.job_title),
+        escapeCsv(r.role),
+        escapeCsv(r.event_id),
+        escapeCsv(r.ticket_token),
+        escapeCsv(r.id_type),
+        escapeCsv(r.id_number),
+        escapeCsv(r.considerations),
+        escapeCsv(r.state),
+        escapeCsv(r.is_primary ? "Yes" : "No"),
+      ];
+      csv += row.join(",") + "\n";
     });
+
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -585,7 +655,8 @@ export function AdminRegistrationsPage() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    toast.success("Exported registrations to CSV!");
+    URL.revokeObjectURL(url);
+    toast.success("Exported registrations to Excel / CSV!");
   };
 
   const pendingCount = registrations.filter((r) => r.state === "pending").length;
@@ -841,6 +912,14 @@ export function AdminRegistrationsPage() {
                         <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground/80 font-mono">
                           <Phone className="h-3 w-3 text-muted-foreground/60 shrink-0" />
                           <span>{r.phone}</span>
+                        </div>
+                      )}
+                      {r.considerations && (
+                        <div className="mt-1 flex items-start gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[11px] text-amber-800 dark:text-amber-300">
+                          <AlertCircle className="h-3 w-3 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                          <span className="truncate max-w-[220px]" title={r.considerations}>
+                            {r.considerations}
+                          </span>
                         </div>
                       )}
                     </td>
@@ -1193,6 +1272,17 @@ export function AdminRegistrationsPage() {
                   </select>
                 </div>
               </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Special Considerations or Requests</label>
+                <textarea
+                  rows={2}
+                  value={formData.considerations || ""}
+                  onChange={(e) => setFormData({ ...formData, considerations: e.target.value })}
+                  placeholder="Dietary requirements, accessibility assistance, VIP notes, special requests…"
+                  className="w-full rounded-lg border border-input bg-background p-2.5 text-xs text-foreground shadow-2xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
             </div>
 
             <footer className="flex items-center justify-end gap-2 border-t border-border bg-muted/30 p-4">
@@ -1455,6 +1545,19 @@ export function AdminRegistrationsPage() {
                       <p className="text-xs text-muted-foreground">{delegationTarget.job_title || "Lead Representative"}</p>
                     </div>
                   </div>
+
+                  {/* Special Considerations or Requests */}
+                  {cleanConsiderations(delegationTarget.considerations) ? (
+                    <div className="mt-3.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-900 dark:text-amber-200">
+                      <div className="flex items-center gap-1.5 font-semibold text-amber-800 dark:text-amber-300">
+                        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                        <span>Special Considerations or Requests:</span>
+                      </div>
+                      <p className="mt-1 pl-5 text-[11px] leading-relaxed text-foreground whitespace-pre-wrap">
+                        {cleanConsiderations(delegationTarget.considerations)}
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Accompanying Members List */}
@@ -1505,6 +1608,12 @@ export function AdminRegistrationsPage() {
                             <p className="text-[11px] text-muted-foreground mt-0.5">
                               {acc.job_title || "Representative"} · {acc.gender || "Male"} {acc.phone ? `· ${acc.phone}` : ""}
                             </p>
+                            {cleanConsiderations(acc.considerations) && (
+                              <div className="mt-1.5 rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-900 dark:text-amber-200">
+                                <strong className="font-semibold text-amber-700 dark:text-amber-300">Special Request: </strong>
+                                {cleanConsiderations(acc.considerations)}
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-2 self-end sm:self-center">
@@ -1603,6 +1712,17 @@ export function AdminRegistrationsPage() {
                           onChange={(e) => setNewMemberData({ ...newMemberData, job_title: e.target.value })}
                           placeholder="Representative"
                           className={inputClass}
+                        />
+                      </div>
+
+                      <div className="space-y-1 sm:col-span-2">
+                        <label className="text-[11px] font-semibold text-foreground">Special Considerations or Requests</label>
+                        <textarea
+                          rows={2}
+                          value={newMemberData.considerations}
+                          onChange={(e) => setNewMemberData({ ...newMemberData, considerations: e.target.value })}
+                          placeholder="Dietary requirements, accessibility assistance, special requests…"
+                          className="w-full rounded-lg border border-input bg-background p-2 text-xs text-foreground shadow-2xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                         />
                       </div>
                     </div>
