@@ -16,9 +16,15 @@ export interface Speaker {
 }
 
 export interface AgendaItem {
+  day?: string | number; // e.g. "Day 1", 1, "Day 2", etc.
+  dayLabel?: string;     // e.g. "Opening Keynotes & Registration"
+  date?: string;         // e.g. "2026-11-12"
   time: string;
   title: string;
   detail?: string;
+  speaker?: string;
+  location?: string;
+  type?: "keynote" | "session" | "workshop" | "break" | "dining" | "networking" | "general" | string;
 }
 
 export function formatEventDateRange(startDate?: string, endDate?: string, fallbackLabel?: string): string {
@@ -78,6 +84,7 @@ export interface IntEvent {
   description: string[];
   speakers: Speaker[];
   agenda: AgendaItem[];
+  agendaUrl?: string;
   partners: string[];
   mapUrl?: string;
   partnerList?: Array<{ name: string; logo?: string; category?: string }>;

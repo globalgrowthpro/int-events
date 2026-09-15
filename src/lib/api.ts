@@ -58,6 +58,7 @@ export async function getEvents(): Promise<IntEvent[]> {
         description: ev.description || [],
         speakers: ev.speakers || [],
         agenda: ev.agenda || [],
+        agendaUrl: ev.agenda_url || "",
         partners: ev.partners || [],
         partnerList: ev.partner_list || [],
       };
@@ -106,6 +107,7 @@ export async function createEvent(eventData: Partial<IntEvent>): Promise<IntEven
         partner_list: eventData.partnerList,
         speakers: eventData.speakers,
         agenda: eventData.agenda,
+        agenda_url: eventData.agendaUrl,
       })
       .select()
       .single();
@@ -142,6 +144,7 @@ export async function updateEvent(eventId: string, updates: Partial<IntEvent>): 
         partner_list: updates.partnerList,
         speakers: updates.speakers,
         agenda: updates.agenda,
+        agenda_url: updates.agendaUrl,
       })
       .eq("id", eventId);
 

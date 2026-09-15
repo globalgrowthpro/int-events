@@ -24,6 +24,7 @@ import { useAuth } from "@/lib/auth";
 import { toDdMmYyyy } from "@/lib/format";
 import { toast } from "sonner";
 import { RichTextView } from "@/components/int/rich-text-editor";
+import { AgendaTimeline } from "@/components/int/agenda-timeline";
 
 export function EventDetailContent({
   event: initialEvent,
@@ -251,23 +252,12 @@ export function EventDetailContent({
           {/* Agenda & Schedule Timeline */}
           {event.agenda && event.agenda.length > 0 && (
             <Panel title="Agenda & Schedule Timeline" icon={Clock}>
-              <ol className="space-y-4 divide-y divide-border">
-                {event.agenda.map((item, idx) => (
-                  <li key={idx} className="flex gap-4 pt-3.5 first:pt-0">
-                    <span className="w-24 shrink-0 font-mono text-xs font-bold text-primary bg-primary/10 py-1 px-2.5 rounded-lg text-center h-fit">
-                      {item.time}
-                    </span>
-                    <div className="flex-1">
-                      <span className="block text-sm font-bold text-foreground">{item.title}</span>
-                      {item.detail && (
-                        <span className="mt-0.5 block text-xs text-muted-foreground leading-relaxed">
-                          {item.detail}
-                        </span>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ol>
+              <AgendaTimeline 
+                agenda={event.agenda} 
+                startDate={event.date} 
+                endDate={event.endDate} 
+                agendaUrl={event.agendaUrl}
+              />
             </Panel>
           )}
 

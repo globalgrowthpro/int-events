@@ -73,6 +73,7 @@ type EventFormValues = {
   partnerList: PartnerEntry[];
   speakers: Speaker[];
   agenda: AgendaItem[];
+  agendaUrl: string;
 };
 
 const defaultFormValues: EventFormValues = {
@@ -95,6 +96,7 @@ const defaultFormValues: EventFormValues = {
   partnerList: [],
   speakers: [],
   agenda: [],
+  agendaUrl: "",
 };
 
 export function AdminEventsPage() {
@@ -200,6 +202,7 @@ export function AdminEventsPage() {
         : (ev.partners || []).map((p) => ({ name: p, category: "Partner Sponsor", logo: "" })),
       speakers: ev.speakers || [],
       agenda: ev.agenda || [],
+      agendaUrl: ev.agendaUrl || "",
     });
     setActiveFormTab("details");
     setIsCreateOpen(true);
@@ -232,6 +235,19 @@ export function AdminEventsPage() {
           return { ...prev, partnerList: updated };
         });
         toast.success("Partner logo uploaded!");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle Agenda File Upload
+  const handleAgendaFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFormData((prev) => ({ ...prev, agendaUrl: reader.result as string }));
+        toast.success("Agenda file uploaded!");
       };
       reader.readAsDataURL(file);
     }
@@ -273,7 +289,7 @@ export function AdminEventsPage() {
   const handleAddAgenda = () => {
     setFormData((prev) => ({
       ...prev,
-      agenda: [...prev.agenda, { time: "11:00 AM", title: "", detail: "" }],
+      agenda: [...prev.agenda, { day: "Day 1", time: "11:00 AM", title: "", type: "session", location: "", speaker: "", detail: "" }],
     }));
   };
 
@@ -318,6 +334,7 @@ export function AdminEventsPage() {
         partnerList: formData.partnerList,
         speakers: formData.speakers,
         agenda: formData.agenda,
+        agendaUrl: formData.agendaUrl,
       };
 
       await updateEvent(editingEvent.id, updatedEvent);
@@ -359,6 +376,7 @@ export function AdminEventsPage() {
         partnerList: formData.partnerList,
         speakers: formData.speakers,
         agenda: formData.agenda,
+        agendaUrl: formData.agendaUrl,
       };
 
       await createEvent(newEvent);
@@ -1179,53 +1197,169 @@ export function AdminEventsPage() {
                   </div>
 
                   {/* Agenda Section */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-border pb-2">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                        Agenda Timeline ({formData.agenda.length})
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={handleAddAgenda}
-                        className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20"
-                      >
+                  <div className="space-y-6">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                        Downloadable Agenda File (PDF URL or Upload)
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          value={formData.agendaUrl || ""}
+                          onChange={(e) => setFormData({ ...formData, agendaUrl: e.target.value })}
+                          placeholder="https://example.com/agenda.pdf (Optional)"
+                          className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-sm"
+                        />
+                        <label className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-lg bg-primary/10 px-4 text-sm font-semibold text-primary transition-all hover:bg-primary/20 hover:border-primary/50 shrink-0">
+                          <input 
+                            type="file" 
+                            accept=".pdf,.doc,.docx,.png,.jpeg,.jpg,.webp" 
+                            className="hidden" 
+                            onChange={handleAgendaFileUpload} 
+                          />
+                          Upload File
+                        </label>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        If provided, a "Download Agenda" button will appear above the event timeline.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between border-b border-border pb-2">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                          Agenda Timeline ({formData.agenda.length})
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={handleAddAgenda}
+                          className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20"
+                        >
                         <Plus className="h-3 w-3" /> Add Timeline Item
                       </button>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                       {formData.agenda.map((ag, idx) => (
-                        <div key={idx} className="flex gap-2 items-center rounded-xl border border-border bg-card p-3">
-                          <input
-                            value={ag.time}
-                            onChange={(e) => {
-                              const updated = [...formData.agenda];
-                              if (updated[idx]) updated[idx] = { ...updated[idx]!, time: e.target.value };
-                              setFormData({ ...formData, agenda: updated });
-                            }}
-                            placeholder="09:00 AM"
-                            className="h-8 w-28 rounded-lg border border-input bg-background px-2 text-xs font-mono"
-                          />
-                          <input
-                            value={ag.title}
-                            onChange={(e) => {
-                              const updated = [...formData.agenda];
-                              if (updated[idx]) updated[idx] = { ...updated[idx]!, title: e.target.value };
-                              setFormData({ ...formData, agenda: updated });
-                            }}
-                            placeholder="Session Title / Keynote"
-                            className="h-8 flex-1 rounded-lg border border-input bg-background px-2 text-xs"
-                          />
+                        <div key={idx} className="relative rounded-xl border border-border bg-card p-4 shadow-sm space-y-3">
                           <button
                             type="button"
                             onClick={() => handleRemoveAgenda(idx)}
-                            className="text-destructive p-1"
+                            className="absolute top-3 right-3 text-destructive hover:bg-destructive/10 p-1.5 rounded-lg transition-colors"
                           >
-                            <Trash className="h-3.5 w-3.5" />
+                            <Trash className="h-4 w-4" />
                           </button>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pr-8">
+                            <div>
+                              <label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">Day</label>
+                              <input
+                                type="date"
+                                value={ag.day || ""}
+                                onChange={(e) => {
+                                  const updated = [...formData.agenda];
+                                  if (updated[idx]) updated[idx] = { ...updated[idx]!, day: e.target.value };
+                                  setFormData({ ...formData, agenda: updated });
+                                }}
+                                className="h-8 w-full rounded-lg border border-input bg-background px-2 text-xs"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">Time</label>
+                              <input
+                                value={ag.time}
+                                onChange={(e) => {
+                                  const updated = [...formData.agenda];
+                                  if (updated[idx]) updated[idx] = { ...updated[idx]!, time: e.target.value };
+                                  setFormData({ ...formData, agenda: updated });
+                                }}
+                                placeholder="09:00 AM - 10:00 AM"
+                                className="h-8 w-full rounded-lg border border-input bg-background px-2 text-xs font-mono"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">Session Type</label>
+                              <select
+                                value={ag.type || "session"}
+                                onChange={(e) => {
+                                  const updated = [...formData.agenda];
+                                  if (updated[idx]) updated[idx] = { ...updated[idx]!, type: e.target.value };
+                                  setFormData({ ...formData, agenda: updated });
+                                }}
+                                className="h-8 w-full rounded-lg border border-input bg-background px-2 text-xs"
+                              >
+                                <option value="session">Tech Session</option>
+                                <option value="keynote">Keynote / Showcase</option>
+                                <option value="workshop">Workshop</option>
+                                <option value="networking">Networking</option>
+                                <option value="dining">Dining / Break</option>
+                                <option value="registration">Registration</option>
+                                <option value="general">General</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">Title</label>
+                              <input
+                                value={ag.title}
+                                onChange={(e) => {
+                                  const updated = [...formData.agenda];
+                                  if (updated[idx]) updated[idx] = { ...updated[idx]!, title: e.target.value };
+                                  setFormData({ ...formData, agenda: updated });
+                                }}
+                                placeholder="Session Title"
+                                className="h-8 w-full rounded-lg border border-input bg-background px-2 text-xs font-bold"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">Speaker</label>
+                                <input
+                                  value={ag.speaker || ""}
+                                  onChange={(e) => {
+                                    const updated = [...formData.agenda];
+                                    if (updated[idx]) updated[idx] = { ...updated[idx]!, speaker: e.target.value };
+                                    setFormData({ ...formData, agenda: updated });
+                                  }}
+                                  placeholder="Speaker Name"
+                                  className="h-8 w-full rounded-lg border border-input bg-background px-2 text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">Location</label>
+                                <input
+                                  value={ag.location || ""}
+                                  onChange={(e) => {
+                                    const updated = [...formData.agenda];
+                                    if (updated[idx]) updated[idx] = { ...updated[idx]!, location: e.target.value };
+                                    setFormData({ ...formData, agenda: updated });
+                                  }}
+                                  placeholder="e.g. Hall A"
+                                  className="h-8 w-full rounded-lg border border-input bg-background px-2 text-xs"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">Detail Summary (Optional)</label>
+                            <textarea
+                              value={ag.detail || ""}
+                              onChange={(e) => {
+                                const updated = [...formData.agenda];
+                                if (updated[idx]) updated[idx] = { ...updated[idx]!, detail: e.target.value };
+                                setFormData({ ...formData, agenda: updated });
+                              }}
+                              placeholder="Describe what happens in this session..."
+                              className="w-full min-h-[60px] rounded-lg border border-input bg-background px-3 py-2 text-xs resize-y"
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
+                  </div>
                   </div>
                 </div>
               )}

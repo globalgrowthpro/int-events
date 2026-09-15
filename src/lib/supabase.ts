@@ -54,7 +54,18 @@ export type Database = {
           description: string[];
           partners: string[];
           speakers: Array<{ name: string; position: string; company: string; bio: string }>;
-          agenda: Array<{ time: string; title: string; detail?: string }>;
+          agenda: Array<{ 
+            day?: string | number;
+            dayLabel?: string;
+            date?: string;
+            time: string;
+            title: string;
+            detail?: string;
+            speaker?: string;
+            location?: string;
+            type?: string;
+          }>;
+          agenda_url: string | null;
           created_at: string;
           updated_at: string;
         };
