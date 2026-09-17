@@ -710,12 +710,23 @@ function sendSmtpSocket($host, $port, $username, $password, $fromEmail, $fromNam
   }
 }
 
-// Prepare attachments if pass_image_base64 is present
+// Prepare attachments if pass_pdf_base64 or pass_image_base64 is present
 $attachments = [];
+$safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $recipientName ?? 'Attendee');
+
+$passPdfBase64 = !empty($data["pass_pdf_base64"]) ? $data["pass_pdf_base64"] : "";
+if ($kind === "pass" && !empty($passPdfBase64)) {
+  $rawPdfBase64 = preg_replace('/^data:application\/pdf;base64,/', '', $passPdfBase64);
+  $attachments[] = [
+    "filename" => "{$safeName}_ITS2026_Pass_A4.pdf",
+    "type" => "application/pdf",
+    "data" => $rawPdfBase64,
+  ];
+}
+
 $passImageBase64 = !empty($data["pass_image_base64"]) ? $data["pass_image_base64"] : "";
 if ($kind === "pass" && !empty($passImageBase64)) {
   $rawBase64 = preg_replace('/^data:image\/\w+;base64,/', '', $passImageBase64);
-  $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $recipientName ?? 'Attendee');
   $attachments[] = [
     "filename" => "{$safeName}_ITS2026_Pass.png",
     "type" => "image/png",

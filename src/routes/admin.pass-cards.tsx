@@ -40,8 +40,12 @@ import {
   A4PassCardTestDialog,
   type A4PassCardTestAttendee,
 } from "@/components/int/a4-pass-card-test-dialog";
+import {
+  generatePassCardPng,
+  PASS_CARD_TEMPLATES,
+  getPassCardTemplate,
+} from "@/lib/pass-card-renderer";
 import { generateA4PassCardPdf } from "@/lib/pass-card-pdf";
-import { generatePassCardPng } from "@/lib/pass-card-renderer";
 import { uploadPassCardPdf } from "@/lib/pass-storage";
 
 export const Route = createFileRoute("/admin/pass-cards")({
@@ -109,6 +113,7 @@ export function AdminPassCardsPage() {
 
   // Preview Modal
   const [previewItem, setPreviewItem] = useState<AttendeePassRow | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<string>("/2.png");
   const [testingA4Attendee, setTestingA4Attendee] = useState<A4PassCardTestAttendee | null>(null);
   
   // Real events from DB
@@ -209,14 +214,15 @@ export function AdminPassCardsPage() {
   };
 
   // Dispatch Pass Card Email
-  const handleSendPass = async (row: AttendeePassRow) => {
+  const handleSendPass = async (row: AttendeePassRow, templateSrc: string = "/2.png") => {
     setSendingId(row.id);
     const ev = getEventObj(row.event_id);
+    const tmpl = getPassCardTemplate(templateSrc);
 
     try {
-      toast.loading(`Sending pass card to ${row.attendee_email}...`, { id: `send-${row.id}` });
+      toast.loading(`Sending ${tmpl.colorName} pass card to ${row.attendee_email}...`, { id: `send-${row.id}` });
       
-      const passImageBase64 = await generatePassCardDataUrl(row);
+      const passImageBase64 = await generatePassCardDataUrl(row, templateSrc);
       let passPdfBase64: string | undefined = undefined;
       let passPdfUrl: string | undefined = undefined;
       if (passImageBase64) {
@@ -232,6 +238,7 @@ export function AdminPassCardsPage() {
             eventId: row.event_id,
             registrationId: row.id,
             attendeeName: row.attendee_name,
+            templateId: tmpl.id,
           });
           if (uploadedUrl) {
             passPdfUrl = uploadedUrl;
@@ -239,6 +246,14 @@ export function AdminPassCardsPage() {
         } catch (pdfErr) {
           console.warn("Failed generating A4 PDF attachment or uploading to storage:", pdfErr);
         }
+      }
+
+      // If non-default template is chosen, pass matching template_config primaryColor
+      let templateConfig: any = undefined;
+      if (templateSrc === "/3.png") {
+        templateConfig = { primaryColor: "#004581" };
+      } else if (templateSrc === "/4.png") {
+        templateConfig = { primaryColor: "#09b742" };
       }
 
       const result = await sendPassCardEmail({
@@ -255,6 +270,7 @@ export function AdminPassCardsPage() {
         pass_image_base64: passImageBase64 || undefined,
         pass_pdf_base64: passPdfBase64 || undefined,
         pass_pdf_url: passPdfUrl || undefined,
+        template_config: templateConfig,
       });
 
       if (result.success) {
@@ -445,7 +461,10 @@ export function AdminPassCardsPage() {
   };
 
   // Generate high-resolution base64 PNG data URL of the Pass Card
-  const generatePassCardDataUrl = (row: AttendeePassRow | null): Promise<string> => {
+  const generatePassCardDataUrl = (
+    row: AttendeePassRow | null,
+    templateSrc: string = "/2.png"
+  ): Promise<string> => {
     if (!row) return Promise.resolve("");
     const ev = getEventObj(row.event_id);
     return generatePassCardPng({
@@ -453,22 +472,27 @@ export function AdminPassCardsPage() {
       job_title: row.job_title || "Participant",
       company: row.company || "Integrated Technics",
       event_title: ev?.title || "Integrated Technics Showcase 2026",
+      template_src: templateSrc,
     });
   };
 
   // Download High-Resolution PNG Pass Card
-  const handleDownloadPng = async (row: AttendeePassRow | null) => {
+  const handleDownloadPng = async (
+    row: AttendeePassRow | null,
+    templateSrc: string = "/2.png"
+  ) => {
     if (!row) return;
     const toastId = toast.loading("Generating PNG pass card...");
     try {
-      const dataUrl = await generatePassCardDataUrl(row);
+      const dataUrl = await generatePassCardDataUrl(row, templateSrc);
       if (!dataUrl) {
         toast.error("Failed to generate pass card image", { id: toastId });
         return;
       }
       const link = document.createElement("a");
       const safeName = row.attendee_name.replace(/[^a-zA-Z0-9_-]/g, "_");
-      link.download = `${safeName}_ITS2026_Pass.png`;
+      const tmpl = getPassCardTemplate(templateSrc);
+      link.download = `${safeName}_ITS2026_Pass_${tmpl.colorName}.png`;
       link.href = dataUrl;
       link.click();
       toast.success("Pass Card downloaded as PNG!", { id: toastId });
@@ -922,11 +946,48 @@ export function AdminPassCardsPage() {
 
           {previewItem && (
             <div className="p-3.5 space-y-3">
+              {/* Color Template Selector */}
+              <div className="flex items-center justify-between px-0.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Badge Variation
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {PASS_CARD_TEMPLATES.map((tmpl) => {
+                    const isSelected = previewTemplate === tmpl.src;
+                    return (
+                      <button
+                        key={tmpl.id}
+                        type="button"
+                        onClick={() => setPreviewTemplate(tmpl.src)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+                          isSelected
+                            ? "text-white shadow-xs"
+                            : "text-muted-foreground bg-secondary/60 border-border hover:bg-secondary hover:text-foreground"
+                        }`}
+                        style={
+                          isSelected
+                            ? { backgroundColor: tmpl.color, borderColor: tmpl.color }
+                            : undefined
+                        }
+                      >
+                        {tmpl.colorName}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Pass Card Component */}
               <div className="shadow-lg rounded-xl overflow-hidden ring-1 ring-border">
                 {(() => {
                   const { registration, event } = getPassCardProps(previewItem);
-                  return <PassCard registration={registration} event={event} />;
+                  return (
+                    <PassCard
+                      registration={registration}
+                      event={event}
+                      templateSrc={previewTemplate}
+                    />
+                  );
                 })()}
               </div>
 
@@ -936,7 +997,7 @@ export function AdminPassCardsPage() {
                   variant="outline"
                   size="sm"
                   className="text-xs gap-1.5 px-2 font-medium"
-                  onClick={() => handleDownloadPng(previewItem)}
+                  onClick={() => handleDownloadPng(previewItem, previewTemplate)}
                   title="Download Badge as High-Res PNG Image"
                 >
                   <Download className="h-3.5 w-3.5 text-primary" />
@@ -958,15 +1019,20 @@ export function AdminPassCardsPage() {
 
                 <Button
                   size="sm"
-                  className="text-xs gap-1.5 px-2 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold truncate"
+                  className="text-xs gap-1.5 px-2 text-white font-semibold truncate hover:brightness-110 shadow-xs"
+                  style={{
+                    backgroundColor: getPassCardTemplate(previewTemplate).color,
+                  }}
                   onClick={() => {
-                    handleSendPass(previewItem);
+                    handleSendPass(previewItem, previewTemplate);
                   }}
                   disabled={sendingId === previewItem.id}
-                  title={getStatus(previewItem) === "sent" ? "Resend Pass Email" : "Send Pass Email"}
+                  title={`Send ${getPassCardTemplate(previewTemplate).colorName} Pass Email`}
                 >
                   <Send className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{getStatus(previewItem) === "sent" ? "Resend" : "Send"}</span>
+                  <span className="truncate">
+                    {getStatus(previewItem) === "sent" ? "Resend" : "Send"}
+                  </span>
                 </Button>
               </div>
             </div>
@@ -979,7 +1045,7 @@ export function AdminPassCardsPage() {
         isOpen={!!testingA4Attendee}
         onClose={() => setTestingA4Attendee(null)}
         attendee={testingA4Attendee}
-        onSendEmail={async (pdfDataUri, att) => {
+        onSendEmail={async (pdfDataUri, att, templateSrc) => {
           if (!att.attendee_email) return;
           // Find the matching row to get all send details
           const matchRow = rows.find(
@@ -987,16 +1053,56 @@ export function AdminPassCardsPage() {
           ) || rows.find((r) => r.attendee_name === att.attendee_name);
           if (!matchRow) return;
           setSendingId(matchRow.id);
+          const tmpl = getPassCardTemplate(templateSrc);
           try {
             const ev = getEventObj(matchRow.event_id);
-            let passPdfUrl: string | undefined = undefined;
-            if (pdfDataUri) {
-              const uploadedUrl = await uploadPassCardPdf(pdfDataUri, {
-                eventId: matchRow.event_id,
-                registrationId: matchRow.id,
-                attendeeName: matchRow.attendee_name,
+            const activeTemplate = templateSrc || "/2.png";
+
+            // 1. ALWAYS render the badge PNG fresh with selected activeTemplate
+            let passImageBase64: string | undefined = undefined;
+            try {
+              passImageBase64 = await generatePassCardPng({
+                attendee_name: matchRow.attendee_name,
+                job_title: matchRow.job_title || "Participant",
+                company: matchRow.company || "Integrated Technics",
+                event_title: ev?.title || att.event_title || "Integrated Technics Showcase 2026",
+                template_src: activeTemplate,
               });
-              if (uploadedUrl) passPdfUrl = uploadedUrl;
+            } catch (err) {
+              console.warn("Could not generate pass PNG:", err);
+            }
+
+            // 2. ALWAYS generate the fresh A4 PDF directly from the newly rendered passImageBase64
+            let passPdfBase64: string | undefined = undefined;
+            let passPdfUrl: string | undefined = undefined;
+
+            if (passImageBase64) {
+              try {
+                const freshPdfRes = generateA4PassCardPdf(passImageBase64, {
+                  attendeeName: matchRow.attendee_name,
+                  quadrant: "top-left",
+                  showCutGuides: true,
+                });
+                passPdfBase64 = freshPdfRes.dataUri;
+
+                const uploadedUrl = await uploadPassCardPdf(freshPdfRes.blob, {
+                  eventId: matchRow.event_id,
+                  registrationId: matchRow.id,
+                  attendeeName: matchRow.attendee_name,
+                  templateId: tmpl.id,
+                });
+                if (uploadedUrl) passPdfUrl = uploadedUrl;
+              } catch (pdfErr) {
+                console.warn("Failed generating fresh A4 PDF or uploading to storage:", pdfErr);
+              }
+            }
+
+            // 3. Provide matching primaryColor in template_config if non-default
+            let templateConfig: any = undefined;
+            if (activeTemplate === "/3.png") {
+              templateConfig = { primaryColor: "#004581" };
+            } else if (activeTemplate === "/4.png") {
+              templateConfig = { primaryColor: "#09b742" };
             }
 
             const result = await sendPassCardEmail({
@@ -1010,12 +1116,14 @@ export function AdminPassCardsPage() {
               job_title: matchRow.job_title,
               registration_id: matchRow.id,
               token: matchRow.ticket_token,
-              pass_pdf_base64: pdfDataUri,
+              pass_image_base64: passImageBase64 || undefined,
+              pass_pdf_base64: passPdfBase64 || pdfDataUri || undefined,
               pass_pdf_url: passPdfUrl || undefined,
+              template_config: templateConfig,
             });
             if (result.success) {
               await updateStatus(matchRow, "sent");
-              toast.success(`A4 PDF pass card sent to ${matchRow.attendee_name}!`, {
+              toast.success(`${tmpl.colorName} A4 PDF pass card sent to ${matchRow.attendee_name}!`, {
                 id: `a4-send-${matchRow.id}`,
                 description: `Delivered to ${att.attendee_email}`,
               });

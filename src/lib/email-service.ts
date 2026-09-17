@@ -171,7 +171,9 @@ export async function sendPassCardEmail(payload: PassEmailPayload): Promise<Send
 
   const finalPayload = {
     ...payload,
-    template_config: payload.template_config || templateConfig,
+    template_config: payload.template_config
+      ? { ...templateConfig, ...payload.template_config }
+      : templateConfig,
     domain: typeof window !== "undefined" ? window.location.origin : undefined,
     host: payload.host || smtpConfig?.host,
     port: payload.port || smtpConfig?.port,

@@ -4,11 +4,12 @@ export interface UploadPassPdfOptions {
   eventId?: string | undefined;
   registrationId?: string | undefined;
   attendeeName?: string | undefined;
+  templateId?: string | undefined;
 }
 
 /**
  * Uploads an A4 Pass Card PDF to Supabase Storage (bucket: 'pass-cards')
- * and returns the public download URL.
+ * and returns the public download URL with cache-busting.
  * Also persists the URL to the registrations table if registrationId is provided.
  */
 export async function uploadPassCardPdf(
@@ -33,7 +34,9 @@ export async function uploadPassCardPdf(
     const safeName = (opts.attendeeName || "Attendee").replace(/[^a-zA-Z0-9_-]/g, "_");
     const eventFolder = (opts.eventId || "general").replace(/[^a-zA-Z0-9_-]/g, "_");
     const regFolder = (opts.registrationId || "reg").replace(/[^a-zA-Z0-9_-]/g, "_");
-    const filePath = `${eventFolder}/${regFolder}/${safeName}_Pass_A4.pdf`;
+    const templateKey = (opts.templateId || "badge").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const timestamp = Date.now();
+    const filePath = `${eventFolder}/${regFolder}/${safeName}_Pass_A4_${templateKey}_${timestamp}.pdf`;
 
     const { error: uploadError } = await supabase.storage
       .from("pass-cards")
@@ -48,7 +51,8 @@ export async function uploadPassCardPdf(
     }
 
     const { data } = supabase.storage.from("pass-cards").getPublicUrl(filePath);
-    const publicUrl = data?.publicUrl;
+    const rawPublicUrl = data?.publicUrl;
+    const publicUrl = rawPublicUrl ? `${rawPublicUrl}?v=${timestamp}` : null;
 
     if (publicUrl && opts.registrationId) {
       try {

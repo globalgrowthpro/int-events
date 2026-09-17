@@ -1,7 +1,8 @@
 import type { IntEvent, Registration } from "@/lib/int-data";
+import { getPassCardTemplate } from "@/lib/pass-card-renderer";
 
 /**
- * Official ITS 2026 Badge Pass Card using 2.png branded template.
+ * Official ITS 2026 Badge Pass Card using branded templates (2.png, 3.png, 4.png).
  * Displays:
  * 1. Event Name
  * 2. Attendee Name
@@ -12,22 +13,26 @@ export function PassCard({
   registration,
   event,
   compact = false,
+  templateSrc = "/2.png",
 }: {
   registration: Registration;
   event: IntEvent;
   compact?: boolean;
+  templateSrc?: string;
 }) {
   const eventName = event?.title || "Integrated Technics Showcase 2026";
   const attendeeName = registration?.attendee || "Attendee Name";
   const position = registration?.jobTitle || "Security & Technology Leader";
   const organization = registration?.company || "Integrated Technics";
 
+  const template = getPassCardTemplate(templateSrc);
+
   return (
     <div className={`relative w-full mx-auto overflow-hidden rounded-2xl border border-border/40 shadow-xl bg-white select-none ${compact ? "max-w-[260px]" : "max-w-[290px] sm:max-w-[310px]"}`}>
-      {/* Background Graphic Template (2.png) */}
+      {/* Background Graphic Template (2.png, 3.png, 4.png) */}
       <img
-        src="/2.png?v=2"
-        alt="ITS Pass Card Template"
+        src={`${template.src}?v=2`}
+        alt={`ITS Pass Card Template - ${template.name}`}
         className="w-full h-auto object-contain block pointer-events-none"
       />
 
@@ -51,7 +56,10 @@ export function PassCard({
         </p>
 
         {/* Organization */}
-        <p className="text-sm sm:text-base font-black text-[#f37021] uppercase tracking-wider leading-tight px-1 pt-0.5 truncate w-full">
+        <p
+          className="text-sm sm:text-base font-black uppercase tracking-wider leading-tight px-1 pt-0.5 truncate w-full"
+          style={{ color: template.color }}
+        >
           {organization}
         </p>
       </div>

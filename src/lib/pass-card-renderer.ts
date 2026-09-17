@@ -2,12 +2,64 @@
  * Utility for rendering high-resolution Pass Card badges onto an HTML Canvas and exporting as PNG.
  */
 
+export interface PassCardTemplate {
+  id: string;
+  name: string;
+  colorName: string;
+  src: string;
+  color: string;
+  badgeLabel: string;
+  description: string;
+}
+
+export const PASS_CARD_TEMPLATES: PassCardTemplate[] = [
+  {
+    id: "orange",
+    name: "Classic Orange",
+    colorName: "Orange",
+    src: "/2.png",
+    color: "#f37021",
+    badgeLabel: "Default",
+    description: "Standard ITS2026 Orange Banner",
+  },
+  {
+    id: "blue",
+    name: "Executive Blue",
+    colorName: "Blue",
+    src: "/3.png",
+    color: "#004581",
+    badgeLabel: "Executive",
+    description: "ITS2026 Executive Blue Banner",
+  },
+  {
+    id: "green",
+    name: "VIP Green",
+    colorName: "Green",
+    src: "/4.png",
+    color: "#09b742",
+    badgeLabel: "VIP",
+    description: "ITS2026 VIP Green Banner",
+  },
+];
+
+export function getPassCardTemplate(srcOrId?: string): PassCardTemplate {
+  if (!srcOrId) return PASS_CARD_TEMPLATES[0];
+  const found = PASS_CARD_TEMPLATES.find(
+    (t) =>
+      t.src === srcOrId ||
+      t.id === srcOrId ||
+      t.colorName.toLowerCase() === srcOrId.toLowerCase()
+  );
+  return found || PASS_CARD_TEMPLATES[0];
+}
+
 export interface PassCardRenderOptions {
   attendee_name: string;
   job_title?: string | null;
   company?: string | null;
   event_title?: string | null;
   template_src?: string;
+  theme_color?: string;
 }
 
 /**
@@ -101,6 +153,9 @@ export function generatePassCardPng(options: PassCardRenderOptions): Promise<str
 
   const upperEventTitle = (event_title || "INTEGRATED TECHNICS SHOWCASE EVENT ITS2026").toUpperCase();
 
+  const currentTemplate = getPassCardTemplate(template_src);
+  const themeColor = options.theme_color || currentTemplate.color;
+
   return new Promise((resolve) => {
     if (typeof window === "undefined") {
       return resolve("");
@@ -118,7 +173,7 @@ export function generatePassCardPng(options: PassCardRenderOptions): Promise<str
         const ctx = canvas.getContext("2d");
         if (!ctx) return resolve("");
 
-        // 1. Draw background template image (2.png)
+        // 1. Draw background template image (2.png, 3.png, or 4.png)
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         const centerX = canvas.width / 2;
@@ -187,8 +242,8 @@ export function generatePassCardPng(options: PassCardRenderOptions): Promise<str
         ctx.font = `bold ${jobTitleFontSize}px Arial, sans-serif`;
         ctx.fillText(job_title || "Participant", centerX, jobTitleY);
 
-        // Organization (Bold Brand Orange Uppercase)
-        ctx.fillStyle = "#f37021";
+        // Organization (Bold Brand Themed Uppercase)
+        ctx.fillStyle = themeColor;
         const companyFontSize = Math.round(canvas.width * 0.056);
         ctx.font = `bold ${companyFontSize}px Arial, sans-serif`;
         ctx.fillText(
@@ -197,8 +252,8 @@ export function generatePassCardPng(options: PassCardRenderOptions): Promise<str
           jobTitleY + canvas.height * 0.058
         );
 
-        // 4. Bottom Orange Footer Band (Dynamic Event Title)
-        ctx.fillStyle = "#f37021";
+        // 4. Bottom Footer Band (Dynamic Event Title themed to template color)
+        ctx.fillStyle = themeColor;
         ctx.fillRect(0, canvas.height * 0.84, canvas.width, canvas.height * 0.16);
 
         ctx.fillStyle = "#ffffff";

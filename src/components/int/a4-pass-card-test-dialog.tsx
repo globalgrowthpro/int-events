@@ -13,7 +13,11 @@ import {
   ExternalLink,
   Send,
 } from "lucide-react";
-import { generatePassCardPng } from "@/lib/pass-card-renderer";
+import {
+  generatePassCardPng,
+  PASS_CARD_TEMPLATES,
+  getPassCardTemplate,
+} from "@/lib/pass-card-renderer";
 import {
   generateA4PassCardPdf,
   A4_WIDTH_MM,
@@ -30,13 +34,18 @@ export interface A4PassCardTestAttendee {
   job_title?: string | null;
   company?: string | null;
   event_title?: string | null;
+  template_src?: string;
 }
 
 interface A4PassCardTestDialogProps {
   isOpen: boolean;
   onClose: () => void;
   attendee: A4PassCardTestAttendee | null;
-  onSendEmail?: (pdfDataUri: string, attendee: A4PassCardTestAttendee) => Promise<void>;
+  onSendEmail?: (
+    pdfDataUri: string,
+    attendee: A4PassCardTestAttendee,
+    templateSrc: string
+  ) => Promise<void>;
 }
 
 export function A4PassCardTestDialog({
@@ -45,6 +54,9 @@ export function A4PassCardTestDialog({
   attendee,
   onSendEmail,
 }: A4PassCardTestDialogProps) {
+  const [selectedTemplate, setSelectedTemplate] = useState<string>(
+    attendee?.template_src || "/2.png"
+  );
   const [quadrant, setQuadrant] = useState<
     "top-left" | "top-right" | "bottom-left" | "bottom-right"
   >("top-left");
@@ -54,6 +66,13 @@ export function A4PassCardTestDialog({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [previewMode, setPreviewMode] = useState<"sheet" | "pdf">("sheet");
+
+  // Sync template if attendee changes or modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedTemplate(attendee?.template_src || "/2.png");
+    }
+  }, [isOpen, attendee]);
 
   // Sample fallback attendee if none provided
   const currentAttendee: A4PassCardTestAttendee = useMemo(() => {
@@ -66,18 +85,21 @@ export function A4PassCardTestDialog({
     };
   }, [attendee]);
 
-  // Generate PNG & PDF whenever attendee or options change
+  // Generate PNG & PDF whenever attendee, selectedTemplate or options change
   useEffect(() => {
     if (!isOpen) return;
 
     let cancelled = false;
     setIsGenerating(true);
+    setPdfDataUri("");
+    setPngDataUrl("");
 
     generatePassCardPng({
       attendee_name: currentAttendee.attendee_name,
       job_title: currentAttendee.job_title || "Participant",
       company: currentAttendee.company || "Integrated Technics",
       event_title: currentAttendee.event_title || "INTEGRATED TECHNICS SHOWCASE EVENT ITS2026",
+      template_src: selectedTemplate,
     })
       .then((png) => {
         if (cancelled) return;
@@ -100,18 +122,22 @@ export function A4PassCardTestDialog({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, currentAttendee, quadrant, showCutGuides]);
+  }, [isOpen, currentAttendee, selectedTemplate, quadrant, showCutGuides]);
 
   if (!isOpen) return null;
 
   const handleDownloadPdf = () => {
     if (!pngDataUrl) return;
+    const tmpl = getPassCardTemplate(selectedTemplate);
+    const cleanName = (currentAttendee.attendee_name || "attendee")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
     const pdfResult = generateA4PassCardPdf(pngDataUrl, {
       attendeeName: currentAttendee.attendee_name,
       quadrant,
       showCutGuides,
     });
-    pdfResult.download();
+    pdfResult.download(`ITS2026-Pass-A4-${tmpl.colorName}-${cleanName}.pdf`);
   };
 
   const handlePrint = () => {
@@ -202,6 +228,85 @@ export function A4PassCardTestDialog({
                   <p className="text-[11px] text-muted-foreground/80 pt-1 border-t border-border/50">
                     {currentAttendee.event_title || "Integrated Technics Showcase 2026"}
                   </p>
+                </div>
+              </div>
+
+              {/* Pass Card Background & Color Selection */}
+              <div className="rounded-xl border border-border bg-card p-4 shadow-xs space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Badge Background & Color
+                  </span>
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{
+                      color: getPassCardTemplate(selectedTemplate).color,
+                      backgroundColor: `${getPassCardTemplate(selectedTemplate).color}18`,
+                    }}
+                  >
+                    {getPassCardTemplate(selectedTemplate).colorName}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  {PASS_CARD_TEMPLATES.map((tmpl) => {
+                    const isSelected = selectedTemplate === tmpl.src;
+                    return (
+                      <button
+                        key={tmpl.id}
+                        type="button"
+                        onClick={() => setSelectedTemplate(tmpl.src)}
+                        className={`relative flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-center group cursor-pointer ${
+                          isSelected
+                            ? "shadow-sm ring-2"
+                            : "border-border bg-background hover:bg-secondary/60 hover:border-border/80"
+                        }`}
+                        style={
+                          isSelected
+                            ? {
+                                borderColor: tmpl.color,
+                                backgroundColor: `${tmpl.color}0D`,
+                                "--tw-ring-color": `${tmpl.color}50`,
+                              } as React.CSSProperties
+                            : undefined
+                        }
+                      >
+                        {/* Thumbnail & Color Swatch */}
+                        <div className="relative w-full aspect-[3/4] max-h-[74px] rounded-lg overflow-hidden mb-1.5 border border-border/60 bg-muted/40 shadow-xs">
+                          <img
+                            src={`${tmpl.src}?v=1`}
+                            alt={tmpl.name}
+                            className="w-full h-full object-cover object-center pointer-events-none"
+                          />
+                          <div
+                            className="absolute bottom-0 inset-x-0 h-3"
+                            style={{ backgroundColor: tmpl.color }}
+                          />
+                          {isSelected && (
+                            <div
+                              className="absolute top-1 right-1 h-4 w-4 rounded-full text-white flex items-center justify-center shadow-xs"
+                              style={{ backgroundColor: tmpl.color }}
+                            >
+                              <CheckCircle2 className="h-3 w-3" />
+                            </div>
+                          )}
+                        </div>
+
+                        <span className="text-[11px] font-bold text-foreground truncate w-full">
+                          {tmpl.colorName}
+                        </span>
+                        <span
+                          className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full mt-0.5"
+                          style={{
+                            color: tmpl.color,
+                            backgroundColor: `${tmpl.color}18`,
+                          }}
+                        >
+                          {tmpl.badgeLabel}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -296,17 +401,21 @@ export function A4PassCardTestDialog({
                       if (!pdfDataUri) return;
                       setIsSendingEmail(true);
                       try {
-                        await onSendEmail(pdfDataUri, currentAttendee);
+                        await onSendEmail(pdfDataUri, currentAttendee, selectedTemplate);
                       } finally {
                         setIsSendingEmail(false);
                       }
                     }}
                     disabled={!pdfDataUri || isGenerating || isSendingEmail}
-                    variant="default"
-                    className="w-full gap-2 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                    style={{
+                      backgroundColor: getPassCardTemplate(selectedTemplate).color,
+                    }}
+                    className="w-full gap-2 font-bold text-white shadow-sm hover:brightness-110 transition-all"
                   >
                     <Send className={`h-4 w-4 ${isSendingEmail ? "animate-pulse" : ""}`} />
-                    {isSendingEmail ? "Sending..." : `Send to ${currentAttendee.attendee_email}`}
+                    {isSendingEmail
+                      ? `Sending ${getPassCardTemplate(selectedTemplate).colorName} Pass...`
+                      : `Send ${getPassCardTemplate(selectedTemplate).colorName} Pass to ${currentAttendee.attendee_email}`}
                   </Button>
                 )}
               </div>
