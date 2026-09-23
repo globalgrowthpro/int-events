@@ -43,14 +43,14 @@ export const PASS_CARD_TEMPLATES: PassCardTemplate[] = [
 ];
 
 export function getPassCardTemplate(srcOrId?: string): PassCardTemplate {
-  if (!srcOrId) return PASS_CARD_TEMPLATES[0];
+  if (!srcOrId) return PASS_CARD_TEMPLATES[0]!;
   const found = PASS_CARD_TEMPLATES.find(
     (t) =>
       t.src === srcOrId ||
       t.id === srcOrId ||
       t.colorName.toLowerCase() === srcOrId.toLowerCase()
   );
-  return found || PASS_CARD_TEMPLATES[0];
+  return found || PASS_CARD_TEMPLATES[0]!;
 }
 
 export interface PassCardRenderOptions {

@@ -13,7 +13,7 @@ export const Route = createFileRoute("/admin/bulk-mail")({
   component: BulkMailPage,
 });
 
-type Row = AccommodationEmailPayload & { status: "queued" | "sending" | "sent" | "failed"; error?: string };
+type Row = AccommodationEmailPayload & { status: "queued" | "sending" | "sent" | "failed"; error?: string | undefined };
 
 const DELAY_MS = 10_000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -79,7 +79,7 @@ function BulkMailPage() {
       .filter((r) => r.recipient_name || r.recipient_email);
     const valid = parsed.filter((r) => EMAIL_RE.test(r.recipient_email));
     if (valid.length < parsed.length) toast.warning(`${parsed.length - valid.length} rows skipped (invalid email)`);
-    if (!valid.length) return toast.error("No valid rows found");
+    if (!valid.length) { toast.error("No valid rows found"); return; }
     setRows(valid);
     toast.success(`${valid.length} recipients imported — sending started`);
     runQueue(valid);

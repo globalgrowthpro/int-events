@@ -23,6 +23,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAccountsRouteImport } from './routes/admin.accounts'
 import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AdminAttendeesRouteImport } from './routes/admin.attendees'
+import { Route as AdminBulkMailRouteImport } from './routes/admin.bulk-mail'
 import { Route as AdminChatRouteImport } from './routes/admin.chat'
 import { Route as AdminClientsRouteImport } from './routes/admin.clients'
 import { Route as AdminEmailTemplatesRouteImport } from './routes/admin.email-templates'
@@ -109,6 +110,11 @@ const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
 const AdminAttendeesRoute = AdminAttendeesRouteImport.update({
   id: '/attendees',
   path: '/attendees',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBulkMailRoute = AdminBulkMailRouteImport.update({
+  id: '/bulk-mail',
+  path: '/bulk-mail',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminChatRoute = AdminChatRouteImport.update({
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/admin/accounts': typeof AdminAccountsRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/attendees': typeof AdminAttendeesRoute
+  '/admin/bulk-mail': typeof AdminBulkMailRoute
   '/admin/chat': typeof AdminChatRoute
   '/admin/clients': typeof AdminClientsRoute
   '/admin/email-templates': typeof AdminEmailTemplatesRoute
@@ -243,6 +250,7 @@ export interface FileRoutesByTo {
   '/admin/accounts': typeof AdminAccountsRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/attendees': typeof AdminAttendeesRoute
+  '/admin/bulk-mail': typeof AdminBulkMailRoute
   '/admin/chat': typeof AdminChatRoute
   '/admin/clients': typeof AdminClientsRoute
   '/admin/email-templates': typeof AdminEmailTemplatesRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/admin/accounts': typeof AdminAccountsRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/attendees': typeof AdminAttendeesRoute
+  '/admin/bulk-mail': typeof AdminBulkMailRoute
   '/admin/chat': typeof AdminChatRoute
   '/admin/clients': typeof AdminClientsRoute
   '/admin/email-templates': typeof AdminEmailTemplatesRoute
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
     | '/admin/accounts'
     | '/admin/attendance'
     | '/admin/attendees'
+    | '/admin/bulk-mail'
     | '/admin/chat'
     | '/admin/clients'
     | '/admin/email-templates'
@@ -344,6 +354,7 @@ export interface FileRouteTypes {
     | '/admin/accounts'
     | '/admin/attendance'
     | '/admin/attendees'
+    | '/admin/bulk-mail'
     | '/admin/chat'
     | '/admin/clients'
     | '/admin/email-templates'
@@ -377,6 +388,7 @@ export interface FileRouteTypes {
     | '/admin/accounts'
     | '/admin/attendance'
     | '/admin/attendees'
+    | '/admin/bulk-mail'
     | '/admin/chat'
     | '/admin/clients'
     | '/admin/email-templates'
@@ -513,6 +525,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAttendeesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/bulk-mail': {
+      id: '/admin/bulk-mail'
+      path: '/bulk-mail'
+      fullPath: '/admin/bulk-mail'
+      preLoaderRoute: typeof AdminBulkMailRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/chat': {
       id: '/admin/chat'
       path: '/chat'
@@ -639,6 +658,7 @@ interface AdminRouteChildren {
   AdminAccountsRoute: typeof AdminAccountsRoute
   AdminAttendanceRoute: typeof AdminAttendanceRoute
   AdminAttendeesRoute: typeof AdminAttendeesRoute
+  AdminBulkMailRoute: typeof AdminBulkMailRoute
   AdminChatRoute: typeof AdminChatRoute
   AdminClientsRoute: typeof AdminClientsRoute
   AdminEmailTemplatesRoute: typeof AdminEmailTemplatesRoute
@@ -660,6 +680,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAccountsRoute: AdminAccountsRoute,
   AdminAttendanceRoute: AdminAttendanceRoute,
   AdminAttendeesRoute: AdminAttendeesRoute,
+  AdminBulkMailRoute: AdminBulkMailRoute,
   AdminChatRoute: AdminChatRoute,
   AdminClientsRoute: AdminClientsRoute,
   AdminEmailTemplatesRoute: AdminEmailTemplatesRoute,
