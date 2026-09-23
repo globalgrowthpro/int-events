@@ -37,10 +37,15 @@ function BulkMailPage() {
       return;
     }
     setSending(true);
-    const r = await sendAccommodationEmail({ ...form, recipient_email: form.recipient_email.trim() });
+    const payload = { ...form, recipient_email: form.recipient_email.trim() };
+    const r = await sendAccommodationEmail(payload);
     setSending(false);
+    setRows((rs) => [
+      ...rs,
+      { ...payload, status: r.success ? "sent" : "failed", error: r.error },
+    ]);
     if (r.success) {
-      toast.success(`Email sent to ${form.recipient_email}`);
+      toast.success(`Email sent to ${payload.recipient_email}`);
       setForm(empty);
     } else toast.error(r.error || "Failed to send");
   }
