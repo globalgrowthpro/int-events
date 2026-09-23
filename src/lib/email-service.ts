@@ -317,3 +317,31 @@ export async function sendRegistrationConfirmationEmail(
   );
 }
 
+
+export interface AccommodationEmailPayload {
+  recipient_name: string;
+  recipient_email: string;
+  message: string;
+  building_name: string;
+  room_type: string;
+}
+
+export async function sendAccommodationEmail(payload: AccommodationEmailPayload): Promise<SendResult> {
+  let smtpConfig: any = null;
+  try {
+    const { data } = await supabase.from("smtp_settings").select("*").limit(1).maybeSingle();
+    smtpConfig = data;
+  } catch {
+    /* ignore */
+  }
+  return dispatch("/api/send-message" as any, "message" as any, {
+    ...payload,
+    domain: typeof window !== "undefined" ? window.location.origin : undefined,
+    host: smtpConfig?.host,
+    port: smtpConfig?.port,
+    username: smtpConfig?.username,
+    password: smtpConfig?.password_encrypted || smtpConfig?.password,
+    from_name: smtpConfig?.from_name,
+    from_email: smtpConfig?.from_email,
+  });
+}

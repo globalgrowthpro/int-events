@@ -71,9 +71,11 @@ Deno.serve(async (req: Request) => {
 
   try {
     const payload = await req.json();
-    const kind: "test" | "invitation" | "pass" | "confirmation" =
+    const kind: "test" | "invitation" | "pass" | "confirmation" | "message" =
       payload.kind === "test"
         ? "test"
+        : payload.kind === "message"
+          ? "message"
         : payload.kind === "pass"
           ? "pass"
           : payload.kind === "confirmation"
@@ -101,7 +103,22 @@ Deno.serve(async (req: Request) => {
     let html: string;
     const attachments: { filename: string; content: string; encoding: "base64"; contentType: string; contentID?: string }[] = [];
 
-    if (kind === "test") {
+    if (kind === "message") {
+      const esc = (s: unknown) =>
+        String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+      const name = esc(payload.recipient_name || "Guest");
+      const building = esc(payload.building_name);
+      const room = esc(payload.room_type);
+      const msg = esc(payload.message).replace(/\n/g, "<br/>");
+      subject = String(payload.subject || `Accommodation Details — ${payload.recipient_name || "Guest"}`).slice(0, 200);
+      html = shell(`
+        <p style="margin:0 0 16px;font-size:16px;font-weight:700;color:#fff;">Dear ${name},</p>
+        <p style="margin:0 0 20px;color:#cbd5e1;">${msg}</p>
+        <div style="padding:16px;background:#1e293b;border-radius:12px;border-left:4px solid #f37021;font-size:13px;">
+          <p style="margin:0 0 6px;"><strong>Building:</strong> ${building || "-"}</p>
+          <p style="margin:0;"><strong>Room Type:</strong> ${room || "-"}</p>
+        </div>`);
+    } else if (kind === "test") {
       subject = "INT Events Platform — SMTP Handshake & Delivery Test";
       html = shell(`
         <p style="margin:0 0 16px;color:#10b981;font-size:16px;font-weight:700;">&#10003; Live SMTP Handshake Verified</p>
