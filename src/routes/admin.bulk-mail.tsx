@@ -155,40 +155,41 @@ function BulkMailPage() {
           </div>
         </div>
 
-        {rows.length > 0 && (
-          <>
-            <div className="flex flex-wrap gap-4 text-sm">
-              <span>Total: <b>{rows.length}</b></span>
-              <span className="text-primary">Sent: <b>{sent}</b></span>
-              <span className="text-destructive">Failed: <b>{failed}</b></span>
-              {countdown > 0 && <span className="text-muted-foreground">Next email in {countdown}s…</span>}
-            </div>
-            <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-left">
-                  <tr><th className="p-2">#</th><th className="p-2">Name</th><th className="p-2">Email</th><th className="p-2">Building</th><th className="p-2">Room</th><th className="p-2">Status</th></tr>
-                </thead>
-                <tbody>
-                  {rows.map((r, i) => (
-                    <tr key={i} className="border-t">
-                      <td className="p-2">{i + 1}</td>
-                      <td className="p-2">{r.recipient_name}</td>
-                      <td className="p-2">{r.recipient_email}</td>
-                      <td className="p-2">{r.building_name}</td>
-                      <td className="p-2">{r.room_type}</td>
-                      <td className="p-2">
-                        {r.status === "queued" && <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="h-3.5 w-3.5" />Queued</span>}
-                        {r.status === "sending" && <span className="inline-flex items-center gap-1"><Loader2 className="h-3.5 w-3.5 animate-spin" />Sending</span>}
-                        {r.status === "sent" && <span className="inline-flex items-center gap-1 text-primary"><CheckCircle2 className="h-3.5 w-3.5" />Sent</span>}
-                        {r.status === "failed" && <span className="inline-flex items-center gap-1 text-destructive" title={r.error}><XCircle className="h-3.5 w-3.5" />Failed</span>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+        <div className="flex flex-wrap gap-4 text-sm">
+          <span>Total: <b>{rows.length}</b></span>
+          <span className="text-primary">Sent: <b>{sent}</b></span>
+          <span className="text-destructive">Failed: <b>{failed}</b></span>
+          {countdown > 0 && <span className="text-muted-foreground">Next email in {countdown}s…</span>}
+        </div>
+        <div className="overflow-x-auto rounded-xl border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-left">
+              <tr><th className="p-2">#</th><th className="p-2">Name</th><th className="p-2">Email</th><th className="p-2">Building</th><th className="p-2">Room</th><th className="p-2">Status</th></tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 && (
+                <tr className="border-t">
+                  <td className="p-4 text-center text-muted-foreground" colSpan={6}>No emails yet — send one above or import an Excel sheet.</td>
+                </tr>
+              )}
+              {rows.map((r, i) => (
+                <tr key={i} className="border-t">
+                  <td className="p-2">{i + 1}</td>
+                  <td className="p-2">{r.recipient_name}</td>
+                  <td className="p-2">{r.recipient_email}</td>
+                  <td className="p-2">{r.building_name}</td>
+                  <td className="p-2">{r.room_type}</td>
+                  <td className="p-2">
+                    {r.status === "queued" && <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="h-3.5 w-3.5" />Queued</span>}
+                    {r.status === "sending" && <span className="inline-flex items-center gap-1"><Loader2 className="h-3.5 w-3.5 animate-spin" />Sending</span>}
+                    {r.status === "sent" && <span className="inline-flex items-center gap-1 text-primary"><CheckCircle2 className="h-3.5 w-3.5" />Sent</span>}
+                    {r.status === "failed" && <span className="inline-flex items-center gap-1 text-destructive" title={r.error}><XCircle className="h-3.5 w-3.5" />Failed</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
