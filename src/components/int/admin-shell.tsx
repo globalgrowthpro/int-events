@@ -54,6 +54,7 @@ const nav = [
   { to: "/admin/gallery", label: "Gallery", icon: Images },
   { to: "/admin/settings", label: "Settings", icon: Settings },
   { to: "/admin/email-templates", label: "Email Templates", icon: Mail },
+  { to: "/admin/bulk-mail", label: "Accommodation Mail", icon: Mail },
 
   /*
    * =========================================================================
