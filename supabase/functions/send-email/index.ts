@@ -144,6 +144,7 @@ Deno.serve(async (req: Request) => {
       const bgColor = template.backgroundColor || '#0b1120';
       const textColor = template.textColor || '#f8fafc';
       const headerText = template.headerText || 'Integrated Technics';
+      const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Events Gateway';
       const rawBody = (template.bodyText || `It is our pleasure to extend to you an exclusive VIP invitation to attend ${eventTitle}. Step into an exclusive technology experience designed to showcase the latest innovations, emerging technologies, and intelligent solutions.`).replace(/{recipientName}/g, recipientName).replace(/{eventTitle}/g, eventTitle);
       const cleanBodyText = rawBody.replace(/^\s*Dear\s+[^,\n]+,\s*/i, '').trim().replace(/\n/g, '<br />');
 
