@@ -18,18 +18,44 @@ export interface WhatsAppAccommodationPayload {
  * - If an Egyptian local number starts with '01', converts to '201...'.
  * - Ensures no leading '+' or '00'.
  */
-export function cleanWhatsAppNumber(phone: string): string {
-  if (!phone) return "";
-  let cleaned = phone.replace(/[\s\-\(\)\+\.]/g, "").trim();
+export function cleanWhatsAppNumber(phone: unknown): string {
+  if (phone === null || phone === undefined) return "";
+  let str = String(phone).trim();
+  if (!str) return "";
+
+  // Convert Eastern Arabic and Persian numerals to ASCII digits
+  str = str
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 1632))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 1776));
+
+  // Strip trailing .0 from Excel float numbers e.g. 201012345678.0
+  str = str.replace(/\.0+$/, "");
+
+  // Remove non-digit characters
+  let cleaned = str.replace(/\D/g, "");
 
   // Remove leading 00 international prefix
   if (cleaned.startsWith("00")) {
     cleaned = cleaned.substring(2);
   }
 
-  // Handle Egypt mobile numbers starting with 01 (e.g. 010, 011, 012, 015)
+  // Handle Egypt mobile numbers:
+  // Starts with 010, 011, 012, 015 (11 digits: e.g. 01012345678 -> 201012345678)
   if (/^01[0125]\d{8}$/.test(cleaned)) {
     cleaned = "20" + cleaned.substring(1);
+  }
+  // Starts with 10, 11, 12, 15 (10 digits: leading zero lost in Excel -> 201012345678)
+  else if (/^1[0125]\d{8}$/.test(cleaned)) {
+    cleaned = "20" + cleaned;
+  }
+  // Handle Saudi mobile numbers:
+  // Starts with 05 (10 digits: e.g. 0512345678 -> 966512345678)
+  else if (/^05\d{8}$/.test(cleaned)) {
+    cleaned = "966" + cleaned.substring(1);
+  }
+  // Starts with 5 (9 digits: e.g. 512345678 -> 966512345678)
+  else if (/^5\d{8}$/.test(cleaned)) {
+    cleaned = "966" + cleaned;
   }
 
   return cleaned;
