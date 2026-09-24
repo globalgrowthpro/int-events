@@ -135,8 +135,24 @@ export function cleanConsiderations(text?: string | null): string {
 }
 
 export function AdminRegistrationsPage() {
-  const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
-  const [allEvents, setAllEvents] = useState<any[]>([]);
+  const [registrations, setRegistrations] = useState<RegistrationRow[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const cached = localStorage.getItem("int_registrations_cache");
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [allEvents, setAllEvents] = useState<any[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const cached = localStorage.getItem("int_events_cache");
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [search, setSearch] = useState("");
   const [eventFilter, setEventFilter] = useState("all");
   const [stateFilter, setStateFilter] = useState("all");
@@ -204,9 +220,18 @@ export function AdminRegistrationsPage() {
   const loadRegistrations = async (showToast = false) => {
     if (showToast) setRefreshing(true);
     try {
-      const { data: evData } = await supabase
-        .from("events")
-        .select("*");
+      // Parallelize all 3 requests concurrently instead of sequential waterfall
+      const [evRes, regRes, profRes] = await Promise.all([
+        supabase.from("events").select("id, title, date, start_date, location, venue, city, capacity"),
+        supabase.from("registrations").select("*").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("id, email, id_type, id_number, document_url, id_doc_name, gender, phone")
+      ]);
+
+      const evData = evRes.data;
+      const data = regRes.data;
+      const error = regRes.error;
+      const profData = profRes.data;
+
       if (evData && evData.length > 0) {
         const evMap = new Map();
         events.forEach((e) => evMap.set(e.id, e));
@@ -220,17 +245,12 @@ export function AdminRegistrationsPage() {
             capacity: e.capacity || 500,
           });
         });
-        setAllEvents(Array.from(evMap.values()));
+        const evList = Array.from(evMap.values());
+        setAllEvents(evList);
+        try {
+          localStorage.setItem("int_events_cache", JSON.stringify(evList));
+        } catch {}
       }
-
-      const { data, error } = await supabase
-        .from("registrations")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      const { data: profData } = await supabase
-        .from("profiles")
-        .select("id, email, id_type, id_number, document_url, id_doc_name, gender, phone");
 
       const profMap = new Map<string, any>();
       if (profData) {
@@ -258,7 +278,10 @@ export function AdminRegistrationsPage() {
           };
         });
         setRegistrations(enriched as RegistrationRow[]);
-      } else {
+        try {
+          localStorage.setItem("int_registrations_cache", JSON.stringify(enriched));
+        } catch {}
+      } else if (!data || data.length === 0) {
         setRegistrations([]);
       }
       if (showToast) toast.success("Registrations synced with Supabase!");

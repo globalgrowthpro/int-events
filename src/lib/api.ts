@@ -7,19 +7,18 @@ import { getCompanyLogo, getUserAvatar } from "./logos";
  */
 export async function getEvents(): Promise<IntEvent[]> {
   try {
-    const { data: eventsData, error: evError } = await supabase
-      .from("events")
-      .select("*")
-      .order("date", { ascending: true });
+    const [eventsRes, regsRes] = await Promise.all([
+      supabase.from("events").select("*").order("date", { ascending: true }),
+      supabase.from("registrations").select("event_id, state"),
+    ]);
+
+    const eventsData = eventsRes.data;
+    const evError = eventsRes.error;
+    const regsData = regsRes.data;
 
     if (evError || !eventsData || eventsData.length === 0) {
       return [];
     }
-
-    // Query real registration counts per event
-    const { data: regsData } = await supabase
-      .from("registrations")
-      .select("event_id, state");
 
     const countsMap: Record<string, { registered: number; checkedIn: number }> = {};
     if (regsData) {
@@ -381,7 +380,7 @@ export async function verifyCheckIn(ticketToken: string, gate = "Main Entrance G
     try {
       const parsed = JSON.parse(cleanToken);
       cleanToken = parsed.t || parsed.token || parsed.id || cleanToken;
-    } catch {}
+    } catch { }
   }
 
   try {
@@ -403,7 +402,7 @@ export async function verifyCheckIn(ticketToken: string, gate = "Main Entrance G
           scanned_by: scannedBy || null,
           status: "invalid",
         });
-      } catch {}
+      } catch { }
 
       return {
         success: false,
@@ -427,13 +426,13 @@ export async function verifyCheckIn(ticketToken: string, gate = "Main Entrance G
           scanned_by: scannedBy || null,
           status: "duplicate",
         });
-      } catch {}
+      } catch { }
 
       const initialCheckIn = reg.check_in_time
         ? new Date(reg.check_in_time).toLocaleString([], {
-            dateStyle: "medium",
-            timeStyle: "short",
-          })
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
         : "earlier today";
 
       return {
@@ -553,7 +552,7 @@ export async function getVendors() {
     {
       id: "ven-1",
       name: "Genetec",
-      contact_person: "John Smith",
+      contact_person: "Hafez Rahim",
       category: "Unified Security",
       reps_count: 6,
       approved_events_count: 3,
@@ -563,7 +562,7 @@ export async function getVendors() {
       id_type: "Passport",
       id_number: "P-8821943",
       id_doc_url: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&auto=format&fit=crop&q=80",
-      id_doc_name: "Passport_JohnSmith.pdf",
+      id_doc_name: "Passport_Hafez RahimSmith.pdf",
       can_chat: true,
     },
     {
@@ -861,7 +860,7 @@ export function getLocalStoredMessages(): ChatMessage[] {
       id: "msg-1",
       sender_id: "ven-1",
       recipient_id: "cli-1",
-      sender_name: "John Smith",
+      sender_name: "Hafez Rahim",
       sender_company: "Genetec",
       sender_role: "vendor",
       content: "Hello Ahmed! Welcome to the INT Security Technology Summit. Let us know if you would like a demo of our Unified Platform at Booth #4.",
@@ -875,7 +874,7 @@ export function getLocalStoredMessages(): ChatMessage[] {
       sender_name: "Ahmed Mohamed",
       sender_company: "ABC Corporation",
       sender_role: "client",
-      content: "Hi John, thank you! I will stop by right after the morning keynote session.",
+      content: "Hi Hafez Rahim, thank you! I will stop by right after the morning keynote session.",
       created_at: new Date(Date.now() - 3600000 * 1.5).toISOString(),
       is_read: true,
     },
@@ -965,7 +964,7 @@ export async function getUserChatPermission(userId?: string, userEmail?: string)
     if (data && typeof data.can_chat === "boolean") {
       return data.can_chat;
     }
-  } catch {}
+  } catch { }
   return true;
 }
 
@@ -1349,7 +1348,7 @@ export async function getScheduledReminders(): Promise<ScheduledReminder[]> {
     try {
       const stored = localStorage.getItem(REMINDERS_STORAGE_KEY);
       if (stored) return JSON.parse(stored);
-    } catch {}
+    } catch { }
   }
   return [];
 }
@@ -1386,7 +1385,7 @@ export async function createScheduledReminder(
       const list = await getScheduledReminders();
       const next = [newReminder, ...list];
       localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(next));
-    } catch {}
+    } catch { }
   }
 
   return newReminder;
@@ -1413,7 +1412,7 @@ export async function updateScheduledReminder(
       const list = await getScheduledReminders();
       const next = list.map((r) => (r.id === id ? { ...r, ...updates, updated_at: now } : r));
       localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(next));
-    } catch {}
+    } catch { }
   }
   return true;
 }
@@ -1435,7 +1434,7 @@ export async function deleteScheduledReminder(id: string): Promise<boolean> {
       const list = await getScheduledReminders();
       const next = list.filter((r) => r.id !== id);
       localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(next));
-    } catch {}
+    } catch { }
   }
   return true;
 }
@@ -1460,7 +1459,7 @@ export async function triggerSendReminderNow(reminder: ScheduledReminder): Promi
         created_at: now,
       },
     ]);
-  } catch {}
+  } catch { }
 
   // 2. Trigger browser web push notification if granted
   if (typeof window !== "undefined" && reminder.send_browser_push && "Notification" in window) {
@@ -1472,7 +1471,7 @@ export async function triggerSendReminderNow(reminder: ScheduledReminder): Promi
           badge: "/pwa-192x192.png",
         });
       }
-    } catch {}
+    } catch { }
   }
 
   // 3. Dispatch in-app update event

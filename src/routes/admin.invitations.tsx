@@ -203,7 +203,7 @@ export function AdminInvitationsPage() {
       } else {
         setAccountsList([
           { id: "1", full_name: "Ahmed Mohamed", email: "client@intevents.com", company: "ABC Corporation", job_title: "CIO", role: "client", status: "active", phone: "+20 100 123 4567" },
-          { id: "2", full_name: "John Smith", email: "jsmith@genetec.com", company: "Genetec", job_title: "Security Director", role: "vendor", status: "active", phone: "+20 100 234 5678" },
+          { id: "2", full_name: "Hafez Rahim", email: "jsmith@genetec.com", company: "Genetec", job_title: "Security Director", role: "vendor", status: "active", phone: "+20 100 234 5678" },
           { id: "3", full_name: "Sara Hassan", email: "sara.h@cairo-tech.com", company: "Cairo Tech Solutions", job_title: "Procurement Head", role: "client", status: "active", phone: "+20 100 345 6789" },
           { id: "4", full_name: "Omar Ali", email: "omar.ali@integratedtechnics.com", company: "Integrated Technics", job_title: "Field Lead", role: "employee", status: "active", phone: "+20 100 456 7890" },
         ]);
@@ -402,8 +402,8 @@ export function AdminInvitationsPage() {
             errorReason: !fullName
               ? "Missing Name"
               : !emailValid
-              ? "Invalid Email Format"
-              : undefined,
+                ? "Invalid Email Format"
+                : undefined,
           };
         });
 
@@ -826,7 +826,7 @@ export function AdminInvitationsPage() {
     if (!deletingInvitation) return;
     try {
       await supabase.from("invitations").delete().eq("id", deletingInvitation.id);
-    } catch {}
+    } catch { }
     setInvitations((prev) => prev.filter((i) => i.id !== deletingInvitation.id));
     toast.success(`Removed invitation ${deletingInvitation.id}`);
     setDeletingInvitation(null);
@@ -1049,11 +1049,10 @@ export function AdminInvitationsPage() {
                       </td>
                       <td className="px-4 py-4 text-xs">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            inv.source === "excel"
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${inv.source === "excel"
                               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                               : "bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20"
-                          }`}
+                            }`}
                         >
                           {inv.source === "excel" ? <FileSpreadsheet className="h-3 w-3" /> : <Users className="h-3 w-3" />}
                           {inv.source === "excel" ? "Excel Import" : "Accounts"}
@@ -1185,15 +1184,13 @@ export function AdminInvitationsPage() {
                   <button
                     type="button"
                     onClick={() => setRecipientSource("accounts")}
-                    className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${
-                      recipientSource === "accounts"
+                    className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${recipientSource === "accounts"
                         ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-2xs"
                         : "border-border bg-card hover:bg-secondary/40 text-muted-foreground"
-                    }`}
+                      }`}
                   >
-                    <div className={`grid h-10 w-10 place-items-center rounded-xl shrink-0 ${
-                      recipientSource === "accounts" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                    }`}>
+                    <div className={`grid h-10 w-10 place-items-center rounded-xl shrink-0 ${recipientSource === "accounts" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                      }`}>
                       <Users className="h-5 w-5" />
                     </div>
                     <div>
@@ -1205,15 +1202,13 @@ export function AdminInvitationsPage() {
                   <button
                     type="button"
                     onClick={() => setRecipientSource("excel")}
-                    className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${
-                      recipientSource === "excel"
+                    className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${recipientSource === "excel"
                         ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-2xs"
                         : "border-border bg-card hover:bg-secondary/40 text-muted-foreground"
-                    }`}
+                      }`}
                   >
-                    <div className={`grid h-10 w-10 place-items-center rounded-xl shrink-0 ${
-                      recipientSource === "excel" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                    }`}>
+                    <div className={`grid h-10 w-10 place-items-center rounded-xl shrink-0 ${recipientSource === "excel" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                      }`}>
                       <FileSpreadsheet className="h-5 w-5" />
                     </div>
                     <div>
@@ -1272,9 +1267,8 @@ export function AdminInvitationsPage() {
                         return (
                           <label
                             key={acc.id}
-                            className={`flex items-center justify-between p-3 cursor-pointer transition-colors ${
-                              checked ? "bg-primary/5" : "hover:bg-secondary/30"
-                            }`}
+                            className={`flex items-center justify-between p-3 cursor-pointer transition-colors ${checked ? "bg-primary/5" : "hover:bg-secondary/30"
+                              }`}
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <input
@@ -1506,13 +1500,12 @@ export function AdminInvitationsPage() {
                   {dispatchLogs.map((log) => (
                     <div
                       key={log.id}
-                      className={`flex items-start gap-2 ${
-                        log.status === "success"
+                      className={`flex items-start gap-2 ${log.status === "success"
                           ? "text-emerald-600 dark:text-emerald-400"
                           : log.status === "error"
-                          ? "text-destructive"
-                          : "text-muted-foreground"
-                      }`}
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                        }`}
                     >
                       <span className="text-[10px] opacity-70 shrink-0">{log.time}</span>
                       <span>{log.text}</span>
@@ -1604,7 +1597,7 @@ export function AdminInvitationsPage() {
                 </div>
 
                 {/* Simulated Email Body */}
-                <div 
+                <div
                   className="rounded-2xl border p-6 shadow-2xl space-y-5"
                   style={{ backgroundColor: bgColor, borderColor: secondaryColor, color: textColor }}
                 >
@@ -1619,7 +1612,7 @@ export function AdminInvitationsPage() {
                         <p className="text-[11px]" style={{ color: primaryColor }}>{headerSubtext}</p>
                       </div>
                     </div>
-                    <span 
+                    <span
                       className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider border"
                       style={{ color: primaryColor, backgroundColor: `${primaryColor}20`, borderColor: `${primaryColor}50` }}
                     >
@@ -1637,7 +1630,7 @@ export function AdminInvitationsPage() {
                   </div>
 
                   {/* Event Details Card */}
-                  <div 
+                  <div
                     className="rounded-xl border p-4 space-y-2 text-xs"
                     style={{ borderColor: `${primaryColor}40`, backgroundColor: `${secondaryColor}80` }}
                   >
@@ -1666,7 +1659,7 @@ export function AdminInvitationsPage() {
 
                   {/* Template Footer */}
                   {footerText && (
-                    <div 
+                    <div
                       className="border-t pt-4 text-center text-xs"
                       style={{ borderColor: `${secondaryColor}`, color: `${textColor}99` }}
                     >

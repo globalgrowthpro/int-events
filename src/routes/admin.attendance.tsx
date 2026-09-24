@@ -43,7 +43,15 @@ interface AttendeeRow {
 }
 
 function AdminAttendance() {
-  const [attendeesList, setAttendeesList] = useState<AttendeeRow[]>([]);
+  const [attendeesList, setAttendeesList] = useState<AttendeeRow[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const cached = localStorage.getItem("int_attendance_cache");
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [search, setSearch] = useState("");
   const [filterState, setFilterState] = useState<string>("all");
   const [refreshing, setRefreshing] = useState(false);
@@ -72,11 +80,14 @@ function AdminAttendance() {
           state: r.state as any,
         }));
         setAttendeesList(rows);
+        try {
+          localStorage.setItem("int_attendance_cache", JSON.stringify(rows));
+        } catch {}
       } else {
         // Fallback default sample data
         setAttendeesList([
           { id: "1", name: "Ahmed Mohamed", email: "ahmed.mohamed@abccorp.com", company: "ABC Corporation", role: "Client", event: "Security Summit", time: "09:41 AM", gate: "Main Gate A", state: "checked-in" },
-          { id: "2", name: "John Smith", email: "jsmith@genetec.com", company: "Genetec", role: "Vendor", event: "Security Summit", time: "09:42 AM", gate: "Partner Gate", state: "checked-in" },
+          { id: "2", name: "Hafez Rahim", email: "jsmith@genetec.com", company: "Genetec", role: "Vendor", event: "Security Summit", time: "09:42 AM", gate: "Partner Gate", state: "checked-in" },
           { id: "3", name: "Omar Ali", email: "omar.ali@integratedtechnics.com", company: "Integrated Technics", role: "Employee", event: "Security Summit", time: "09:43 AM", gate: "Staff Gate", state: "checked-in" },
           { id: "4", name: "Nour Hassan", email: "nour.hassan@egypttelecom.eg", company: "Egypt Telecom", role: "Client", event: "Security Summit", time: "09:47 AM", gate: "Main Gate A", state: "checked-in" },
           { id: "5", name: "Sara Adel", email: "sara.adel@deltabank.com.eg", company: "Delta Bank", role: "Client", event: "Security Summit", time: "—", state: "registered" },
@@ -253,11 +264,10 @@ function AdminAttendance() {
             <button
               key={tab.id}
               onClick={() => setFilterState(tab.id)}
-              className={`rounded-md px-3 py-1.5 font-medium transition-all ${
-                filterState === tab.id
+              className={`rounded-md px-3 py-1.5 font-medium transition-all ${filterState === tab.id
                   ? "bg-card text-foreground shadow-2xs font-semibold"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               {tab.label}
             </button>

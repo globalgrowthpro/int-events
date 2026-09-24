@@ -29,7 +29,7 @@ export interface AgendaItem {
 
 export function formatEventDateRange(startDate?: string, endDate?: string, fallbackLabel?: string): string {
   if (!startDate) return fallbackLabel || "TBD";
-  
+
   const toDdMm = (iso?: string) => {
     if (!iso) return "";
     const clean = iso.includes("T") ? iso.split("T")[0]! : iso;
@@ -50,7 +50,7 @@ export function formatEventDateRange(startDate?: string, endDate?: string, fallb
         const year = d.getFullYear();
         return `${day}-${month}-${year}`;
       }
-    } catch {}
+    } catch { }
     return iso;
   };
 
@@ -133,7 +133,7 @@ export const myRegistrations: Registration[] = [];
 
 export const attendees = [
   { time: "09:41", name: "Ahmed Mohamed", company: "ABC Corporation", role: "client", event: "Security Summit", state: "checked-in" },
-  { time: "09:42", name: "John Smith", company: "Genetec", role: "vendor", event: "Security Summit", state: "checked-in" },
+  { time: "09:42", name: "Hafez Rahim", company: "Genetec", role: "vendor", event: "Security Summit", state: "checked-in" },
   { time: "09:43", name: "Omar Ali", company: "Integrated Technics", role: "employee", event: "Security Summit", state: "checked-in" },
   { time: "09:47", name: "Nour Hassan", company: "Egypt Telecom", role: "client", event: "Security Summit", state: "checked-in" },
   { time: "—", name: "Sara Adel", company: "Delta Bank", role: "client", event: "Security Summit", state: "registered" },
@@ -143,7 +143,7 @@ export const attendees = [
 ] as const;
 
 export const vendors = [
-  { name: "Genetec", contact: "John Smith", category: "Unified Security", reps: 6, events: 3, state: "approved" },
+  { name: "Genetec", contact: "Hafez Rahim", category: "Unified Security", reps: 6, events: 3, state: "approved" },
   { name: "Axis Communications", contact: "Petra Lund", category: "Network Video", reps: 4, events: 2, state: "approved" },
   { name: "Milestone Systems", contact: "Marco Rossi", category: "VMS", reps: 3, events: 2, state: "pending" },
   { name: "HID Global", contact: "Amira Zaki", category: "Access Control", reps: 2, events: 1, state: "pending" },

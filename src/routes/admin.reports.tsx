@@ -119,7 +119,7 @@ export function ReportsPage() {
     } else if (type === "vendors") {
       csvContent =
         "Vendor Name,Contact Person,Category,Reps Count,Approved Events,Status\n" +
-        "Genetec,John Smith,Unified Security,6,3,Approved\n" +
+        "Genetec,Hafez Rahim,Unified Security,6,3,Approved\n" +
         "Axis Communications,Petra Lund,Network Video,4,2,Approved\n" +
         "Milestone Systems,Marco Rossi,VMS,3,2,Pending\n" +
         "HID Global,Amira Zaki,Access Control,2,1,Pending\n";
@@ -281,22 +281,20 @@ export function ReportsPage() {
               <button
                 type="button"
                 onClick={() => setTrendView("area")}
-                className={`rounded-md px-2.5 py-1 font-semibold transition-all ${
-                  trendView === "area"
+                className={`rounded-md px-2.5 py-1 font-semibold transition-all ${trendView === "area"
                     ? "bg-card text-foreground shadow-2xs"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 Area
               </button>
               <button
                 type="button"
                 onClick={() => setTrendView("bar")}
-                className={`rounded-md px-2.5 py-1 font-semibold transition-all ${
-                  trendView === "bar"
+                className={`rounded-md px-2.5 py-1 font-semibold transition-all ${trendView === "bar"
                     ? "bg-card text-foreground shadow-2xs"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 Bars
               </button>

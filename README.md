@@ -764,7 +764,7 @@ Attendance status
 Example
 Attendee	Company	Type	Event	Status
 Ahmed Mohamed	ABC	Client	Summit	Checked-in
-John Smith	Genetec	Vendor	Summit	Registered
+Hafez Rahim	Genetec	Vendor	Summit	Registered
 Ali Hassan	INT	Employee	Summit	Checked-in
 27. Vendor Management
 
@@ -817,7 +817,7 @@ Attendance:
 Live attendee stream
 Time	Attendee	Company	Type
 09:41	Ahmed Mohamed	ABC	Client
-09:42	John Smith	Genetec	Vendor
+09:42	Hafez Rahim	Genetec	Vendor
 09:43	Omar Ali	INT	Employee
 29. Event Attendance Card
 

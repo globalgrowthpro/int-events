@@ -23,7 +23,6 @@ export const USER_AVATARS: Record<string, string> = {
   "Sarah Klein": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80",
   "Hafez Rahim": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
   "Omar Ali": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80",
-  "John Smith": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80",
   "Petra Lund": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80",
   "Nour Hassan": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80",
   "Marco Rossi": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80",
@@ -41,7 +40,7 @@ export const USER_AVATARS: Record<string, string> = {
 export function getCompanyLogo(companyName?: string | null): string {
   if (!companyName) return "";
   const trimmed = companyName.trim();
-  
+
   for (const [key, url] of Object.entries(COMPANY_LOGOS)) {
     if (trimmed.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(trimmed.toLowerCase())) {
       return url;

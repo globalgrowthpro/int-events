@@ -608,7 +608,7 @@ VALUES
     60,
     'completed',
     'Hands-on technical workshop on converged building management and smart city sensors.',
-    ARRAY['Schneider Electric', 'Johnson Controls', 'INT Labs']
+    ARRAY['Schneider Electric', 'Hafez Rahimson Controls', 'INT Labs']
   )
 ON CONFLICT (id) DO UPDATE SET
   title = EXCLUDED.title,
@@ -617,7 +617,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO public.vendors (name, contact_person, category, reps_count, approved_events_count, state, email, phone)
 VALUES
-  ('Genetec', 'John Smith', 'Unified Security', 6, 3, 'approved', 'jsmith@genetec.com', '+20 100 123 4567'),
+  ('Genetec', 'Hafez Rahim', 'Unified Security', 6, 3, 'approved', 'jsmith@genetec.com', '+20 100 123 4567'),
   ('Axis Communications', 'Petra Lund', 'Network Video', 4, 2, 'approved', 'plund@axis.com', '+20 100 234 5678'),
   ('Milestone Systems', 'Marco Rossi', 'VMS', 3, 2, 'pending', 'mrossi@milestonesys.com', '+20 100 345 6789'),
   ('HID Global', 'Amira Zaki', 'Access Control', 2, 1, 'pending', 'azaki@hidglobal.com', '+20 100 456 7890'),
@@ -793,3 +793,47 @@ DROP POLICY IF EXISTS "email_templates_all" ON public.email_templates;
 CREATE POLICY "email_templates_all" ON public.email_templates FOR ALL USING (true) WITH CHECK (true);
 
 INSERT INTO public.email_templates (id, config) VALUES ('default', '{}'::jsonb) ON CONFLICT DO NOTHING;
+
+-- ==============================================================================
+-- Table: ACCOMMODATION_EMAILS (Tracks single & bulk accommodation emails)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.accommodation_emails (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipient_name TEXT NOT NULL,
+  recipient_email TEXT NOT NULL,
+  recipient_phone TEXT,
+  channel TEXT NOT NULL DEFAULT 'email',
+  building_name TEXT,
+  room_type TEXT,
+  message TEXT,
+  status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'sending', 'sent', 'failed')),
+  error TEXT,
+  sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_accommodation_emails_created_at 
+  ON public.accommodation_emails (created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_accommodation_emails_email 
+  ON public.accommodation_emails (recipient_email);
+
+CREATE INDEX IF NOT EXISTS idx_accommodation_emails_phone 
+  ON public.accommodation_emails (recipient_phone);
+
+CREATE INDEX IF NOT EXISTS idx_accommodation_emails_channel 
+  ON public.accommodation_emails (channel);
+
+CREATE INDEX IF NOT EXISTS idx_accommodation_emails_status 
+  ON public.accommodation_emails (status);
+
+ALTER TABLE public.accommodation_emails ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "accommodation_emails_all" ON public.accommodation_emails;
+CREATE POLICY "accommodation_emails_all" 
+  ON public.accommodation_emails 
+  FOR ALL 
+  USING (true) 
+  WITH CHECK (true);
+
+
