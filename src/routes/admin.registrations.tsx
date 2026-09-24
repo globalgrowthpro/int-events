@@ -294,9 +294,10 @@ export function AdminRegistrationsPage() {
 
   useEffect(() => {
     loadRegistrations();
+    // Relaxed auto-sync interval to prevent connection pile-up
     const interval = setInterval(() => {
       loadRegistrations(false);
-    }, 10_000);
+    }, 45_000);
     return () => clearInterval(interval);
   }, []);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   CalendarDays,
@@ -82,70 +82,76 @@ interface LiveAttendee {
 export function AdminDashboard() {
   const onlineUsers = useOnlinePresence();
   const [chartType, setChartType] = useState<"area" | "bar">("area");
-  const [loading, setLoading] = useState(true);
+
+  // Read initial cached metrics for instant 0ms dashboard render
+  const initialCache = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("int_dashboard_metrics");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const [loading, setLoading] = useState(!initialCache);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Live Database States
-  const [eventsList, setEventsList] = useState<LiveEvent[]>([]);
-  const [totalRegistrations, setTotalRegistrations] = useState(0);
-  const [checkedInCount, setCheckedInCount] = useState(0);
-  const [pendingVendorsCount, setPendingVendorsCount] = useState(0);
-  const [totalVendorsCount, setTotalVendorsCount] = useState(0);
-  const [recentAttendees, setRecentAttendees] = useState<LiveAttendee[]>([]);
-  const [audienceData, setAudienceData] = useState<Array<{ name: string; value: number; count: number }>>([]);
-  const [chartData, setChartData] = useState<Array<{ name: string; registrations: number; checkIns: number }>>([]);
+  // Live Database States initialized from instant cache
+  const [eventsList, setEventsList] = useState<LiveEvent[]>(initialCache?.eventsList || []);
+  const [totalRegistrations, setTotalRegistrations] = useState(initialCache?.totalRegistrations || 0);
+  const [checkedInCount, setCheckedInCount] = useState(initialCache?.checkedInCount || 0);
+  const [pendingVendorsCount, setPendingVendorsCount] = useState(initialCache?.pendingVendorsCount || 0);
+  const [totalVendorsCount, setTotalVendorsCount] = useState(initialCache?.totalVendorsCount || 0);
+  const [recentAttendees, setRecentAttendees] = useState<LiveAttendee[]>(initialCache?.recentAttendees || []);
+  const [audienceData, setAudienceData] = useState<Array<{ name: string; value: number; count: number }>>(initialCache?.audienceData || []);
+  const [chartData, setChartData] = useState<Array<{ name: string; registrations: number; checkIns: number }>>(initialCache?.chartData || []);
 
   const fetchRealData = async (showToast = false) => {
     try {
       if (showToast) setRefreshing(true);
 
-      // 1. Query live events from Supabase
-      const { data: eventsData, error: evError } = await supabase
-        .from("events")
-        .select("*")
-        .order("date", { ascending: true });
+      // Run events, registrations, and vendors concurrently in parallel
+      const [evRes, regsRes, vendorsRes] = await Promise.all([
+        supabase.from("events").select("*").order("date", { ascending: true }),
+        supabase.from("registrations").select("id, role, state, attendee_name, company, created_at, check_in_time, event_id").order("created_at", { ascending: false }),
+        supabase.from("vendors").select("id, state"),
+      ]);
+
+      const eventsData = evRes.data;
+      const regsData = regsRes.data;
+      const vendorsData = vendorsRes.data;
 
       let liveEvents: LiveEvent[] = [];
-      if (!evError && eventsData) {
+      if (!evRes.error && eventsData) {
         liveEvents = eventsData as LiveEvent[];
         setEventsList(liveEvents);
       }
 
-      // 2. Query live registrations from Supabase
-      const { data: regsData, error: regsError } = await supabase
-        .from("registrations")
-        .select("id, role, state, attendee_name, company, created_at, check_in_time, event_id")
-        .order("created_at", { ascending: false });
+      let audienceSegments: Array<{ name: string; value: number; count: number }> = [];
+      let liveFeeds: LiveAttendee[] = [];
+      let total = 0;
+      let checkedIn = 0;
 
-      if (!regsError && regsData) {
-        const total = regsData.length;
-        const checkedIn = regsData.filter((r) => r.state === "checked-in").length;
+      if (!regsRes.error && regsData) {
+        total = regsData.length;
+        checkedIn = regsData.filter((r) => r.state === "checked-in").length;
         setTotalRegistrations(total);
         setCheckedInCount(checkedIn);
 
-        // Calculate exact real audience split from registrations
         const clients = regsData.filter((r) => !r.role || r.role.toLowerCase() === "client").length;
         const vendors = regsData.filter((r) => r.role && r.role.toLowerCase() === "vendor").length;
         const employees = regsData.filter((r) => r.role && r.role.toLowerCase() === "employee").length;
 
-        const audienceSegments = [
+        audienceSegments = [
           { name: "Clients", value: clients, count: clients },
           { name: "Vendors", value: vendors, count: vendors },
           { name: "Employees", value: employees, count: employees },
         ].filter((s) => s.count > 0);
 
-        setAudienceData(
-          audienceSegments.length > 0
-            ? audienceSegments
-            : [
-                { name: "Clients", value: clients, count: clients },
-                { name: "Vendors", value: vendors, count: vendors },
-                { name: "Employees", value: employees, count: employees },
-              ]
-        );
+        setAudienceData(audienceSegments);
 
-        // Build recent live check-ins feed
-        const liveFeeds: LiveAttendee[] = regsData.slice(0, 6).map((r) => {
+        liveFeeds = regsData.slice(0, 6).map((r) => {
           const matchedEvent = liveEvents.find((e) => e.id === r.event_id);
           return {
             id: r.id,
@@ -163,22 +169,41 @@ export function AdminDashboard() {
         setRecentAttendees(liveFeeds);
       }
 
-      // 3. Query vendors count from Supabase
-      const { data: vendorsData } = await supabase.from("vendors").select("id, state");
+      let totalV = 0;
+      let pendingV = 0;
       if (vendorsData) {
-        setTotalVendorsCount(vendorsData.length);
-        setPendingVendorsCount(vendorsData.filter((v) => v.state === "pending").length);
+        totalV = vendorsData.length;
+        pendingV = vendorsData.filter((v) => v.state === "pending").length;
+        setTotalVendorsCount(totalV);
+        setPendingVendorsCount(pendingV);
       }
 
-      // 4. Build dynamic chart data from real events
+      let dynamicCharts: Array<{ name: string; registrations: number; checkIns: number }> = [];
       if (liveEvents.length > 0) {
-        const dynamicCharts = liveEvents.map((ev) => ({
+        dynamicCharts = liveEvents.map((ev) => ({
           name: ev.title.replace("INT ", "").replace(" 2026", "").replace("Technical ", ""),
           registrations: ev.registered_count || 0,
           checkIns: ev.checked_in_count || Math.round((ev.registered_count || 0) * 0.75),
         }));
         setChartData(dynamicCharts);
       }
+
+      // Persist metrics to localStorage for instant subsequent renders
+      try {
+        localStorage.setItem(
+          "int_dashboard_metrics",
+          JSON.stringify({
+            eventsList: liveEvents,
+            totalRegistrations: total,
+            checkedInCount: checkedIn,
+            pendingVendorsCount: pendingV,
+            totalVendorsCount: totalV,
+            recentAttendees: liveFeeds,
+            audienceData: audienceSegments,
+            chartData: dynamicCharts,
+          })
+        );
+      } catch {}
 
       if (showToast) {
         toast.success("Live data synced with Supabase!");
@@ -193,10 +218,10 @@ export function AdminDashboard() {
 
   useEffect(() => {
     fetchRealData();
-    // Auto-sync with live Supabase database every 10 seconds
+    // Relaxed auto-sync interval to prevent connection pile-up
     const interval = setInterval(() => {
       fetchRealData(false);
-    }, 10_000);
+    }, 45_000);
     return () => clearInterval(interval);
   }, []);
 

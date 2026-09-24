@@ -108,10 +108,10 @@ function AdminAttendance() {
 
   useEffect(() => {
     loadAttendance();
-    // Auto-sync attendance every 10 seconds
+    // Relaxed auto-sync interval to prevent connection pile-up
     const interval = setInterval(() => {
       loadAttendance(false);
-    }, 10_000);
+    }, 45_000);
     return () => clearInterval(interval);
   }, []);
 

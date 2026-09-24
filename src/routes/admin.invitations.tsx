@@ -106,11 +106,35 @@ interface AccountItem {
 }
 
 export function AdminInvitationsPage() {
-  // Navigation & Data
-  const [eventsList, setEventsList] = useState<EventItem[]>([]);
-  const [accountsList, setAccountsList] = useState<AccountItem[]>([]);
-  const [invitations, setInvitations] = useState<InvitationRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Navigation & Data (Initialized from instant cache for 0ms render)
+  const [eventsList, setEventsList] = useState<EventItem[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const c = localStorage.getItem("int_invitations_events");
+      return c ? JSON.parse(c) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [accountsList, setAccountsList] = useState<AccountItem[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const c = localStorage.getItem("int_invitations_accounts");
+      return c ? JSON.parse(c) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [invitations, setInvitations] = useState<InvitationRow[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const c = localStorage.getItem("int_invitations_list");
+      return c ? JSON.parse(c) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   // Filters & Search
@@ -173,44 +197,48 @@ export function AdminInvitationsPage() {
   const pausedRef = useRef(false);
   const abortRef = useRef(false);
 
-  // Load initial data
+  // Load initial data concurrently with Promise.all
   const loadData = async (showToast = false) => {
     if (showToast) setRefreshing(true);
     try {
+      const [evRes, accRes, smtpRes, tplRes, invRes] = await Promise.all([
+        supabase.from("events").select("*").order("date", { ascending: true }),
+        supabase.from("profiles").select("*").order("full_name", { ascending: true }),
+        supabase.from("smtp_settings").select("*").limit(1).maybeSingle(),
+        supabase.from("email_templates").select("config").eq("id", "default").maybeSingle(),
+        supabase.from("invitations").select("*").order("created_at", { ascending: false }),
+      ]);
+
       // 1. Events
-      const { data: evData } = await supabase.from("events").select("*").order("date", { ascending: true });
+      const evData = evRes.data;
       if (evData && evData.length > 0) {
-        setEventsList(
-          evData.map((e: any) => ({
-            id: e.id,
-            title: e.title,
-            dateLabel: formatEventDateRange(e.date, e.end_date || e.endDate, e.date_label || e.dateLabel),
-            city: e.city || "Cairo",
-            location: e.venue || e.location || (e.city ? `${e.city}` : "Integrated Technics HQ"),
-            capacity: e.capacity || 200,
-            registered_count: e.registered_count || 0,
-          }))
-        );
+        const formattedEvents = evData.map((e: any) => ({
+          id: e.id,
+          title: e.title,
+          dateLabel: formatEventDateRange(e.date, e.end_date || e.endDate, e.date_label || e.dateLabel),
+          city: e.city || "Cairo",
+          location: e.venue || e.location || (e.city ? `${e.city}` : "Integrated Technics HQ"),
+          capacity: e.capacity || 200,
+          registered_count: e.registered_count || 0,
+        }));
+        setEventsList(formattedEvents);
+        try {
+          localStorage.setItem("int_invitations_events", JSON.stringify(formattedEvents));
+        } catch {}
         if (!targetEventId && evData[0]?.id) setTargetEventId(evData[0].id);
-      } else {
-        setEventsList([]);
       }
 
       // 2. Accounts
-      const { data: accData } = await supabase.from("profiles").select("*").order("full_name", { ascending: true });
+      const accData = accRes.data;
       if (accData && accData.length > 0) {
         setAccountsList(accData as AccountItem[]);
-      } else {
-        setAccountsList([
-          { id: "1", full_name: "Ahmed Mohamed", email: "client@intevents.com", company: "ABC Corporation", job_title: "CIO", role: "client", status: "active", phone: "+20 100 123 4567" },
-          { id: "2", full_name: "Hafez Rahim", email: "jsmith@genetec.com", company: "Genetec", job_title: "Security Director", role: "vendor", status: "active", phone: "+20 100 234 5678" },
-          { id: "3", full_name: "Sara Hassan", email: "sara.h@cairo-tech.com", company: "Cairo Tech Solutions", job_title: "Procurement Head", role: "client", status: "active", phone: "+20 100 345 6789" },
-          { id: "4", full_name: "Omar Ali", email: "omar.ali@integratedtechnics.com", company: "Integrated Technics", job_title: "Field Lead", role: "employee", status: "active", phone: "+20 100 456 7890" },
-        ]);
+        try {
+          localStorage.setItem("int_invitations_accounts", JSON.stringify(accData));
+        } catch {}
       }
 
       // 3. SMTP Config
-      const { data: smtpData } = await supabase.from("smtp_settings").select("*").limit(1).single();
+      const smtpData = smtpRes.data;
       if (smtpData) {
         setSmtpFullConfig(smtpData);
         setSmtpSender({
@@ -220,22 +248,20 @@ export function AdminInvitationsPage() {
         });
       }
 
-      // Fetch Email Template
-      const { data: tplData } = await supabase.from("email_templates").select("config").eq("id", "default").maybeSingle();
+      // Template
+      const tplData = tplRes.data;
       if (tplData?.config) {
         setTemplateConfig(tplData.config);
       }
 
       // 4. Invitations
-      const { data: invData, error: invError } = await supabase
-        .from("invitations")
-        .select("*")
-        .order("created_at", { ascending: false });
-
+      const invData = invRes.data;
+      const invError = invRes.error;
       if (!invError && invData && invData.length > 0) {
         setInvitations(invData as InvitationRow[]);
-      } else {
-        setInvitations([]);
+        try {
+          localStorage.setItem("int_invitations_list", JSON.stringify(invData));
+        } catch {}
       }
 
       if (showToast) toast.success("Invitations and accounts synchronized!");
@@ -249,10 +275,10 @@ export function AdminInvitationsPage() {
 
   useEffect(() => {
     loadData();
-    // Auto-sync every 10 seconds
+    // Relaxed auto-sync interval to prevent connection pile-up
     const interval = setInterval(() => {
       loadData(false);
-    }, 10_000);
+    }, 45_000);
     return () => clearInterval(interval);
   }, []);
 
