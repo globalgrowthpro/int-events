@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   MessageSquare,
   Send,
@@ -10,6 +11,9 @@ import {
   ThumbsDown,
   RotateCcw,
   Sparkles,
+  ShieldCheck,
+  Clock,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -47,6 +51,7 @@ export function EventFeedbackSurvey({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedName, setSubmittedName] = useState("");
 
   const questions: EventSurveyQuestion[] = survey.questions || [];
 
@@ -101,6 +106,7 @@ export function EventFeedbackSurvey({
         answers: formattedAnswers,
       });
 
+      setSubmittedName(trimmedName);
       setSubmitted(true);
       toast.success("Thank you! Your feedback has been submitted.");
     } catch (err) {
@@ -112,33 +118,100 @@ export function EventFeedbackSurvey({
   };
 
   if (submitted) {
-    return (
-      <div className="rounded-2xl border border-border bg-card p-8 sm:p-12 text-center shadow-card space-y-5 animate-in fade-in-50 duration-300">
-        <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-emerald-500/10 text-emerald-500">
-          <CheckCircle2 className="h-9 w-9" />
-        </div>
-        <div className="space-y-2 max-w-md mx-auto">
-          <h3 className="text-xl sm:text-2xl font-bold text-foreground">
-            Thank you for your feedback!
-          </h3>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Your valuable insights for <span className="font-semibold text-foreground">{event.title}</span> have been recorded. Your input directly helps us create even better events.
-          </p>
-        </div>
+    const displayName = (submittedName || name || "Attendee").trim();
+    const formattedEventTitle = (() => {
+      const t = event.title || "Integrated Technics Showcase Event";
+      if (t.includes("(") && t.includes(")")) return t;
+      if (t.includes("ITS2026")) return t.replace("ITS2026", "(ITS2026)");
+      if (t.includes("ITS 2026")) return t.replace("ITS 2026", "(ITS2026)");
+      if (event.code && !t.includes(event.code)) return `${t} (${event.code})`;
+      return t;
+    })();
 
-        <div className="pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setSubmitted(false);
-              setAnswers({});
-            }}
-            className="gap-2 text-xs"
-          >
-            <RotateCcw className="h-3.5 w-3.5" /> Submit another response
-          </Button>
+    return (
+      <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-card/95 backdrop-blur-md p-6 sm:p-10 md:p-12 shadow-xl animate-in fade-in-50 zoom-in-95 duration-300">
+        {/* Soft background ambient glow */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -z-10 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl -z-10 pointer-events-none" />
+
+        <div className="max-w-2xl mx-auto space-y-8">
+          {/* Header Badge & Icon */}
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className="relative">
+              <div className="h-16 w-16 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center ring-8 ring-emerald-500/5 shadow-inner">
+                <CheckCircle2 className="h-8 w-8 stroke-[2.25]" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 text-white flex items-center justify-center ring-2 ring-card shadow-xs">
+                <Sparkles className="h-3 w-3" />
+              </div>
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>Official Feedback Recorded</span>
+            </div>
+
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+              Thank you for your feedback!
+            </h2>
+          </div>
+
+          {/* Letter / Note Container */}
+          <div className="rounded-2xl border border-border/70 bg-background/60 p-6 sm:p-8 space-y-5 shadow-xs text-left">
+            <p className="text-base sm:text-lg font-bold text-foreground">
+              Dear <span className="text-primary">{displayName}</span>,
+            </p>
+
+            <p className="text-sm sm:text-base font-semibold text-foreground/90">
+              Thank you for your feedback.
+            </p>
+
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+              Your valuable insights regarding the <strong className="text-foreground font-semibold">{formattedEventTitle}</strong> have been successfully recorded. Your input plays an essential role in helping us continuously elevate the quality of our future events.
+            </p>
+
+            {/* Signature Block */}
+            <div className="pt-5 border-t border-border/60 flex flex-wrap items-end justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-xs sm:text-sm text-muted-foreground">Best regards,</p>
+                <p className="text-sm sm:text-base font-bold text-foreground tracking-tight">
+                  Integrated Technics Team
+                </p>
+              </div>
+
+              <div className="text-right text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1 opacity-75">
+                  <Clock className="h-3 w-3" /> Recorded just now
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Navigation Buttons */}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <Link
+              to="/event/$eventId"
+              params={{ eventId: event.id }}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm hover:bg-tech transition-all"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Event Details</span>
+            </Link>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSubmitted(false);
+                setAnswers({});
+              }}
+              className="h-10 px-4 text-xs sm:text-sm gap-2 rounded-xl border-border hover:bg-muted/80"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Submit Another Response</span>
+            </Button>
+          </div>
         </div>
       </div>
     );
