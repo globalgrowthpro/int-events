@@ -407,7 +407,7 @@ export async function getVendors() {
 
     const countsMap: Record<string, number> = {};
     if (regs) {
-      regs.forEach((r) => {
+      regs.forEach((r: any) => {
         if (r.state !== "cancelled") {
           if (r.user_id) countsMap[r.user_id] = (countsMap[r.user_id] || 0) + 1;
           if (r.attendee_email) {
@@ -419,7 +419,7 @@ export async function getVendors() {
     }
 
     if (!error && vendorProfiles && vendorProfiles.length > 0) {
-      return vendorProfiles.map((p) => {
+      return vendorProfiles.map((p: any) => {
         const emailKey = p.email ? p.email.toLowerCase() : "";
         const regCount = countsMap[p.id] || countsMap[emailKey] || 1;
         return {
@@ -587,7 +587,7 @@ export async function getClients(): Promise<ClientRecord[]> {
 
     const countsMap: Record<string, number> = {};
     if (regs) {
-      regs.forEach((r) => {
+      regs.forEach((r: any) => {
         if (r.state !== "cancelled") {
           if (r.user_id) countsMap[r.user_id] = (countsMap[r.user_id] || 0) + 1;
           if (r.attendee_email) {
@@ -599,7 +599,7 @@ export async function getClients(): Promise<ClientRecord[]> {
     }
 
     if (!error && profiles && profiles.length > 0) {
-      return profiles.map((p) => {
+      return profiles.map((p: any) => {
         const emailKey = p.email ? p.email.toLowerCase() : "";
         const regCount = countsMap[p.id] || countsMap[emailKey] || 0;
         return {
@@ -1010,7 +1010,7 @@ export async function getChatContacts(currentUserId?: string, currentUserEmail?:
   }
 
   // 2. Add vendors
-  vendors.forEach((v) => {
+  vendors.forEach((v: any) => {
     const isSelf =
       (v.id && selfAliases.includes(v.id)) ||
       (cleanEmail && v.email?.toLowerCase() === cleanEmail);

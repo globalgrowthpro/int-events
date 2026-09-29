@@ -48,7 +48,7 @@ export function Dashboard() {
 
       if (!error && regsData && regsData.length > 0) {
         const filteredRegs = regsData.filter(
-          (r) =>
+          (r: any) =>
             (userEmail && r.attendee_email?.trim().toLowerCase() === userEmail) ||
             (userName && r.attendee_name?.trim().toLowerCase() === userName) ||
             (user?.id && r.user_id === user.id)
@@ -66,7 +66,7 @@ export function Dashboard() {
 
         const targetList = uniqueRegs.length > 0 ? uniqueRegs : (user ? [] : regsData.slice(0, 3));
 
-        const mapped: Registration[] = targetList.map((r) => ({
+        const mapped: Registration[] = targetList.map((r: any) => ({
           id: r.id,
           eventId: r.event_id,
           attendee: r.attendee_name,

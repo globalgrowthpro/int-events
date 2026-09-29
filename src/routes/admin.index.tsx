@@ -135,13 +135,13 @@ export function AdminDashboard() {
 
       if (!regsRes.error && regsData) {
         total = regsData.length;
-        checkedIn = regsData.filter((r) => r.state === "checked-in").length;
+        checkedIn = regsData.filter((r: any) => r.state === "checked-in").length;
         setTotalRegistrations(total);
         setCheckedInCount(checkedIn);
 
-        const clients = regsData.filter((r) => !r.role || r.role.toLowerCase() === "client").length;
-        const vendors = regsData.filter((r) => r.role && r.role.toLowerCase() === "vendor").length;
-        const employees = regsData.filter((r) => r.role && r.role.toLowerCase() === "employee").length;
+        const clients = regsData.filter((r: any) => !r.role || r.role.toLowerCase() === "client").length;
+        const vendors = regsData.filter((r: any) => r.role && r.role.toLowerCase() === "vendor").length;
+        const employees = regsData.filter((r: any) => r.role && r.role.toLowerCase() === "employee").length;
 
         audienceSegments = [
           { name: "Clients", value: clients, count: clients },
@@ -151,7 +151,7 @@ export function AdminDashboard() {
 
         setAudienceData(audienceSegments);
 
-        liveFeeds = regsData.slice(0, 6).map((r) => {
+        liveFeeds = regsData.slice(0, 6).map((r: any) => {
           const matchedEvent = liveEvents.find((e) => e.id === r.event_id);
           return {
             id: r.id,
@@ -173,7 +173,7 @@ export function AdminDashboard() {
       let pendingV = 0;
       if (vendorsData) {
         totalV = vendorsData.length;
-        pendingV = vendorsData.filter((v) => v.state === "pending").length;
+        pendingV = vendorsData.filter((v: any) => v.state === "pending").length;
         setTotalVendorsCount(totalV);
         setPendingVendorsCount(pendingV);
       }

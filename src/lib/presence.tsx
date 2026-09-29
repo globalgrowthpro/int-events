@@ -45,7 +45,7 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
 
       // Check if channel already exists to prevent duplicate subscriptions
       const existingChannels = supabase.getChannels();
-      const existing = existingChannels.find((c) => c.topic === "realtime:int-online-presence");
+      const existing = existingChannels.find((c: any) => c.topic === "realtime:int-online-presence");
       channel = existing || supabase.channel("int-online-presence", {
         config: {
           presence: {

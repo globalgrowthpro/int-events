@@ -147,7 +147,7 @@ export function AdminPassCardsPage() {
 
       const dbStatuses: Record<string, CardDeliveryStatus> = { ...getStoredStatuses() };
       if (logs && logs.length > 0) {
-        logs.forEach((log) => {
+        logs.forEach((log: any) => {
           if (log.recipient_email) {
             dbStatuses[log.recipient_email.toLowerCase().trim()] = "sent";
           }

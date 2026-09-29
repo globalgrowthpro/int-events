@@ -200,7 +200,7 @@ export function ChatView({ isAdmin = false }: { isAdmin?: boolean }) {
           schema: "public",
           table: "messages",
         },
-        (payload) => {
+        (payload: any) => {
           const newMsg = payload.new as ChatMessage;
           const isBetweenUs =
             (selfAliases.includes(newMsg.sender_id) && contactAliases.includes(newMsg.recipient_id)) ||

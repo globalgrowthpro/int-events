@@ -46,7 +46,7 @@ export function Passes() {
 
       if (!error && regsData) {
         const mine = regsData.filter(
-          (r) =>
+          (r: any) =>
             (userEmail && r.attendee_email?.trim().toLowerCase() === userEmail) ||
             (userName && r.attendee_name?.trim().toLowerCase() === userName) ||
             (user?.id && r.user_id === user.id)
@@ -62,7 +62,7 @@ export function Passes() {
           }
         }
 
-        const mapped: Registration[] = uniqueMine.map((r) => ({
+        const mapped: Registration[] = uniqueMine.map((r: any) => ({
           id: r.id,
           eventId: r.event_id,
           attendee: r.attendee_name,

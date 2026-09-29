@@ -68,7 +68,7 @@ function AdminAttendance() {
         .order("created_at", { ascending: false });
 
       if (!error && regsData && regsData.length > 0) {
-        const rows: AttendeeRow[] = regsData.map((r) => ({
+        const rows: AttendeeRow[] = regsData.map((r: any) => ({
           id: r.id,
           name: r.attendee_name,
           email: r.attendee_email,

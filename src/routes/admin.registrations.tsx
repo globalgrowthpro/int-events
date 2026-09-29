@@ -256,7 +256,7 @@ export function AdminRegistrationsPage() {
 
       const profMap = new Map<string, any>();
       if (profData) {
-        profData.forEach((p) => {
+        profData.forEach((p: any) => {
           if (p.id) profMap.set(p.id, p);
           if (p.email) profMap.set(p.email.toLowerCase(), p);
         });

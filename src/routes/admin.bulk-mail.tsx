@@ -289,8 +289,8 @@ function BulkMailPage() {
         status: "sent",
         sent_at: nowIso,
       })
-      .then(({ error }) => {
-        if (error) console.error("Error logging whatsapp send:", error);
+      .then((res: any) => {
+        if (res?.error) console.error("Error logging whatsapp send:", res.error);
       });
 
     toast.success(`Opening WhatsApp Web for ${cleanPhone}…`);
@@ -338,8 +338,8 @@ function BulkMailPage() {
         status: "sent",
         sent_at: sentTime,
       })
-      .then(({ error }) => {
-        if (error) console.error("Error logging whatsapp send to DB:", error);
+      .then((res: any) => {
+        if (res?.error) console.error("Error logging whatsapp send to DB:", res.error);
       });
   }
 

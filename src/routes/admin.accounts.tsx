@@ -104,7 +104,7 @@ export function AccountsPage() {
 
       if (!error && data && data.length > 0) {
         setAccounts(
-          data.map((p) => ({
+          data.map((p: any) => ({
             id: p.id,
             email: p.email,
             full_name: p.full_name || p.name || "User",
