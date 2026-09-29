@@ -55,12 +55,12 @@ function AdminSurveyPage() {
 
   function handleSave(): void {
     const ev = events.find((e) => e.id === eventId);
-    if (!ev) return toast.error("Please select an event");
-    if (!questions.length) return toast.error("Add at least one question");
+    if (!ev) { toast.error("Please select an event"); return; }
+    if (!questions.length) { toast.error("Add at least one question"); return; }
     for (const q of questions) {
-      if (!q.text.trim()) return toast.error("Every question needs text");
+      if (!q.text.trim()) { toast.error("Every question needs text"); return; }
       if (q.type === "choice" && q.options.filter((o) => o.trim()).length < 2)
-        return toast.error("Multiple choice questions need at least 2 options");
+        { toast.error("Multiple choice questions need at least 2 options"); return; }
     }
     const clean = questions.map((q) => ({ ...q, text: q.text.trim().slice(0, 500), options: q.options.map((o) => o.trim()).filter(Boolean) }));
     const survey: Survey = {
