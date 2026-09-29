@@ -4,7 +4,7 @@ import { Save, RefreshCw, Type, Palette, Layout, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { sendRegistrationConfirmationEmail, sendLiveInvitationEmail, sendPassCardEmail } from "@/lib/email-service";
+import { sendRegistrationConfirmationEmail, sendLiveInvitationEmail, sendPassCardEmail, sendThankYouEmail } from "@/lib/email-service";
 import { generatePassCardPng } from "@/lib/pass-card-renderer";
 import { generateA4PassCardPdf } from "@/lib/pass-card-pdf";
 import { uploadPassCardPdf } from "@/lib/pass-storage";
@@ -205,6 +205,13 @@ function EmailTemplatesPage() {
       let res;
       if (activeTemplateId === "registration") {
         res = await sendRegistrationConfirmationEmail({
+          recipient_name: "Valued Guest (Test)",
+          recipient_email: testEmail.trim(),
+          event_title: "Integrated Technics Showcase Event 2026",
+          template_config: config as any,
+        });
+      } else if (activeTemplateId === "thankyou") {
+        res = await sendThankYouEmail({
           recipient_name: "Valued Guest (Test)",
           recipient_email: testEmail.trim(),
           event_title: "Integrated Technics Showcase Event 2026",
@@ -624,7 +631,7 @@ function EmailTemplatesPage() {
 
                       <div style={{ padding: '28px', fontSize: '14px', lineHeight: 1.6 }}>
                         <p style={{ margin: '0 0 8px', color: config.primaryColor, fontSize: '12px', fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase' }}>
-                          {activeTemplateId === "default" ? "Official Invitation" : activeTemplateId === "registration" ? "Registration Confirmation" : "Event Badge"}
+                          {activeTemplateId === "default" ? "Official Invitation" : activeTemplateId === "registration" ? "Registration Confirmation" : activeTemplateId === "thankyou" ? "Thank You" : "Event Badge"}
                         </p>
                         <h1 style={{ margin: '0 0 12px', color: '#fff', fontSize: '22px' }}>Event Title Here</h1>
 
