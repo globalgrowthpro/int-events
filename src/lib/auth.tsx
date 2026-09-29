@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { supabase } from "./supabase";
+import { apiClient, setAuthToken } from "./api-client";
 
 export type DemoRole = "client" | "vendor" | "employee" | "admin";
 
@@ -132,20 +132,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setReady(true);
 
-    // Also fetch fresh avatar_url and details from Supabase profiles
+    // Also fetch fresh user details from local backend API
     if (initialUser?.id || initialUser?.email) {
       const fetchProfile = async () => {
         try {
-          const { data } = await supabase
-            .from("profiles")
-            .select("avatar_url, full_name, company")
-            .or(`id.eq.${initialUser?.id},email.eq.${initialUser?.email}`)
-            .maybeSingle();
-
-          if (data && data.avatar_url) {
+          const profile = await apiClient.get<any>("/user");
+          if (profile && profile.id) {
             setUser((prev) => {
               if (!prev) return null;
-              const updated = { ...prev, avatar_url: data.avatar_url, name: data.full_name || prev.name, company: data.company || prev.company };
+              const updated = {
+                ...prev,
+                avatar_url: profile.avatar_url || prev.avatar_url,
+                name: profile.name || prev.name,
+                company: profile.company || prev.company,
+              };
               try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
               } catch {}
@@ -164,7 +164,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(next);
     try {
       if (next) localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      else localStorage.removeItem(STORAGE_KEY);
+      else {
+        localStorage.removeItem(STORAGE_KEY);
+        setAuthToken(null);
+      }
     } catch {
       /* ignore */
     }
@@ -198,73 +201,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn: async (email, password) => {
         const cleanEmail = email.trim().toLowerCase();
 
-        // 0. Check if account is active in Supabase profiles
+        // 1. Try Local Laravel Backend Auth first
         try {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("status, full_name, email")
-            .ilike("email", cleanEmail)
-            .maybeSingle();
-
-          if (profile && (profile.status === "suspended" || profile.status === "inactive" || profile.status === "pending")) {
-            return {
-              ok: false,
-              isInactive: true,
-              error: "Your account is currently inactive or suspended. Sign in is disabled by the administrator.",
-            };
-          }
-        } catch {
-          /* continue */
-        }
-
-        // 1. Try real Supabase Auth first
-        try {
-          const { data, error: supaError } = await supabase.auth.signInWithPassword({
+          const res = await apiClient.post<any>("/login", {
             email: cleanEmail,
             password,
           });
 
-          if (!supaError && data.user) {
-            // Fetch profile
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("*")
-              .eq("id", data.user.id)
-              .single();
-
-            if (profile && (profile.status === "suspended" || profile.status === "inactive" || profile.status === "pending")) {
-              await supabase.auth.signOut();
-              return {
-                ok: false,
-                isInactive: true,
-                error: "Your account is currently inactive or suspended. Sign in is disabled.",
-              };
+          if (res?.ok && res.user) {
+            if (res.token) {
+              setAuthToken(res.token);
             }
-
-            const role = (profile?.role as DemoRole) || "client";
             const session: SessionUser = {
-              id: data.user.id,
-              email: data.user.email || cleanEmail,
-              name: profile?.full_name || cleanEmail.split("@")[0],
-              company: profile?.company || "Integrated Technics",
-              role,
-              initials: (profile?.full_name || cleanEmail)
-                .split(" ")
-                .map((n: string) => n[0])
-                .join("")
-                .substring(0, 2)
-                .toUpperCase(),
-              home: role === "admin" ? "/admin" : "/dashboard",
+              id: res.user.id,
+              email: res.user.email,
+              name: res.user.name,
+              company: res.user.company || "Integrated Technics",
+              role: res.user.role || "client",
+              initials: res.user.initials || "U",
+              avatar_url: res.user.avatar_url,
+              home: res.user.home || "/dashboard",
             };
 
             persist(session);
             return { ok: true, user: session };
           }
-        } catch {
-          /* continue to verified accounts check */
+        } catch (err: any) {
+          if (err.message && err.message.includes("inactive")) {
+            return {
+              ok: false,
+              isInactive: true,
+              error: err.message,
+            };
+          }
+          // Continue to verified demo accounts check
         }
 
-        // 2. Validate against verified real accounts
+        // 2. Validate against verified accounts fallback
         const account = verifiedAccounts.find(
           (a) => a.email.toLowerCase() === cleanEmail
         );
@@ -282,30 +255,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { ok: true, user: session };
       },
       signInAs: async (account) => {
-        const cleanEmail = account.email.trim().toLowerCase();
-        try {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("status, full_name")
-            .ilike("email", cleanEmail)
-            .maybeSingle();
-
-          if (profile && (profile.status === "suspended" || profile.status === "inactive" || profile.status === "pending")) {
-            return {
-              ok: false,
-              isInactive: true,
-              error: `Account for ${account.name} is currently inactive / suspended in database.`,
-            };
-          }
-        } catch {}
-
         const session = toSession(account);
         persist(session);
         return { ok: true, user: session };
       },
       signOut: async () => {
         try {
-          await supabase.auth.signOut();
+          await apiClient.post("/logout");
         } catch {
           /* ignore */
         }

@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { apiClient } from "./api-client";
 import { type IntEvent, type Registration } from "./int-data";
 import { getCompanyLogo, getUserAvatar } from "./logos";
 
@@ -7,62 +8,41 @@ import { getCompanyLogo, getUserAvatar } from "./logos";
  */
 export async function getEvents(): Promise<IntEvent[]> {
   try {
-    const [eventsRes, regsRes] = await Promise.all([
-      supabase.from("events").select("*").order("date", { ascending: true }),
-      supabase.from("registrations").select("event_id, state"),
-    ]);
+    // 1. Fetch from Local Backend API
+    const eventsData = await apiClient.get<any[]>("/events");
 
-    const eventsData = eventsRes.data;
-    const evError = eventsRes.error;
-    const regsData = regsRes.data;
-
-    if (evError || !eventsData || eventsData.length === 0) {
-      return [];
-    }
-
-    const countsMap: Record<string, { registered: number; checkedIn: number }> = {};
-    if (regsData) {
-      regsData.forEach((r) => {
-        const item = countsMap[r.event_id] ?? { registered: 0, checkedIn: 0 };
-        if (r.state !== "cancelled") item.registered += 1;
-        if (r.state === "checked-in") item.checkedIn += 1;
-        countsMap[r.event_id] = item;
-      });
-    }
-
-    return eventsData.map((ev) => {
-      const liveReg = countsMap[ev.id]?.registered ?? ev.registered_count ?? 0;
-      const liveCheck = countsMap[ev.id]?.checkedIn ?? ev.checked_in_count ?? 0;
-
-      return {
+    if (eventsData && Array.isArray(eventsData) && eventsData.length > 0) {
+      return eventsData.map((ev) => ({
         id: ev.id,
         code: ev.code,
         title: ev.title,
-        category: ev.category,
+        category: ev.category || "Summit",
         date: ev.date,
         endDate: ev.end_date || ev.date,
-        dateLabel: ev.date_label,
+        dateLabel: ev.date_label || ev.date,
         startTime: ev.start_time || "09:00 AM",
         endTime: ev.end_time || "05:00 PM",
-        city: ev.city,
+        city: ev.city || "Cairo, Egypt",
         venue: ev.venue,
         mapUrl: ev.map_url || "",
         image: ev.image_url || "",
         capacity: ev.capacity || 250,
-        registered: liveReg,
-        checkedIn: liveCheck,
+        registered: ev.registered_count ?? 0,
+        checkedIn: ev.checked_in_count ?? 0,
         status: ev.status === "open" ? "registration-open" : (ev.status as any),
         organizer: ev.organizer || "Integrated Technics",
         summary: ev.summary || "",
-        description: ev.description || [],
-        speakers: ev.speakers || [],
-        agenda: ev.agenda || [],
+        description: Array.isArray(ev.description) ? ev.description : [],
+        speakers: Array.isArray(ev.speakers) ? ev.speakers : [],
+        agenda: Array.isArray(ev.agenda) ? ev.agenda : [],
         agendaUrl: ev.agenda_url || "",
-        partners: ev.partners || [],
-        partnerList: ev.partner_list || [],
-      };
-    });
-  } catch {
+        partners: Array.isArray(ev.partners) ? ev.partners : [],
+        partnerList: Array.isArray(ev.partner_list) ? ev.partner_list : [],
+      }));
+    }
+    return [];
+  } catch (err) {
+    console.warn("getEvents local API fallback:", err);
     return [];
   }
 }
@@ -168,28 +148,22 @@ export async function deleteEvent(eventId: string): Promise<boolean> {
 export async function checkUserRegistration(eventId: string, email?: string, userId?: string): Promise<{ isRegistered: boolean; ticketToken?: string }> {
   if (!eventId || (!email && !userId)) return { isRegistered: false };
   try {
-    let query = supabase
-      .from("registrations")
-      .select("id, ticket_token, attendee_email, user_id, state")
-      .eq("event_id", eventId)
-      .neq("state", "cancelled");
+    const params = new URLSearchParams({ event_id: eventId });
+    if (email) params.append("email", email.trim());
+    if (userId) params.append("user_id", userId);
 
-    if (email) {
-      query = query.ilike("attendee_email", email.trim());
-    } else if (userId) {
-      query = query.eq("user_id", userId);
-    }
-
-    const { data, error } = await query.limit(1);
-    if (error || !data || data.length === 0 || !data[0]) return { isRegistered: false };
-    return { isRegistered: true, ticketToken: data[0].ticket_token };
+    const res = await apiClient.get<any>(`/registrations/check?${params.toString()}`);
+    return {
+      isRegistered: !!res?.isRegistered,
+      ticketToken: res?.ticketToken,
+    };
   } catch {
     return { isRegistered: false };
   }
 }
 
 /**
- * Storage & Identity Document Upload Helper
+ * Storage & Identity Document Upload Helper (Local Laravel Storage)
  */
 export async function uploadIdentityDocument(
   file: File,
@@ -197,30 +171,16 @@ export async function uploadIdentityDocument(
 ): Promise<{ url: string; name: string } | null> {
   if (!file) return null;
 
-  const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const filePath = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${cleanName}`;
-
   try {
-    const { error: uploadError } = await supabase.storage
-      .from("id_documents")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: true,
-      });
-
-    if (!uploadError) {
-      const { data } = supabase.storage.from("id_documents").getPublicUrl(filePath);
-      if (data?.publicUrl) {
-        return { url: data.publicUrl, name: file.name };
-      }
-    } else {
-      console.warn("Storage upload notice:", uploadError.message);
+    const res = await apiClient.upload<any>(file, folder);
+    if (res?.success && res.url) {
+      return { url: res.url, name: res.name || file.name };
     }
   } catch (err) {
-    console.warn("Direct storage upload exception:", err);
+    console.warn("Local storage upload notice:", err);
   }
 
-  // Fallback to Base64 Data URL if storage bucket fails
+  // Fallback to Base64 Data URL if local upload endpoint is not reachable
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -356,13 +316,10 @@ export async function createRegistrationWithDelegates({
   ];
 
   try {
-    const { data, error } = await supabase
-      .from("registrations")
-      .insert(rowsToInsert)
-      .select();
-
-    if (error) throw error;
-    return { success: true, count: rowsToInsert.length, data };
+    for (const row of rowsToInsert) {
+      await apiClient.post("/registrations", row);
+    }
+    return { success: true, count: rowsToInsert.length, data: rowsToInsert };
   } catch (err) {
     console.warn("createRegistration fallback:", err);
     return { success: true, count: rowsToInsert.length };
@@ -384,112 +341,58 @@ export async function verifyCheckIn(ticketToken: string, gate = "Main Entrance G
   }
 
   try {
-    // 1. Query registration record in database
-    const { data: reg, error: regError } = await supabase
-      .from("registrations")
-      .select("*, events(*)")
-      .or(`ticket_token.eq.${cleanToken},id.eq.${cleanToken}`)
-      .limit(1)
-      .maybeSingle();
+    // 1. Send scan request to local Laravel Attendance API
+    const scanRes = await apiClient.post<any>("/attendance/scan", {
+      token: cleanToken,
+      scanned_by: scannedBy || "Gate Scanner",
+      gate,
+    });
 
-    if (regError || !reg) {
-      // Log invalid scan attempt
-      try {
-        await supabase.from("attendance_logs").insert({
-          registration_id: null,
-          event_id: null,
-          gate,
-          scanned_by: scannedBy || null,
-          status: "invalid",
-        });
-      } catch { }
-
+    if (scanRes?.valid) {
       return {
-        success: false,
-        status: "invalid" as const,
-        message: "Pass token was not recognized in database",
+        success: true,
+        status: "valid" as const,
+        attendee_name: scanRes.attendee_name,
+        company: scanRes.company || "Enterprise Client",
+        job_title: scanRes.job_title || "Participant",
+        event_title: scanRes.event_title || "INT Event",
+        event_date_time: "Event Date",
+        check_in_time: scanRes.check_in_time || new Date().toISOString(),
         token: cleanToken,
+        gate,
+        message: scanRes.message || "Pass verified and attendee checked in.",
       };
-    }
-
-    const eventDateTime = reg.events
-      ? `${reg.events.date_label || reg.events.date || "Event Date"} · ${reg.events.start_time || "09:00 AM"}`
-      : "Upcoming Session";
-
-    // 2. Check for duplicate scan (BLOCK duplicate registration updates)
-    if (reg.state === "checked-in") {
-      try {
-        await supabase.from("attendance_logs").insert({
-          registration_id: reg.id,
-          event_id: reg.event_id,
-          gate,
-          scanned_by: scannedBy || null,
-          status: "duplicate",
-        });
-      } catch { }
-
-      const initialCheckIn = reg.check_in_time
-        ? new Date(reg.check_in_time).toLocaleString([], {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
-        : "earlier today";
-
+    } else if (scanRes?.duplicate) {
       return {
         success: false,
         status: "duplicate" as const,
-        message: `Duplicate Scan Prevented: Badge was already scanned and checked in at ${initialCheckIn}`,
-        attendee_name: reg.attendee_name,
-        company: reg.company || "Enterprise Client",
-        job_title: reg.job_title || "Participant",
-        event_title: reg.events?.title || "INT Event",
-        event_date_time: eventDateTime,
-        check_in_time: reg.check_in_time || new Date().toISOString(),
+        message: scanRes.message || "Duplicate Scan: Badge was already scanned earlier.",
+        attendee_name: scanRes.attendee_name,
+        company: scanRes.company || "Enterprise Client",
+        job_title: scanRes.job_title || "Participant",
+        event_title: scanRes.event_title || "INT Event",
+        event_date_time: "Event Date",
+        check_in_time: scanRes.check_in_time || new Date().toISOString(),
         token: cleanToken,
         gate,
       };
+    } else {
+      return {
+        success: false,
+        status: "invalid" as const,
+        message: scanRes?.message || "Pass token was not recognized in database",
+        token: cleanToken,
+      };
     }
-
-    // 3. Mark Checked In & Insert Valid Attendance Log
-    const nowIso = new Date().toISOString();
-    await supabase
-      .from("registrations")
-      .update({
-        state: "checked-in",
-        check_in_time: nowIso,
-      })
-      .eq("id", reg.id);
-
-    await supabase.from("attendance_logs").insert({
-      registration_id: reg.id,
-      event_id: reg.event_id,
-      gate,
-      scanned_by: scannedBy || null,
-      status: "valid",
-    });
-
-    return {
-      success: true,
-      status: "valid" as const,
-      message: "Check-in verified and gate access granted",
-      attendee_name: reg.attendee_name,
-      company: reg.company || "Enterprise Client",
-      job_title: reg.job_title || "Participant",
-      event_title: reg.events?.title || "INT Event",
-      event_date_time: eventDateTime,
-      check_in_time: nowIso,
-      token: cleanToken,
-      gate,
-    };
-  } catch (err) {
-    console.error("verifyCheckIn error:", err);
+  } catch (err: any) {
     return {
       success: false,
       status: "invalid" as const,
-      message: "Check-in verification failed",
+      message: err.message || "Pass token was not recognized in database",
       token: cleanToken,
     };
   }
+
 }
 
 /**

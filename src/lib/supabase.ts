@@ -1,13 +1,48 @@
-import { createClient } from "@supabase/supabase-js";
+// Supabase Disconnected - Local Backend Mode
+const disconnectedClient: any = {
+  auth: {
+    signInWithPassword: async () => ({ data: { user: null }, error: new Error("Supabase disconnected") }),
+    signOut: async () => {},
+    getSession: async () => ({ data: { session: null }, error: null }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+  },
+  from: () => {
+    const builder: any = {
+      select: () => builder,
+      insert: () => builder,
+      update: () => builder,
+      delete: () => builder,
+      eq: () => builder,
+      neq: () => builder,
+      or: () => builder,
+      ilike: () => builder,
+      order: () => builder,
+      limit: () => builder,
+      single: async () => ({ data: null, error: null }),
+      maybeSingle: async () => ({ data: null, error: null }),
+      then: (resolve: any) => resolve({ data: [], error: null }),
+    };
+    return builder;
+  },
+  storage: {
+    from: () => ({
+      upload: async () => ({ data: null, error: new Error("Supabase storage disconnected") }),
+      getPublicUrl: () => ({ data: { publicUrl: "" } }),
+    }),
+  },
+  channel: () => ({
+    on: () => ({ on: () => ({ subscribe: () => {} }), subscribe: () => {} }),
+    subscribe: () => {},
+    track: async () => {},
+  }),
+  getChannels: () => [],
+  removeChannel: () => {},
+  functions: {
+    invoke: async () => ({ data: null, error: new Error("Supabase edge functions disconnected") }),
+  },
+};
 
-const supabaseUrl =
-  (import.meta.env["VITE_SUPABASE_URL"] as string | undefined) ||
-  "https://ztjuhekmqnonpfnfbmho.supabase.co";
-const supabaseAnonKey =
-  (import.meta.env["VITE_SUPABASE_ANON_KEY"] as string | undefined) ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0anVoZWttcW5vbnBmbmZibWhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDM5OTYsImV4cCI6MjEwMjkxOTk5Nn0.n4Co-UgvJh9YI8gGX7AUZFfkk59vv5opDeft3jNiH9M";
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = disconnectedClient;
 
 export type Database = {
   public: {
