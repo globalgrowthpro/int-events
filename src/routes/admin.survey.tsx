@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ClipboardList, Plus, Trash2, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { getEvents } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 import type { IntEvent } from "@/lib/int-data";
 import { Button } from "@/components/ui/button";
 
@@ -40,7 +41,15 @@ function AdminSurveyPage() {
 
   useEffect(() => {
     setSurveys(load());
-    getEvents().then(setEvents).catch(() => setEvents([]));
+    const fetchLight = async (attempt = 0): Promise<void> => {
+      const { data, error } = await supabase.from("events").select("id, title").order("date", { ascending: true });
+      if (!error && data) { setEvents(data as unknown as IntEvent[]); return; }
+      if (attempt < 2) return fetchLight(attempt + 1);
+      const full = await getEvents().catch(() => []);
+      setEvents(full);
+      if (!full.length) toast.error("Couldn't load events. Please refresh.");
+    };
+    void fetchLight();
   }, []);
 
   function reset() {
