@@ -646,6 +646,8 @@ function EmailTemplatesPage() {
                             <p style={{ margin: 0 }}><strong>Invitation code:</strong> EVT-INV-XXXXXX</p>
                           ) : activeTemplateId === "registration" ? (
                             <p style={{ margin: 0 }}><strong>Ticket ID:</strong> TKT-REG-XXXXXX</p>
+                          ) : activeTemplateId === "thankyou" ? (
+                            <p style={{ margin: 0 }}><strong>With appreciation:</strong> Integrated Technics Team</p>
                           ) : (
                             <p style={{ margin: 0 }}><strong>Badge ID:</strong> BDG-XXXXXX</p>
                           )}
