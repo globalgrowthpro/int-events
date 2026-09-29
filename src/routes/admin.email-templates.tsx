@@ -165,7 +165,7 @@ function EmailTemplatesPage() {
 
       if (error) throw error;
 
-      const typeName = activeTemplateId === "default" ? "Invitation" : activeTemplateId === "registration" ? "Registration" : "Badge";
+      const typeName = activeTemplateId === "default" ? "Invitation" : activeTemplateId === "registration" ? "Registration" : activeTemplateId === "thankyou" ? "Thank You" : "Badge";
       toast.success(`${typeName} template saved successfully.`);
     } catch (e) {
       console.error(e);
@@ -177,7 +177,7 @@ function EmailTemplatesPage() {
 
   const handleReset = async () => {
     if (window.confirm("Are you sure you want to reset to the default template?")) {
-      const defaultConf = activeTemplateId === "default" ? defaultEmailTemplate : activeTemplateId === "registration" ? defaultRegistrationTemplate : defaultBadgeTemplate;
+      const defaultConf = activeTemplateId === "default" ? defaultEmailTemplate : activeTemplateId === "registration" ? defaultRegistrationTemplate : activeTemplateId === "thankyou" ? defaultThankYouTemplate : defaultBadgeTemplate;
       setConfig(defaultConf);
       saveEmailTemplate(activeTemplateId, defaultConf);
 
@@ -319,6 +319,7 @@ function EmailTemplatesPage() {
           <TabsTrigger value="default">Invitation Template</TabsTrigger>
           <TabsTrigger value="registration">Registration Template</TabsTrigger>
           <TabsTrigger value="badge">Badge Template</TabsTrigger>
+          <TabsTrigger value="thankyou">Thank You Template</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTemplateId} className="m-0 focus-visible:outline-none focus-visible:ring-0">
