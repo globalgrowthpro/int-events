@@ -23,6 +23,7 @@ import {
   Shield,
   Sparkles,
   CreditCard,
+  ClipboardList,
 } from "lucide-react";
 import { IntLogo } from "./logo";
 import { NotificationBell } from "./notification-bell";
@@ -55,6 +56,7 @@ const nav = [
   { to: "/admin/settings", label: "Settings", icon: Settings },
   { to: "/admin/email-templates", label: "Email Templates", icon: Mail },
   { to: "/admin/bulk-mail", label: "Accommodation Mail", icon: Mail },
+  { to: "/admin/survey", label: "Survey", icon: ClipboardList },
 
   /*
    * =========================================================================
