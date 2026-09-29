@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ClipboardList, Plus, Trash2, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { getEvents } from "@/lib/api";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { IntEvent } from "@/lib/int-data";
 import { Button } from "@/components/ui/button";
 
