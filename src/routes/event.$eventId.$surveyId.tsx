@@ -82,8 +82,7 @@ function StandaloneSurveyPage() {
 
   return (
     <SiteShell>
-      <div className="min-h-screen bg-gradient-to-b from-background via-card/20 to-background py-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto space-y-8">
+      <div className="w-full space-y-8 py-2">
           
           {/* Top Navigation */}
           <div className="flex items-center justify-between">
@@ -190,7 +189,6 @@ function StandaloneSurveyPage() {
           </p>
 
         </div>
-      </div>
     </SiteShell>
   );
 }
