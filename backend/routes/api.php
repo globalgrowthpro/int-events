@@ -1,23 +1,43 @@
 <?php
 
+use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\EventController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\RegistrationController;
+use App\Http\Controllers\Api\UploadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// Public Auth Endpoints
+// 1. Public Auth
 Route::post('/login', [AuthController::class, 'login']);
 
-// Public Event Endpoints
+// 2. Events
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{id}', [EventController::class, 'show']);
 
-// Chat & Realtime
+// 3. Registrations & Attendance
+Route::get('/registrations', [RegistrationController::class, 'index']);
+Route::get('/registrations/check', [RegistrationController::class, 'check']);
+Route::get('/registrations/{id}', [RegistrationController::class, 'show']);
+Route::post('/registrations', [RegistrationController::class, 'store']);
+Route::post('/attendance/scan', [AttendanceController::class, 'scan']);
+Route::get('/attendance/logs', [AttendanceController::class, 'logs']);
+
+// 4. Chat & Realtime
 Route::get('/messages', [ChatController::class, 'index']);
 Route::post('/messages', [ChatController::class, 'store']);
 
-// Authenticated Endpoints
+// 5. Notifications
+Route::get('/notifications', [NotificationController::class, 'index']);
+Route::post('/notifications', [NotificationController::class, 'store']);
+Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
+
+// 6. File Uploads (replaces Supabase storage)
+Route::post('/upload', [UploadController::class, 'upload']);
+
+// 7. Authenticated Endpoints
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -26,4 +46,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/events', [EventController::class, 'store']);
     Route::put('/events/{id}', [EventController::class, 'update']);
     Route::delete('/events/{id}', [EventController::class, 'destroy']);
+    Route::put('/registrations/{id}', [RegistrationController::class, 'update']);
+    Route::delete('/registrations/{id}', [RegistrationController::class, 'destroy']);
 });
