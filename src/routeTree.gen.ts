@@ -37,6 +37,7 @@ import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminScannerRouteImport } from './routes/admin.scanner'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminSlidersRouteImport } from './routes/admin.sliders'
+import { Route as AdminSurveyRouteImport } from './routes/admin.survey'
 import { Route as AdminVendorsRouteImport } from './routes/admin.vendors'
 import { Route as EventEventIdRouteImport } from './routes/event.$eventId'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
@@ -182,6 +183,11 @@ const AdminSlidersRoute = AdminSlidersRouteImport.update({
   path: '/sliders',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSurveyRoute = AdminSurveyRouteImport.update({
+  id: '/survey',
+  path: '/survey',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminVendorsRoute = AdminVendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/admin/scanner': typeof AdminScannerRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/sliders': typeof AdminSlidersRoute
+  '/admin/survey': typeof AdminSurveyRoute
   '/admin/vendors': typeof AdminVendorsRoute
   '/event/$eventId': typeof EventEventIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
@@ -264,6 +271,7 @@ export interface FileRoutesByTo {
   '/admin/scanner': typeof AdminScannerRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/sliders': typeof AdminSlidersRoute
+  '/admin/survey': typeof AdminSurveyRoute
   '/admin/vendors': typeof AdminVendorsRoute
   '/event/$eventId': typeof EventEventIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
@@ -299,6 +307,7 @@ export interface FileRoutesById {
   '/admin/scanner': typeof AdminScannerRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/sliders': typeof AdminSlidersRoute
+  '/admin/survey': typeof AdminSurveyRoute
   '/admin/vendors': typeof AdminVendorsRoute
   '/event/$eventId': typeof EventEventIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
@@ -335,6 +344,7 @@ export interface FileRouteTypes {
     | '/admin/scanner'
     | '/admin/settings'
     | '/admin/sliders'
+    | '/admin/survey'
     | '/admin/vendors'
     | '/event/$eventId'
     | '/events/$eventId'
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/admin/scanner'
     | '/admin/settings'
     | '/admin/sliders'
+    | '/admin/survey'
     | '/admin/vendors'
     | '/event/$eventId'
     | '/events/$eventId'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/admin/scanner'
     | '/admin/settings'
     | '/admin/sliders'
+    | '/admin/survey'
     | '/admin/vendors'
     | '/event/$eventId'
     | '/events/$eventId'
@@ -623,6 +635,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSlidersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/survey': {
+      id: '/admin/survey'
+      path: '/survey'
+      fullPath: '/admin/survey'
+      preLoaderRoute: typeof AdminSurveyRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/vendors': {
       id: '/admin/vendors'
       path: '/vendors'
@@ -672,6 +691,7 @@ interface AdminRouteChildren {
   AdminScannerRoute: typeof AdminScannerRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminSlidersRoute: typeof AdminSlidersRoute
+  AdminSurveyRoute: typeof AdminSurveyRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -694,6 +714,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminScannerRoute: AdminScannerRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminSlidersRoute: AdminSlidersRoute,
+  AdminSurveyRoute: AdminSurveyRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
