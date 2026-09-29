@@ -124,7 +124,7 @@ export function saveEmailTemplate(id: string, config: EmailTemplateConfig) {
 }
 
 function EmailTemplatesPage() {
-  const [activeTemplateId, setActiveTemplateId] = useState<"default" | "registration" | "badge">("default");
+  const [activeTemplateId, setActiveTemplateId] = useState<"default" | "registration" | "badge" | "thankyou">("default");
   const [config, setConfig] = useState<EmailTemplateConfig>(defaultEmailTemplate);
   const [isSaving, setIsSaving] = useState(false);
 
