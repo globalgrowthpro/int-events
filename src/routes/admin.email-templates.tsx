@@ -82,10 +82,27 @@ export const defaultBadgeTemplate: EmailTemplateConfig = {
   designMode: "color",
 };
 
+export const defaultThankYouTemplate: EmailTemplateConfig = {
+  logoUrl: "/logo.png",
+  primaryColor: "#ea580c", // orange-600
+  secondaryColor: "#1e293b", // slate-800
+  backgroundColor: "#070b14", // very dark blue
+  textColor: "#f8fafc",
+  headerText: "Integrated Technics",
+  headerSubtext: "التقنيات المتكاملة • Events Gateway",
+  bodyText: "Dear {recipientName}, thank you for being part of {eventTitle}. It was a pleasure having you with us, and we truly appreciate your time and participation. We look forward to welcoming you to our upcoming events.",
+  footerText: "Integrated Technics Events",
+  buttonText: "",
+  buttonUrl: "",
+  backgroundImageUrl: "",
+  designMode: "color",
+};
+
 export function getEmailTemplate(id: string = "default"): EmailTemplateConfig {
   const getDefaults = () => {
     if (id === "registration") return defaultRegistrationTemplate;
     if (id === "badge") return defaultBadgeTemplate;
+    if (id === "thankyou") return defaultThankYouTemplate;
     return defaultEmailTemplate;
   };
 
