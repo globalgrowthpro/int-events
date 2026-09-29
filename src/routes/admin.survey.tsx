@@ -53,7 +53,7 @@ function AdminSurveyPage() {
   const updateQ = (id: string, patch: Partial<Question>) =>
     setQuestions((qs) => qs.map((q) => (q.id === id ? { ...q, ...patch } : q)));
 
-  function handleSave() {
+  function handleSave(): void {
     const ev = events.find((e) => e.id === eventId);
     if (!ev) return toast.error("Please select an event");
     if (!questions.length) return toast.error("Add at least one question");
