@@ -26,12 +26,14 @@ import {
   ExternalLink,
   AlertCircle,
   Info,
+  FileSpreadsheet,
 } from "lucide-react";
 import { StateBadge } from "@/components/int/status-badge";
 
 import { supabase } from "@/lib/supabase";
 import { events } from "@/lib/int-data";
 import { toast } from "sonner";
+import { exportToExcel } from "@/lib/excel-export";
 import { sendPassCardEmail, sendRegistrationConfirmationEmail } from "@/lib/email-service";
 import { PaginationControl, usePagination } from "@/components/int/pagination-control";
 import { generatePassCardPng } from "@/lib/pass-card-renderer";
@@ -625,62 +627,30 @@ export function AdminRegistrationsPage() {
     setDeletingPass(null);
   };
 
-  const handleExportCsv = () => {
-    const escapeCsv = (val: string | null | undefined) => {
-      if (!val) return '""';
-      return `"${String(val).replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
-    };
+  const handleExportExcel = () => {
+    if (filtered.length === 0) {
+      toast.error("No registrations available to export.");
+      return;
+    }
+    const data = filtered.map((r) => ({
+      "Attendee Name": r.attendee_name || "",
+      Email: r.attendee_email || "",
+      Phone: r.phone || "",
+      Gender: r.gender || "",
+      Company: r.company || "",
+      "Job Title": r.job_title || "",
+      Role: r.role || "",
+      "Event ID": r.event_id || "",
+      "QR Token": r.ticket_token || "",
+      "ID Type": r.id_type || "",
+      "ID Number": r.id_number || "",
+      "Special Requests": r.considerations || "",
+      Status: r.state || "",
+      "Is Primary": r.is_primary ? "Yes" : "No",
+      "Registration Date": r.created_at ? new Date(r.created_at).toLocaleString() : "",
+    }));
 
-    const headers = [
-      "ID",
-      "Attendee Name",
-      "Email",
-      "Phone",
-      "Gender",
-      "Company",
-      "Job Title",
-      "Role",
-      "Event ID",
-      "QR Token",
-      "ID Type",
-      "ID Number",
-      "Special Considerations or Requests",
-      "Status",
-      "Is Primary",
-    ];
-    let csv = "\uFEFF" + headers.join(",") + "\n";
-
-    filtered.forEach((r) => {
-      const row = [
-        escapeCsv(r.id),
-        escapeCsv(r.attendee_name),
-        escapeCsv(r.attendee_email),
-        escapeCsv(r.phone),
-        escapeCsv(r.gender),
-        escapeCsv(r.company),
-        escapeCsv(r.job_title),
-        escapeCsv(r.role),
-        escapeCsv(r.event_id),
-        escapeCsv(r.ticket_token),
-        escapeCsv(r.id_type),
-        escapeCsv(r.id_number),
-        escapeCsv(r.considerations),
-        escapeCsv(r.state),
-        escapeCsv(r.is_primary ? "Yes" : "No"),
-      ];
-      csv += row.join(",") + "\n";
-    });
-
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `int-registrations-export-${new Date().toISOString().split("T")[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Exported registrations to Excel / CSV!");
+    exportToExcel(data, "INT_Registrations", "Registrations");
   };
 
   const pendingCount = registrations.filter((r) => r.state === "pending").length;
@@ -715,10 +685,10 @@ export function AdminRegistrationsPage() {
             <RefreshCw className={`h-3.5 w-3.5 text-primary ${refreshing ? "animate-spin" : ""}`} /> Sync
           </button>
           <button
-            onClick={handleExportCsv}
+            onClick={handleExportExcel}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors"
           >
-            <Download className="h-3.5 w-3.5" /> Export CSV
+            <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Export Excel
           </button>
           <button
             onClick={openCreate}

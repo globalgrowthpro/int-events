@@ -24,12 +24,14 @@ import {
   Upload,
   Calendar,
   MessageSquare,
+  FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getClients, toggleUserChatAccess, type ClientRecord } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { getUserAvatar } from "@/lib/logos";
+import { exportToExcel } from "@/lib/excel-export";
 
 export const Route = createFileRoute("/admin/clients")({
   head: () => ({
@@ -277,35 +279,26 @@ function AdminClients() {
     return matchesSearch && matchesDocType;
   });
 
-  const exportCSV = () => {
-    const headers = ["Full Name", "Company", "Job Title", "Email", "Phone", "City", "ID Type", "ID Number", "Chat Allowed", "Events", "Status"];
-    const rows = filteredClients.map((c) => [
-      c.full_name,
-      c.company,
-      c.job_title,
-      c.email,
-      c.phone,
-      c.city,
-      c.id_type,
-      c.id_number,
-      c.can_chat !== false ? "Yes" : "No",
-      c.registered_events_count,
-      c.status,
-    ]);
+  const exportExcel = () => {
+    if (filteredClients.length === 0) {
+      toast.error("No client accounts available to export.");
+      return;
+    }
+    const data = filteredClients.map((c) => ({
+      "Full Name": c.full_name || "",
+      Company: c.company || "",
+      "Job Title": c.job_title || "",
+      Email: c.email || "",
+      Phone: c.phone || "",
+      City: c.city || "",
+      "ID Type": c.id_type || "",
+      "ID Number": c.id_number || "",
+      "Chat Allowed": c.can_chat !== false ? "Yes" : "No",
+      "Registered Events": c.registered_events_count || 0,
+      Status: c.status || "",
+    }));
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((e) => e.map((val) => `"${val}"`).join(","))].join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `int_clients_export_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast.success("Client accounts exported to CSV");
+    exportToExcel(data, "INT_Clients", "Clients");
   };
 
   return (
@@ -335,9 +328,9 @@ function AdminClients() {
           >
             <RefreshCw className={`h-3.5 w-3.5 text-primary ${refreshing ? "animate-spin" : ""}`} /> Sync
           </button>
-          <Button variant="outline" size="sm" onClick={exportCSV} className="h-9 gap-2 text-xs">
-            <Download className="h-4 w-4" />
-            Export CSV
+          <Button variant="outline" size="sm" onClick={exportExcel} className="h-9 gap-2 text-xs">
+            <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            Export Excel
           </Button>
           <Button size="sm" onClick={openCreate} className="h-9 gap-2 text-xs bg-primary hover:bg-tech text-primary-foreground">
             <Plus className="h-4 w-4" />

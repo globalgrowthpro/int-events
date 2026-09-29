@@ -1,6 +1,6 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { SiteShell } from "@/components/int/site-shell";
-import { getEventById, getSurveyById, getSurveyForEvent, type EventSurvey } from "@/lib/api";
+import { getEventById, getEvents, getSurveyById, getSurveyForEvent, type EventSurvey } from "@/lib/api";
 import { type IntEvent } from "@/lib/int-data";
 import { EventFeedbackSurvey } from "@/components/int/event-feedback-survey";
 import { ArrowLeft, Sparkles, Calendar, MapPin, ClipboardCheck, CheckCircle2 } from "lucide-react";
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/event/$eventId/$surveyId")({
         const all = await getEvents();
         const decoded = decodeURIComponent(params.eventId || "").toLowerCase().trim();
         realEvent = all.find(
-          (e) =>
+          (e: any) =>
             e.id.toLowerCase() === decoded ||
             e.code.toLowerCase() === decoded ||
             e.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") === decoded

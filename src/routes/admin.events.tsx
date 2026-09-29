@@ -24,6 +24,7 @@ import {
   User,
   Trash,
   Sparkles,
+  FileSpreadsheet,
 } from "lucide-react";
 import { StatusBadge } from "@/components/int/status-badge";
 import { RichTextEditor } from "@/components/int/rich-text-editor";
@@ -31,6 +32,7 @@ import { type IntEvent, type Speaker, type AgendaItem, formatEventDateRange } fr
 import { toDdMmYyyy } from "@/lib/format";
 import { getEvents, createEvent, updateEvent, deleteEvent } from "@/lib/api";
 import { toast } from "sonner";
+import { exportToExcel } from "@/lib/excel-export";
 
 export const Route = createFileRoute("/admin/events")({
   head: () => ({
@@ -413,21 +415,25 @@ export function AdminEventsPage() {
     toast.success(`Duplicated "${ev.title}" to database!`);
   };
 
-  // Export Events to CSV
-  const handleExportCsv = () => {
-    let csv = "Code,Title,Category,Date,Venue,City,Capacity,Registered,Status\n";
-    filteredEvents.forEach((ev) => {
-      csv += `"${ev.code}","${ev.title}","${ev.category}","${ev.dateLabel}","${ev.venue}","${ev.city}",${ev.capacity},${ev.registered},"${ev.status}"\n`;
-    });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `int-events-export-${new Date().toISOString().split("T")[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast.success("Exported events list to CSV!");
+  // Export Events to Excel
+  const handleExportExcel = () => {
+    if (filteredEvents.length === 0) {
+      toast.error("No events available to export.");
+      return;
+    }
+    const data = filteredEvents.map((ev) => ({
+      Code: ev.code || "",
+      Title: ev.title || "",
+      Category: ev.category || "",
+      Date: ev.dateLabel || "",
+      Venue: ev.venue || "",
+      City: ev.city || "",
+      Capacity: ev.capacity || 0,
+      Registered: ev.registered || 0,
+      Status: ev.status || "",
+    }));
+
+    exportToExcel(data, "INT_Events", "Events");
   };
 
   return (
@@ -457,11 +463,11 @@ export function AdminEventsPage() {
             <RefreshCw className={`h-3.5 w-3.5 text-primary ${refreshing ? "animate-spin" : ""}`} /> Sync
           </button>
           <button
-            onClick={handleExportCsv}
+            onClick={handleExportExcel}
             className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors"
           >
-            <Download className="h-3.5 w-3.5 text-muted-foreground" />
-            Export CSV
+            <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            Export Excel
           </button>
           <button
             onClick={openCreateDialog}

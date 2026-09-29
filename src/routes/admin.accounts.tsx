@@ -24,10 +24,12 @@ import {
   Briefcase,
   Globe,
   SlidersHorizontal,
+  FileSpreadsheet,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { exportToExcel } from "@/lib/excel-export";
 
 export const Route = createFileRoute("/admin/accounts")({
   head: () => ({
@@ -367,21 +369,24 @@ export function AccountsPage() {
     }
   };
 
-  // Export CSV
-  const handleExportCsv = () => {
-    let csv = "Name,Email,Role,Company,Job Title,Phone,City,Status\n";
-    filteredAccounts.forEach((a) => {
-      csv += `"${a.full_name}","${a.email}","${a.role}","${a.company || ""}","${a.job_title || ""}","${a.phone || ""}","${a.city || ""}","${a.status}"\n`;
-    });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `int-accounts-export-${new Date().toISOString().split("T")[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Accounts directory exported to CSV!");
+  // Export Excel
+  const handleExportExcel = () => {
+    if (filteredAccounts.length === 0) {
+      toast.error("No accounts available to export.");
+      return;
+    }
+    const data = filteredAccounts.map((a) => ({
+      "Full Name": a.full_name || "",
+      Email: a.email || "",
+      Role: a.role || "",
+      Company: a.company || "",
+      "Job Title": a.job_title || "",
+      Phone: a.phone || "",
+      City: a.city || "",
+      Status: a.status || "",
+    }));
+
+    exportToExcel(data, "INT_Accounts", "Accounts");
   };
 
   const getRoleBadge = (role: AccountRole) => {
@@ -426,11 +431,11 @@ export function AccountsPage() {
             Sync
           </button>
           <button
-            onClick={handleExportCsv}
+            onClick={handleExportExcel}
             className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors"
           >
-            <Download className="h-3.5 w-3.5 text-muted-foreground" />
-            Export CSV
+            <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            Export Excel
           </button>
           <button
             onClick={openCreate}

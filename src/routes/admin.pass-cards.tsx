@@ -21,9 +21,11 @@ import {
   AlertCircle,
   FileText,
   Users,
+  FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { exportToExcel } from "@/lib/excel-export";
 import { type IntEvent, type Registration } from "@/lib/int-data";
 import { sendPassCardEmail } from "@/lib/email-service";
 import { PassCard } from "@/components/int/pass-card";
@@ -73,6 +75,8 @@ export interface AttendeePassRow {
   role: string;
   ticket_token: string;
   state: "pending" | "registered" | "checked-in" | "cancelled" | "no-show";
+  id_type?: string | null;
+  id_number?: string | null;
   created_at?: string;
   check_in_time?: string | null;
 }
@@ -508,6 +512,31 @@ export function AdminPassCardsPage() {
     setTimeout(() => setCopiedToken(null), 2000);
   };
 
+  const handleExportExcel = () => {
+    if (filteredRows.length === 0) {
+      toast.error("No pass cards available to export.");
+      return;
+    }
+    const data = filteredRows.map((r) => {
+      const ev = getEventObj(r.event_id);
+      const status = getStatus(r);
+      return {
+        "Full Name": r.attendee_name || "",
+        Email: r.attendee_email || "",
+        Phone: r.phone || "",
+        Company: r.company || "",
+        "Job Title": r.job_title || "",
+        Event: ev?.title || r.event_id || "",
+        "Pass Status": status === "sent" ? "Sent" : "Waiting",
+        "Pass Token": r.ticket_token || "",
+        "ID Type": r.id_type || "",
+        "ID Number": r.id_number || "",
+      };
+    });
+
+    exportToExcel(data, "INT_Pass_Cards", "Pass Cards");
+  };
+
   return (
     <div className="w-full space-y-6 pb-12">
       {/* Header */}
@@ -536,6 +565,16 @@ export function AdminPassCardsPage() {
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
             Refresh
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            className="h-9 gap-1.5 text-xs font-medium"
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            Export Excel
           </Button>
 
           <Button

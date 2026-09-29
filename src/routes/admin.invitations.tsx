@@ -37,6 +37,7 @@ import { PaginationControl, usePagination } from "@/components/int/pagination-co
 import { supabase } from "@/lib/supabase";
 import { formatEventDateRange } from "@/lib/int-data";
 import { toast } from "sonner";
+import { exportToExcel } from "@/lib/excel-export";
 import { sendLiveInvitationEmail } from "@/lib/email-service";
 import { QrCode as RealQrCode } from "@/components/int/qr-code";
 
@@ -676,18 +677,25 @@ export function AdminInvitationsPage() {
     toast.warning("Stopping dispatch process...");
   };
 
-  const handleExportCsv = () => {
-    let csv = "ID,Recipient Name,Email,Company,Job Title,Phone,Target Event,Source,Status,Sent At\n";
-    filteredInvitations.forEach((inv) => {
-      csv += `"${inv.id}","${inv.recipient_name}","${inv.recipient_email}","${inv.company || ""}","${inv.job_title || ""}","${inv.phone || ""}","${inv.event_title || inv.event_id}","${inv.source}","${inv.status}","${inv.sent_at || ""}"\n`;
-    });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `int-invitations-export-${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    toast.success("Invitations exported to CSV!");
+  const handleExportExcel = () => {
+    if (filteredInvitations.length === 0) {
+      toast.error("No invitations available to export.");
+      return;
+    }
+    const data = filteredInvitations.map((inv) => ({
+      "Recipient Name": inv.recipient_name || "",
+      Email: inv.recipient_email || "",
+      Company: inv.company || "",
+      "Job Title": inv.job_title || "",
+      Phone: inv.phone || "",
+      "Target Event": inv.event_title || inv.event_id || "",
+      Source: inv.source || "",
+      Status: inv.status || "",
+      "Sent At": inv.sent_at ? new Date(inv.sent_at).toLocaleString() : "",
+      "Invitation Token": inv.token || "",
+    }));
+
+    exportToExcel(data, "INT_Invitations", "Invitations");
   };
 
   const handleCreateSingle = async (e: React.FormEvent) => {
@@ -887,10 +895,10 @@ export function AdminInvitationsPage() {
             Sync
           </button>
           <button
-            onClick={handleExportCsv}
+            onClick={handleExportExcel}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors"
           >
-            <Download className="h-3.5 w-3.5 text-primary" /> Export CSV
+            <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Export Excel
           </button>
           <button
             onClick={() => {

@@ -12,10 +12,12 @@ import {
   AlertTriangle,
   User,
   Users,
+  FileSpreadsheet,
 } from "lucide-react";
 import { StateBadge } from "@/components/int/status-badge";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { exportToExcel } from "@/lib/excel-export";
 
 export const Route = createFileRoute("/admin/attendees")({
   head: () => ({
@@ -44,6 +46,7 @@ interface Attendee {
   event_id: string;
   state: "registered" | "checked-in" | "cancelled" | "no-show";
   ticket_token: string;
+  created_at?: string;
 }
 
 type AttendeeFormData = {
@@ -256,21 +259,27 @@ function AdminAttendees() {
     setDeletingAttendee(null);
   };
 
-  // Export CSV
-  const handleExportCsv = () => {
-    let csv = "ID,Name,Email,Phone,Gender,Company,Job Title,Role,Event ID,QR Token,Status\n";
-    filtered.forEach((a) => {
-      csv += `"${a.id}","${a.attendee_name}","${a.attendee_email}","${a.phone || ""}","${a.gender || ""}","${a.company || ""}","${a.job_title || ""}","${a.role}","${a.event_id}","${a.ticket_token}","${a.state}"\n`;
-    });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `int_attendees_export_${new Date().toISOString().split("T")[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Exported attendees registry to CSV!");
+  // Export Excel
+  const handleExportExcel = () => {
+    if (filtered.length === 0) {
+      toast.error("No attendees available to export.");
+      return;
+    }
+    const data = filtered.map((a) => ({
+      Name: a.attendee_name || "",
+      Email: a.attendee_email || "",
+      Phone: a.phone || "",
+      Gender: a.gender || "",
+      Company: a.company || "",
+      "Job Title": a.job_title || "",
+      Role: a.role || "",
+      "Event ID": a.event_id || "",
+      "QR Token": a.ticket_token || "",
+      Status: a.state || "",
+      "Registration Date": a.created_at ? new Date(a.created_at).toLocaleString() : "",
+    }));
+
+    exportToExcel(data, "INT_Attendees", "Attendees");
   };
 
   return (
@@ -301,10 +310,10 @@ function AdminAttendees() {
             <RefreshCw className={`h-3.5 w-3.5 text-primary ${refreshing ? "animate-spin" : ""}`} /> Sync
           </button>
           <button
-            onClick={handleExportCsv}
+            onClick={handleExportExcel}
             className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors"
           >
-            <Download className="h-3.5 w-3.5" /> Export CSV
+            <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Export Excel
           </button>
           <button
             onClick={openCreate}

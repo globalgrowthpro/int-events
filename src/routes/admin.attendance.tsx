@@ -9,11 +9,13 @@ import {
   RefreshCw,
   DoorOpen,
   Calendar,
+  FileSpreadsheet,
 } from "lucide-react";
 import { KpiCard } from "@/components/int/admin-shell";
 import { StateBadge } from "@/components/int/status-badge";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { exportToExcel } from "@/lib/excel-export";
 
 export const Route = createFileRoute("/admin/attendance")({
   head: () => ({
@@ -131,20 +133,23 @@ function AdminAttendance() {
     return matchesSearch && matchesState;
   });
 
-  const exportCSV = () => {
-    let csv = "ID,Attendee Name,Email,Company,Role,Event,Check-In Time,Status\n";
-    filteredAttendees.forEach((a) => {
-      csv += `"${a.id}","${a.name}","${a.email}","${a.company}","${a.role}","${a.event}","${a.time}","${a.state}"\n`;
-    });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `int_attendance_export_${new Date().toISOString().split("T")[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Exported attendance report to CSV!");
+  const exportExcel = () => {
+    if (filteredAttendees.length === 0) {
+      toast.error("No attendance records to export.");
+      return;
+    }
+    const data = filteredAttendees.map((a) => ({
+      "Attendee Name": a.name || "",
+      Email: a.email || "",
+      Company: a.company || "",
+      Role: a.role || "",
+      Event: a.event || "",
+      "Check-In Time": a.time || "",
+      Gate: a.gate || "Main Entrance",
+      Status: a.state || "",
+    }));
+
+    exportToExcel(data, "INT_Attendance_Logs", "Attendance");
   };
 
   return (
@@ -175,10 +180,10 @@ function AdminAttendance() {
             <RefreshCw className={`h-3.5 w-3.5 text-primary ${refreshing ? "animate-spin" : ""}`} /> Sync
           </button>
           <button
-            onClick={exportCSV}
+            onClick={exportExcel}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors"
           >
-            <Download className="h-3.5 w-3.5" /> Export CSV
+            <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Export Excel
           </button>
         </div>
       </div>

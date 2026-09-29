@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { getEvents } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { sendThankYouEmail } from "@/lib/email-service";
+import { exportToExcel } from "@/lib/excel-export";
 import type { IntEvent } from "@/lib/int-data";
 import { Button } from "@/components/ui/button";
 import {
@@ -644,7 +645,71 @@ function AdminSurveyPage() {
   function handleRemoveReceiverFromActiveSurvey(receiverId: string) {
     if (!activeSurveyReceivers) return;
     const updated = (activeSurveyReceivers.receivers || []).filter((r) => r.id !== receiverId);
-    updateSurveyReceiversDirectly(activeSurveyReceivers.id, updated);
+  }
+
+  // --- Export to Excel Handlers ---
+  function handleExportSurveys() {
+    if (surveys.length === 0) {
+      toast.error("No surveys available to export.");
+      return;
+    }
+    const rows = surveys.map((s, idx) => ({
+      "#": idx + 1,
+      "Event Name": s.event_name,
+      "Event ID": s.event_id,
+      "Survey Title": s.title,
+      "Total Questions": s.questions?.length || 0,
+      "Multiple Choice Qs": s.questions?.filter((q) => q.type === "choice").length || 0,
+      "Yes/No Qs": s.questions?.filter((q) => q.type === "yesno").length || 0,
+      "Open Answer Qs": s.questions?.filter((q) => q.type === "open").length || 0,
+      "Total Receivers": s.receivers?.length || 0,
+      "Responses Received": responsesMap[s.id] || 0,
+      "Created At": s.created_at ? new Date(s.created_at).toLocaleString() : "",
+    }));
+    exportToExcel(rows, "INT_Surveys_List", "Surveys");
+  }
+
+  function handleExportSurveyResponses() {
+    if (!activeSurveyResponses || surveyResponsesList.length === 0) {
+      toast.error("No responses available to export.");
+      return;
+    }
+    const rows = surveyResponsesList.map((resp, idx) => {
+      const row: Record<string, any> = {
+        "#": idx + 1,
+        "Respondent Name": resp.respondent_name || "Guest",
+        "Respondent Email": resp.respondent_email || "",
+        "Event": activeSurveyResponses.event_name,
+        "Survey": activeSurveyResponses.title,
+        "Submitted At": resp.submitted_at ? new Date(resp.submitted_at).toLocaleString() : "",
+      };
+      if (Array.isArray(resp.answers)) {
+        resp.answers.forEach((ans: any, aIdx: number) => {
+          row[`Q${aIdx + 1}: ${ans.question_text || "Question"}`] = ans.answer || "";
+        });
+      }
+      return row;
+    });
+    const cleanTitle = (activeSurveyResponses.title || "Survey").replace(/[^a-zA-Z0-9]+/g, "_");
+    exportToExcel(rows, `INT_Responses_${cleanTitle}`, "Responses");
+  }
+
+  function handleExportReceivers() {
+    if (!activeSurveyReceivers || !activeSurveyReceivers.receivers?.length) {
+      toast.error("No receivers in this survey to export.");
+      return;
+    }
+    const rows = activeSurveyReceivers.receivers.map((r, idx) => ({
+      "#": idx + 1,
+      "Recipient Name": r.name,
+      "Email Address": r.email,
+      "Dispatch Status": r.status || "pending",
+      "Sent At": r.sent_at ? new Date(r.sent_at).toLocaleString() : "",
+      "Survey Title": activeSurveyReceivers.title,
+      "Event Name": activeSurveyReceivers.event_name,
+    }));
+    const cleanTitle = (activeSurveyReceivers.title || "Survey").replace(/[^a-zA-Z0-9]+/g, "_");
+    exportToExcel(rows, `INT_Receivers_${cleanTitle}`, "Receivers");
   }
 
   // --- Thank You Email Sending Handlers ---
@@ -1173,9 +1238,26 @@ function AdminSurveyPage() {
       </div>
 
       {/* Surveys List Table */}
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20">
+          <div>
+            <h3 className="font-semibold text-sm">Configured Surveys</h3>
+            <p className="text-xs text-muted-foreground">Manage your event surveys, receivers, and responses</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={handleExportSurveys}
+            disabled={surveys.length === 0}
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            Export Excel
+          </Button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3">Event</th>
               <th className="px-4 py-3">Survey</th>
@@ -1284,6 +1366,7 @@ function AdminSurveyPage() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Dialog for Managing Receivers of a specific survey directly from the table */}
@@ -1341,6 +1424,17 @@ function AdminSurveyPage() {
                 >
                   <Download className="h-3.5 w-3.5" />
                   Template (.xlsx)
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={handleExportReceivers}
+                  disabled={!activeSurveyReceivers?.receivers?.length}
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Export (.xlsx)
                 </Button>
                 <input
                   ref={modalFileInputRef}
@@ -1535,15 +1629,28 @@ function AdminSurveyPage() {
         }}
       >
         <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-6 overflow-hidden">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-emerald-500" />
-              <span>Feedback Responses — &quot;{activeSurveyResponses?.title}&quot;</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Event: <span className="font-semibold text-foreground">{activeSurveyResponses?.event_name}</span> ·{" "}
-              {surveyResponsesList.length} feedback submission{surveyResponsesList.length === 1 ? "" : "s"}
-            </DialogDescription>
+          <DialogHeader className="flex flex-row items-start justify-between gap-4">
+            <div className="space-y-1">
+              <DialogTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-emerald-500" />
+                <span>Feedback Responses — &quot;{activeSurveyResponses?.title}&quot;</span>
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Event: <span className="font-semibold text-foreground">{activeSurveyResponses?.event_name}</span> ·{" "}
+                {surveyResponsesList.length} feedback submission{surveyResponsesList.length === 1 ? "" : "s"}
+              </DialogDescription>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs gap-1.5 shrink-0"
+              onClick={handleExportSurveyResponses}
+              disabled={surveyResponsesList.length === 0}
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              Export Excel
+            </Button>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto space-y-4 py-2 pr-1">

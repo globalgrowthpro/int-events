@@ -32,6 +32,7 @@ import {
   Legend,
 } from "recharts";
 import { toast } from "sonner";
+import { exportToExcel } from "@/lib/excel-export";
 
 export const Route = createFileRoute("/admin/reports")({
   head: () => ({
@@ -99,48 +100,45 @@ export function ReportsPage() {
   const [trendView, setTrendView] = useState<"area" | "bar">("area");
   const [timeRange, setTimeRange] = useState("This Quarter");
 
-  const handleDownloadCsv = (type: string, filename: string) => {
-    let csvContent = "";
+  const handleDownloadExcel = (type: string, filename: string) => {
+    let data: Record<string, any>[] = [];
+    let sheetName = "Report";
+
     if (type === "registrations") {
-      csvContent =
-        "Registration ID,Full Name,Company,Role,Gender,Event,Status,Date\n" +
-        "INT-EVT-000248,Ahmed Mohamed,ABC Corporation,Client,Male,INT Security Technology Summit 2026,Registered,2026-08-20\n" +
-        "INT-EVT-000249,Sarah Klein,Genetec,Vendor,Female,INT Security Technology Summit 2026,Registered,2026-08-20\n" +
-        "INT-EVT-000250,Omar Ali,Integrated Technics,Employee,Male,INT Security Technology Summit 2026,Confirmed,2026-08-19\n" +
-        "INT-EVT-000251,Nour Hassan,Egypt Telecom,Client,Female,INT Security Technology Summit 2026,Registered,2026-08-18\n" +
-        "INT-EVT-000252,Marco Rossi,Milestone,Vendor,Male,INT Partner Day,Registered,2026-08-18\n";
+      sheetName = "Registrations";
+      data = [
+        { "Registration ID": "INT-EVT-000248", "Full Name": "Ahmed Mohamed", Company: "ABC Corporation", Role: "Client", Gender: "Male", Event: "INT Security Technology Summit 2026", Status: "Registered", Date: "2026-08-20" },
+        { "Registration ID": "INT-EVT-000249", "Full Name": "Sarah Klein", Company: "Genetec", Role: "Vendor", Gender: "Female", Event: "INT Security Technology Summit 2026", Status: "Registered", Date: "2026-08-20" },
+        { "Registration ID": "INT-EVT-000250", "Full Name": "Omar Ali", Company: "Integrated Technics", Role: "Employee", Gender: "Male", Event: "INT Security Technology Summit 2026", Status: "Confirmed", Date: "2026-08-19" },
+        { "Registration ID": "INT-EVT-000251", "Full Name": "Nour Hassan", Company: "Egypt Telecom", Role: "Client", Gender: "Female", Event: "INT Security Technology Summit 2026", Status: "Registered", Date: "2026-08-18" },
+        { "Registration ID": "INT-EVT-000252", "Full Name": "Marco Rossi", Company: "Milestone", Role: "Vendor", Gender: "Male", Event: "INT Partner Day", Status: "Registered", Date: "2026-08-18" },
+      ];
     } else if (type === "attendance") {
-      csvContent =
-        "Badge ID,Attendee Name,Company,Event,Check-in Time,Gate,Status\n" +
-        "TCK-9012,Ahmed Mohamed,ABC Corporation,Security Summit,09:12 AM,Main Gate A,Present\n" +
-        "TCK-9013,Sarah Klein,Genetec,Security Summit,09:20 AM,VIP Gate,Present\n" +
-        "TCK-9014,Omar Ali,Integrated Technics,Security Summit,08:45 AM,Staff Gate,Present\n" +
-        "TCK-9015,Nour Hassan,Egypt Telecom,Security Summit,09:35 AM,Main Gate B,Present\n";
+      sheetName = "Attendance";
+      data = [
+        { "Badge ID": "TCK-9012", "Attendee Name": "Ahmed Mohamed", Company: "ABC Corporation", Event: "Security Summit", "Check-in Time": "09:12 AM", Gate: "Main Gate A", Status: "Present" },
+        { "Badge ID": "TCK-9013", "Attendee Name": "Sarah Klein", Company: "Genetec", Event: "Security Summit", "Check-in Time": "09:20 AM", Gate: "VIP Gate", Status: "Present" },
+        { "Badge ID": "TCK-9014", "Attendee Name": "Omar Ali", Company: "Integrated Technics", Event: "Security Summit", "Check-in Time": "08:45 AM", Gate: "Staff Gate", Status: "Present" },
+        { "Badge ID": "TCK-9015", "Attendee Name": "Nour Hassan", Company: "Egypt Telecom", Event: "Security Summit", "Check-in Time": "09:35 AM", Gate: "Main Gate B", Status: "Present" },
+      ];
     } else if (type === "vendors") {
-      csvContent =
-        "Vendor Name,Contact Person,Category,Reps Count,Approved Events,Status\n" +
-        "Genetec,Hafez Rahim,Unified Security,6,3,Approved\n" +
-        "Axis Communications,Petra Lund,Network Video,4,2,Approved\n" +
-        "Milestone Systems,Marco Rossi,VMS,3,2,Pending\n" +
-        "HID Global,Amira Zaki,Access Control,2,1,Pending\n";
+      sheetName = "Vendors";
+      data = [
+        { "Vendor Name": "Genetec", "Contact Person": "Hafez Rahim", Category: "Unified Security", "Reps Count": 6, "Approved Events": 3, Status: "Approved" },
+        { "Vendor Name": "Axis Communications", "Contact Person": "Petra Lund", Category: "Network Video", "Reps Count": 4, "Approved Events": 2, Status: "Approved" },
+        { "Vendor Name": "Milestone Systems", "Contact Person": "Marco Rossi", Category: "VMS", "Reps Count": 3, "Approved Events": 2, Status: "Pending" },
+        { "Vendor Name": "HID Global", "Contact Person": "Amira Zaki", Category: "Access Control", "Reps Count": 2, "Approved Events": 1, Status: "Pending" },
+      ];
     } else {
-      csvContent =
-        "Certificate ID,Recipient Name,Company,Event,Issue Date,Status\n" +
-        "CRT-2026-0104,Ahmed Mohamed,ABC Corporation,Smart Infrastructure Workshop,2026-08-20,Delivered\n" +
-        "CRT-2026-0105,Dina Farouk,Cisco,Smart Infrastructure Workshop,2026-08-20,Delivered\n" +
-        "CRT-2026-0106,Hassan Mostafa,Orange,Smart Infrastructure Workshop,2026-08-20,Delivered\n";
+      sheetName = "Certificates";
+      data = [
+        { "Certificate ID": "CRT-2026-0104", "Recipient Name": "Ahmed Mohamed", Company: "ABC Corporation", Event: "Smart Infrastructure Workshop", "Issue Date": "2026-08-20", Status: "Delivered" },
+        { "Certificate ID": "CRT-2026-0105", "Recipient Name": "Dina Farouk", Company: "Cisco", Event: "Smart Infrastructure Workshop", "Issue Date": "2026-08-20", Status: "Delivered" },
+        { "Certificate ID": "CRT-2026-0106", "Recipient Name": "Hassan Mostafa", Company: "Orange", Event: "Smart Infrastructure Workshop", "Issue Date": "2026-08-20", Status: "Delivered" },
+      ];
     }
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${filename}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast.success(`Exported ${filename}.csv successfully!`);
+    exportToExcel(data, filename, sheetName);
   };
 
   return (
@@ -172,10 +170,10 @@ export function ReportsPage() {
           </span>
 
           <button
-            onClick={() => handleDownloadCsv("registrations", "int-events-all-data")}
+            onClick={() => handleDownloadExcel("registrations", "int-events-all-data")}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-tech"
           >
-            <Download className="h-3.5 w-3.5" /> Export All Data
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Export Excel
           </button>
         </div>
       </div>
@@ -583,7 +581,7 @@ export function ReportsPage() {
         <div className="mb-4">
           <h2 className="text-lg font-bold text-foreground">Exportable Data Center</h2>
           <p className="text-xs text-muted-foreground">
-            Download filtered datasets in CSV format for executive reporting and audit logs.
+            Download filtered datasets in Excel (.xlsx) format for executive reporting and audit logs.
           </p>
         </div>
 
@@ -599,10 +597,10 @@ export function ReportsPage() {
               </p>
             </div>
             <button
-              onClick={() => handleDownloadCsv("registrations", "int-registrations-report")}
+              onClick={() => handleDownloadExcel("registrations", "int-registrations-report")}
               className="mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-secondary/40 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
             >
-              <Download className="h-3.5 w-3.5" /> Download CSV
+              <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Download Excel (.xlsx)
             </button>
           </article>
 
@@ -617,10 +615,10 @@ export function ReportsPage() {
               </p>
             </div>
             <button
-              onClick={() => handleDownloadCsv("attendance", "int-attendance-report")}
+              onClick={() => handleDownloadExcel("attendance", "int-attendance-report")}
               className="mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-secondary/40 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
             >
-              <Download className="h-3.5 w-3.5" /> Download CSV
+              <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Download Excel (.xlsx)
             </button>
           </article>
 
@@ -635,10 +633,10 @@ export function ReportsPage() {
               </p>
             </div>
             <button
-              onClick={() => handleDownloadCsv("vendors", "int-vendors-report")}
+              onClick={() => handleDownloadExcel("vendors", "int-vendors-report")}
               className="mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-secondary/40 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
             >
-              <Download className="h-3.5 w-3.5" /> Download CSV
+              <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Download Excel (.xlsx)
             </button>
           </article>
 
@@ -653,10 +651,10 @@ export function ReportsPage() {
               </p>
             </div>
             <button
-              onClick={() => handleDownloadCsv("certificates", "int-certificates-log")}
+              onClick={() => handleDownloadExcel("certificates", "int-certificates-log")}
               className="mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-secondary/40 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
             >
-              <Download className="h-3.5 w-3.5" /> Download CSV
+              <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Download Excel (.xlsx)
             </button>
           </article>
         </div>

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
-import { Download, Upload, Send, Square, Loader2, CheckCircle2, XCircle, Clock, ChevronDown, RefreshCw, MessageCircle } from "lucide-react";
+import { Download, Upload, Send, Square, Loader2, CheckCircle2, XCircle, Clock, ChevronDown, RefreshCw, MessageCircle, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { sendAccommodationEmail, type AccommodationEmailPayload } from "@/lib/email-service";
 import { cleanWhatsAppNumber, buildAccommodationWhatsAppMessage, getWhatsAppWebUrl } from "@/lib/whatsapp-service";
 import { PaginationControl } from "@/components/int/pagination-control";
+import { exportToExcel } from "@/lib/excel-export";
 
 export const Route = createFileRoute("/admin/bulk-mail")({
   component: BulkMailPage,
@@ -399,6 +400,27 @@ function BulkMailPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Recipients");
     XLSX.writeFile(wb, "accommodation-recipients-template.xlsx");
+  }
+
+  function handleExportExcel() {
+    if (rows.length === 0) {
+      toast.error("No accommodation records to export.");
+      return;
+    }
+    const data = rows.map((r) => ({
+      Name: r.recipient_name || "",
+      Email: r.recipient_email || "",
+      Phone: r.recipient_phone || "",
+      Building: r.building_name || "",
+      Room: r.room_type || "",
+      Message: r.message || "",
+      Channel: r.channel || (r.recipient_phone && r.recipient_email ? "both" : r.recipient_phone ? "whatsapp" : "email"),
+      Status: r.status || "queued",
+      "Created At": r.created_at ? new Date(r.created_at).toLocaleString() : "",
+      Error: r.error || "",
+    }));
+
+    exportToExcel(data, "INT_Accommodation_Dispatches", "Accommodation");
   }
 
   function parseSpreadsheet(data: ArrayBuffer): Row[] {
@@ -917,6 +939,10 @@ function BulkMailPage() {
             </Button>
             <Button variant="outline" onClick={downloadTemplate}><Download className="mr-2 h-4 w-4" />Download Template</Button>
             <Button onClick={() => fileRef.current?.click()} disabled={running}><Upload className="mr-2 h-4 w-4" />Import Excel</Button>
+            <Button variant="outline" onClick={handleExportExcel} disabled={rows.length === 0}>
+              <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              Export Excel
+            </Button>
             {rows.length > 0 && (
               <>
                 <Button
