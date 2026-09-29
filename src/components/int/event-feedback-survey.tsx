@@ -138,11 +138,15 @@ export function EventFeedbackSurvey({
           {/* Header Badge & Icon */}
           <div className="flex flex-col items-center text-center space-y-3">
             <div className="relative">
-              <div className="h-16 w-16 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center ring-8 ring-emerald-500/5 shadow-inner">
-                <CheckCircle2 className="h-8 w-8 stroke-[2.25]" />
+              <div className="h-20 w-20 rounded-2xl bg-white p-2.5 flex items-center justify-center ring-8 ring-primary/5 shadow-md border border-border">
+                <img
+                  src="/logo.png"
+                  alt="Integrated Technics"
+                  className="h-full w-full object-contain"
+                />
               </div>
-              <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 text-white flex items-center justify-center ring-2 ring-card shadow-xs">
-                <Sparkles className="h-3 w-3" />
+              <div className="absolute -bottom-1.5 -right-1.5 h-6 w-6 rounded-full bg-emerald-500 text-white flex items-center justify-center ring-2 ring-card shadow-xs">
+                <CheckCircle2 className="h-3.5 w-3.5 stroke-[2.5]" />
               </div>
             </div>
 
