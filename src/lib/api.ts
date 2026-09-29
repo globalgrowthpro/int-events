@@ -1631,3 +1631,186 @@ export async function deleteGallery(galleryId: string): Promise<boolean> {
   writeLocalGalleries(readLocalGalleries().filter((g) => g.id !== galleryId));
   return true;
 }
+
+/**
+ * Survey and Event Feedback Services
+ */
+export interface EventSurveyQuestion {
+  id: string;
+  text: string;
+  type: "choice" | "yesno" | "open";
+  options: string[];
+}
+
+export interface EventSurvey {
+  id: string;
+  event_id: string;
+  event_name: string;
+  title: string;
+  questions: EventSurveyQuestion[];
+  receivers?: Array<{ id: string; name: string; email: string }>;
+  created_at?: string;
+}
+
+export async function getSurveyForEvent(eventId: string): Promise<EventSurvey | null> {
+  const norm = (eventId || "").trim();
+  if (!norm) return null;
+
+  // Resolve candidate event identifiers
+  const candidateIds = new Set<string>([norm, norm.toLowerCase()]);
+  try {
+    const ev = await getEventById(norm);
+    if (ev) {
+      if (ev.id) {
+        candidateIds.add(ev.id);
+        candidateIds.add(ev.id.toLowerCase());
+      }
+      if (ev.code) {
+        candidateIds.add(ev.code);
+        candidateIds.add(ev.code.toLowerCase());
+      }
+    }
+  } catch {}
+
+  const idsArray = Array.from(candidateIds);
+
+  // 1. Try Supabase first
+  try {
+    const { data, error } = await supabase
+      .from("surveys")
+      .select("*")
+      .in("event_id", idsArray)
+      .limit(1)
+      .maybeSingle();
+
+    if (!error && data && Array.isArray(data.questions) && data.questions.length > 0) {
+      return data as EventSurvey;
+    }
+  } catch (err) {
+    console.warn("Supabase getSurveyForEvent error:", err);
+  }
+
+  // 2. Fallback to localStorage
+  try {
+    if (typeof window !== "undefined") {
+      const local = JSON.parse(localStorage.getItem("int_surveys") || "[]");
+      if (Array.isArray(local)) {
+        const found = local.find(
+          (s: any) => {
+            const sid = String(s.event_id || s.eventId || "").trim();
+            return (
+              (idsArray.includes(sid) || idsArray.includes(sid.toLowerCase())) &&
+              Array.isArray(s.questions) &&
+              s.questions.length > 0
+            );
+          }
+        );
+        if (found) return found as EventSurvey;
+      }
+    }
+  } catch (err) {
+    console.warn("LocalStorage getSurveyForEvent error:", err);
+  }
+
+  return null;
+}
+
+export async function getSurveyById(surveyId: string): Promise<EventSurvey | null> {
+  const norm = (surveyId || "").trim();
+  if (!norm) return null;
+
+  // 1. Try Supabase first (exact and lowercase)
+  try {
+    const { data, error } = await supabase
+      .from("surveys")
+      .select("*")
+      .or(`id.eq.${norm},id.eq.${norm.toLowerCase()}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (!error && data && Array.isArray(data.questions) && data.questions.length > 0) {
+      return data as EventSurvey;
+    }
+  } catch (err) {
+    console.warn("Supabase getSurveyById error:", err);
+  }
+
+  // 2. Fallback to localStorage
+  try {
+    if (typeof window !== "undefined") {
+      const local = JSON.parse(localStorage.getItem("int_surveys") || "[]");
+      if (Array.isArray(local)) {
+        const found = local.find(
+          (s: any) => {
+            const sid = String(s.id || s._id || "").trim();
+            return (
+              (sid === norm || sid.toLowerCase() === norm.toLowerCase()) &&
+              Array.isArray(s.questions) &&
+              s.questions.length > 0
+            );
+          }
+        );
+        if (found) return found as EventSurvey;
+      }
+    }
+  } catch (err) {
+    console.warn("LocalStorage getSurveyById error:", err);
+  }
+
+  return null;
+}
+
+export async function submitSurveyResponse(payload: {
+  survey_id: string;
+  event_id: string;
+  respondent_name: string;
+  respondent_email: string;
+  answers: Array<{ question_id: string; question_text: string; answer: string }>;
+}): Promise<{ success: boolean; error?: string }> {
+  const cleanEmail = payload.respondent_email.toLowerCase().trim();
+  const cleanName = payload.respondent_name.trim();
+
+  // 1. Try to record in Supabase
+  try {
+    const { error } = await supabase.from("survey_responses").insert({
+      id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2, 10),
+      survey_id: payload.survey_id,
+      respondent_name: cleanName,
+      respondent_email: cleanEmail,
+      answers: payload.answers,
+      submitted_at: new Date().toISOString(),
+    });
+    if (!error) {
+      // Also update receiver status in survey_receivers table if exists
+      try {
+        await supabase
+          .from("survey_receivers")
+          .update({ status: "submitted", submitted_at: new Date().toISOString() })
+          .eq("survey_id", payload.survey_id)
+          .eq("email", cleanEmail);
+      } catch {}
+    }
+  } catch (err) {
+    console.warn("Supabase submitSurveyResponse error:", err);
+  }
+
+  // 2. Mirror/save to localStorage responses as fallback
+  try {
+    if (typeof window !== "undefined") {
+      const KEY = "int_survey_responses";
+      const existing = JSON.parse(localStorage.getItem(KEY) || "[]");
+      existing.push({
+        id: Math.random().toString(36).slice(2, 10),
+        ...payload,
+        respondent_name: cleanName,
+        respondent_email: cleanEmail,
+        submitted_at: new Date().toISOString(),
+      });
+      localStorage.setItem(KEY, JSON.stringify(existing));
+    }
+  } catch (err) {
+    console.warn("LocalStorage response save error:", err);
+  }
+
+  return { success: true };
+}

@@ -590,7 +590,7 @@ function EmailTemplatesPage() {
                           textAlign: 'center',
                           boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)'
                         }}>
-                          <h2 style={{ margin: '0 0 6px', fontSize: '26px', fontWeight: 700 }}>Hafez Rahim Doe</h2>
+                          <h2 style={{ margin: '0 0 6px', fontSize: '26px', fontWeight: 700 }}>Hafez Rahim</h2>
                           <p style={{ margin: '0 0 4px', fontSize: '16px', color: '#e2e8f0' }}>Senior Executive</p>
                           <p style={{ margin: '0 0 16px', fontSize: '14px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Integrated Technics</p>
 
@@ -636,22 +636,22 @@ function EmailTemplatesPage() {
                         <h1 style={{ margin: '0 0 12px', color: '#fff', fontSize: '22px' }}>Event Title Here</h1>
 
                         <div style={{ whiteSpace: 'pre-wrap', marginBottom: '18px', color: '#94a3b8' }}>
-                          {config.bodyText.replace('{recipientName}', 'Hafez Rahim Doe')}
+                          {config.bodyText.replace('{recipientName}', 'Hafez Rahim')}
                         </div>
 
-                        <div style={{ padding: '16px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '12px', borderLeft: `4px solid ${config.primaryColor}`, fontSize: '13px' }}>
-                          <p style={{ margin: '0 0 6px' }}><strong>Date:</strong> November 14, 2026</p>
-                          <p style={{ margin: '0 0 6px' }}><strong>Venue:</strong> Royal Maxim Palace Kempinski</p>
-                          {activeTemplateId === "default" ? (
-                            <p style={{ margin: 0 }}><strong>Invitation code:</strong> EVT-INV-XXXXXX</p>
-                          ) : activeTemplateId === "registration" ? (
-                            <p style={{ margin: 0 }}><strong>Ticket ID:</strong> TKT-REG-XXXXXX</p>
-                          ) : activeTemplateId === "thankyou" ? (
-                            <p style={{ margin: 0 }}><strong>With appreciation:</strong> Integrated Technics Team</p>
-                          ) : (
-                            <p style={{ margin: 0 }}><strong>Badge ID:</strong> BDG-XXXXXX</p>
-                          )}
-                        </div>
+                        {activeTemplateId !== "thankyou" && (
+                          <div style={{ padding: '16px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '12px', borderLeft: `4px solid ${config.primaryColor}`, fontSize: '13px' }}>
+                            <p style={{ margin: '0 0 6px' }}><strong>Date:</strong> November 14, 2026</p>
+                            <p style={{ margin: '0 0 6px' }}><strong>Venue:</strong> Royal Maxim Palace Kempinski</p>
+                            {activeTemplateId === "default" ? (
+                              <p style={{ margin: 0 }}><strong>Invitation code:</strong> EVT-INV-XXXXXX</p>
+                            ) : activeTemplateId === "registration" ? (
+                              <p style={{ margin: 0 }}><strong>Ticket ID:</strong> TKT-REG-XXXXXX</p>
+                            ) : (
+                              <p style={{ margin: 0 }}><strong>Badge ID:</strong> BDG-XXXXXX</p>
+                            )}
+                          </div>
+                        )}
 
                         {config.buttonText?.trim() && (
                           <p style={{ margin: '22px 0 0', textAlign: 'center' }}>

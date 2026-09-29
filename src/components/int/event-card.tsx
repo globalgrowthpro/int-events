@@ -13,7 +13,20 @@ export function EventCard({
   detailsTo?: "/events/$eventId" | "/event/$eventId";
 }) {
   const seatsLeft = event.capacity - event.registered;
-  const isUpcoming = event.status !== "completed" && event.status !== "cancelled";
+  const isPast = (() => {
+    if (event.status === "completed" || event.status === "cancelled") return true;
+    try {
+      const dateToCheck = (event.endDate || event.date || "").trim();
+      if (!dateToCheck) return false;
+      const targetTime = event.endTime
+        ? parseEventStart(dateToCheck, event.endTime)
+        : new Date(`${dateToCheck}T23:59:59`).getTime();
+      return !isNaN(targetTime) && targetTime < Date.now();
+    } catch {
+      return false;
+    }
+  })();
+  const isUpcoming = !isPast && event.status !== "completed" && event.status !== "cancelled";
   return (
     <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card transition-shadow hover:shadow-elevated">
       <div className="relative aspect-16/9 overflow-hidden bg-navy">
@@ -58,7 +71,7 @@ export function EventCard({
           params={{ eventId: event.id }}
           className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-tech"
         >
-          {event.status === "completed" ? "View Recap & Gallery" : "Register Now"}
+          {event.status === "completed" || isPast ? "View Recap & Gallery" : "Register Now"}
         </Link>
       </div>
     </article>

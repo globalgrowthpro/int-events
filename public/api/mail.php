@@ -47,10 +47,12 @@ if (empty($to)) {
 $requestUri = $_SERVER["REQUEST_URI"] ?? "";
 $redirectUrl = $_SERVER["REDIRECT_URL"] ?? "";
 
-$kind = !empty($data["kind"]) ? $data["kind"] : (!empty($data["type"]) ? $data["type"] : "");
+$kind = !empty($data["kind"]) ? strtolower($data["kind"]) : (!empty($data["type"]) ? strtolower($data["type"]) : "");
 
 if (empty($kind)) {
-  if (strpos($requestUri, "send-confirmation") !== false || strpos($redirectUrl, "send-confirmation") !== false) {
+  if (strpos($requestUri, "send-thankyou") !== false || strpos($redirectUrl, "send-thankyou") !== false || !empty($data["is_thankyou"])) {
+    $kind = "thankyou";
+  } elseif (strpos($requestUri, "send-confirmation") !== false || strpos($redirectUrl, "send-confirmation") !== false) {
     $kind = "confirmation";
   } elseif (strpos($requestUri, "test-smtp") !== false || strpos($redirectUrl, "test-smtp") !== false) {
     $kind = "test";
@@ -64,7 +66,130 @@ if (empty($kind)) {
 $subject = "";
 $html = "";
 
-if ($kind === "confirmation") {
+if ($kind === "thankyou") {
+  $recipientName = !empty($data["recipient_name"]) ? htmlspecialchars($data["recipient_name"]) : "Valued Guest";
+  $eventTitle = !empty($data["event_title"]) ? htmlspecialchars($data["event_title"]) : "Integrated Technics Showcase Event";
+  $domain = !empty($data["domain"]) ? rtrim($data["domain"], "/") : "https://events.integratedtechnics.com";
+
+  $template = $data["template_config"] ?? [];
+  $primaryColor = !empty($template["primaryColor"]) ? $template["primaryColor"] : "#ea580c";
+  $secondaryColor = !empty($template["secondaryColor"]) ? $template["secondaryColor"] : "#1e293b";
+  $bgColor = !empty($template["backgroundColor"]) ? $template["backgroundColor"] : "#070b14";
+  $textColor = !empty($template["textColor"]) ? $template["textColor"] : "#f8fafc";
+  $headerText = !empty($template["headerText"]) ? $template["headerText"] : "Integrated Technics";
+  $headerSubtext = !empty($template["headerSubtext"]) ? $template["headerSubtext"] : "التقنيات المتكاملة &bull; Events Gateway";
+  $footerText = !empty($template["footerText"]) ? $template["footerText"] : "Integrated Technics Events";
+
+  $rawBody = !empty($template["bodyText"]) 
+    ? $template["bodyText"] 
+    : "Dear {recipientName}, thank you for being part of {eventTitle}. It was a pleasure having you with us, and we truly appreciate your time and participation. We look forward to welcoming you to our upcoming events.";
+  $rawBody = str_replace("{recipientName}", $recipientName, $rawBody);
+  $rawBody = str_replace("{eventTitle}", $eventTitle, $rawBody);
+  $cleanBodyText = preg_replace('/^\s*Dear\s+[^,\n]+,\s*/i', '', $rawBody);
+  $cleanBodyText = nl2br(trim($cleanBodyText));
+
+  $logoUrl = !empty($template["logoUrl"]) && $template["logoUrl"] !== "/logo.png" ? $template["logoUrl"] : "{$domain}/logo.png";
+  if (strpos($logoUrl, "http") !== 0) {
+    $logoUrl = "{$domain}/" . ltrim($logoUrl, "/");
+  }
+
+  $buttonText = !empty($template["buttonText"]) ? trim($template["buttonText"]) : "";
+  $buttonUrl = !empty($template["buttonUrl"]) ? $template["buttonUrl"] : "{$domain}/#events";
+
+  $subject = !empty($template["subject"]) 
+    ? str_replace(["{recipientName}", "{eventTitle}"], [$recipientName, $eventTitle], $template["subject"]) 
+    : "Thank You for Being Part of {$eventTitle}";
+
+  $buttonHtml = "";
+  if (!empty($buttonText)) {
+    $buttonHtml = <<<BTN
+          <!-- ACTION BUTTON -->
+          <tr>
+            <td style="padding: 6px 36px 32px 36px;" align="center">
+              <table cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" style="border-radius: 14px;">
+                    <a href="{$buttonUrl}" style="display: inline-block; padding: 16px 36px; background: {$primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px {$primaryColor}80;">
+                      {$buttonText}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+BTN;
+  }
+
+  $html = <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{$subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: {$bgColor}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: {$textColor};">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: {$bgColor}; padding: 32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 640px; background: {$secondaryColor}; border: 1px solid {$secondaryColor}; border-radius: 28px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);">
+          
+          <!-- Top Brand Banner with Logo -->
+          <tr>
+            <td style="padding: 32px 36px 26px 36px; background: linear-gradient(135deg, {$secondaryColor} 0%, {$secondaryColor} 50%, {$primaryColor} 120%); border-bottom: 1px solid {$secondaryColor};">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td width="64" style="vertical-align: middle;">
+                    <div style="background: #ffffff; padding: 4px; border-radius: 14px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); display: inline-block;">
+                      <img src="{$logoUrl}" alt="INT Logo" width="56" height="56" style="display: block; border-radius: 10px; object-fit: contain; width: 56px; height: 56px;" />
+                    </div>
+                  </td>
+                  <td style="padding-left: 16px; vertical-align: middle;">
+                    <div style="display: inline-block; padding: 4px 12px; background: {$primaryColor}29; border: 1px solid {$primaryColor}66; border-radius: 100px; color: {$primaryColor}; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+                      ✦ THANK YOU
+                    </div>
+                    <h1 style="margin: 8px 0 2px 0; color: #ffffff; font-size: 22px; font-weight: 900; line-height: 1.2; letter-spacing: -0.5px;">
+                      {$headerText}
+                    </h1>
+                    <p style="margin: 0; color: {$primaryColor}; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">
+                      {$headerSubtext}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Salutation & Body Content -->
+          <tr>
+            <td style="padding: 28px 36px 24px 36px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
+              <p style="margin: 0 0 10px 0; font-size: 16px; color: #ffffff;">Dear <strong>{$recipientName}</strong>,</p>
+              <div style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">
+                {$cleanBodyText}
+              </div>
+            </td>
+          </tr>
+
+          {$buttonHtml}
+
+          <!-- Template Footer -->
+          <tr>
+            <td style="padding: 20px 36px 24px 36px; background-color: #080c16; border-top: 1px solid #1e293b; color: #94a3b8; font-size: 13px; font-weight: 600; text-align: center;">
+              <p style="margin: 0; color: #94a3b8; font-size: 13px;">
+                {$footerText}
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+HTML;
+
+} elseif ($kind === "confirmation") {
   $recipientName = !empty($data["recipient_name"]) ? htmlspecialchars($data["recipient_name"]) : "Valued Guest";
   $eventTitle = !empty($data["event_title"]) ? htmlspecialchars($data["event_title"]) : "Integrated Technics Showcase Event";
   $eventDate = !empty($data["event_date"]) ? htmlspecialchars($data["event_date"]) : "Event Schedule Announced Soon";
@@ -421,13 +546,70 @@ HTML;
   $cleanBodyText = preg_replace('/^\s*Dear\s+[^,\n]+,\s*/i', '', $rawBody);
   $cleanBodyText = nl2br(trim($cleanBodyText));
 
-  $buttonText = $template["buttonText"] ?? "Register & Book your seat";
+  $isThankYouGuard = ($kind === "thankyou" || !empty($data["is_thankyou"]) || stripos($rawBody, "thank you") !== false || stripos($rawBody, "pleasure having you") !== false);
+
+  $buttonText = $template["buttonText"] ?? ($isThankYouGuard ? "" : "Register & Book your seat");
   $footerText = $template["footerText"] ?? "Integrated Technics Events";
   $logoUrl = !empty($template["logoUrl"]) ? $template["logoUrl"] : "{$domain}/logo.png";
 
   $registerUrl = !empty($template["buttonUrl"]) ? $template["buttonUrl"] : "{$domain}/events/" . urlencode($eventId) . "?token=" . urlencode($token) . "&email=" . urlencode($to) . "&name=" . urlencode($recipientName) . "#register";
 
-  $subject = "Official VIP Invitation: {$eventTitle}";
+  $subject = $isThankYouGuard 
+    ? (!empty($template["subject"]) ? str_replace(["{recipientName}", "{eventTitle}"], [$recipientName, $eventTitle], $template["subject"]) : "Thank You for Being Part of {$eventTitle}")
+    : "Official VIP Invitation: {$eventTitle}";
+  $invitationBadge = $isThankYouGuard ? "✦ THANK YOU" : "✦ VIP INVITATION";
+
+  $eventDetailsBoxHtml = "";
+  if (!$isThankYouGuard) {
+    $eventDetailsBoxHtml = <<<BOX
+          <!-- Event Details Summary Box -->
+          <tr>
+            <td style="padding: 8px 36px 20px 36px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: {$bgColor}; border: 1px solid {$primaryColor}40; border-radius: 16px; padding: 16px 20px;">
+                <tr>
+                  <td style="color: #cbd5e1; font-size: 13px;">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td><strong style="color: #ffffff; font-size: 15px;">{$eventTitle}</strong></td>
+                      </tr>
+                      <tr>
+                        <td style="padding-top: 10px; color: #94a3b8; font-size: 12px;">
+                          <table width="100%" cellspacing="0" cellpadding="0">
+                            <tr>
+                              <td>📅 {$eventDate}</td>
+                              <td align="right">📍 {$eventLocation}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+BOX;
+  }
+
+  $actionButtonHtml = "";
+  if (!$isThankYouGuard && !empty($buttonText)) {
+    $actionButtonHtml = <<<BTN
+          <!-- DIRECT REGISTRATION BUTTON -->
+          <tr>
+            <td style="padding: 10px 36px 32px 36px;" align="center">
+              <table cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" style="border-radius: 14px;">
+                    <a href="{$registerUrl}" style="display: inline-block; padding: 16px 36px; background: {$primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px {$primaryColor}80;">
+                      {$buttonText}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+BTN;
+  }
 
   $html = <<<HTML
 <!DOCTYPE html>
@@ -455,7 +637,7 @@ HTML;
                   </td>
                   <td style="padding-left: 16px; vertical-align: middle;">
                     <div style="display: inline-block; padding: 4px 12px; background: {$primaryColor}29; border: 1px solid {$primaryColor}66; border-radius: 100px; color: {$primaryColor}; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
-                      ✦ VIP INVITATION
+                      {$invitationBadge}
                     </div>
                     <h1 style="margin: 8px 0 2px 0; color: #ffffff; font-size: 22px; font-weight: 900; line-height: 1.2; letter-spacing: -0.5px;">
                       {$headerText}
@@ -471,7 +653,7 @@ HTML;
 
           <!-- Salutation & Welcome Note -->
           <tr>
-            <td style="padding: 28px 36px 16px 36px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
+            <td style="padding: 28px 36px 24px 36px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
               <p style="margin: 0 0 10px 0; font-size: 16px; color: #ffffff;">Dear <strong>{$recipientName}</strong>,</p>
               <div style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">
                 {$cleanBodyText}
@@ -479,47 +661,9 @@ HTML;
             </td>
           </tr>
 
-          <!-- Event Details Summary Box -->
-          <tr>
-            <td style="padding: 8px 36px 20px 36px;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: {$bgColor}; border: 1px solid {$primaryColor}40; border-radius: 16px; padding: 16px 20px;">
-                <tr>
-                  <td style="color: #cbd5e1; font-size: 13px;">
-                    <table width="100%" cellspacing="0" cellpadding="0">
-                      <tr>
-                        <td><strong style="color: #ffffff; font-size: 15px;">{$eventTitle}</strong></td>
-                      </tr>
-                      <tr>
-                        <td style="padding-top: 10px; color: #94a3b8; font-size: 12px;">
-                          <table width="100%" cellspacing="0" cellpadding="0">
-                            <tr>
-                              <td>📅 {$eventDate}</td>
-                              <td align="right">📍 {$eventLocation}</td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+          {$eventDetailsBoxHtml}
 
-          <!-- DIRECT REGISTRATION BUTTON -->
-          <tr>
-            <td style="padding: 10px 36px 32px 36px;" align="center">
-              <table cellspacing="0" cellpadding="0">
-                <tr>
-                  <td align="center" style="border-radius: 14px;">
-                    <a href="{$registerUrl}" style="display: inline-block; padding: 16px 36px; background: {$primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px {$primaryColor}80;">
-                      {$buttonText}
-                    </a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+          {$actionButtonHtml}
 
           <!-- Template Footer -->
           <tr>

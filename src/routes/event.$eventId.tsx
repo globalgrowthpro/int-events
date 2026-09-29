@@ -1,17 +1,19 @@
-import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
+import { createFileRoute, notFound, redirect, Outlet, useChildMatches } from "@tanstack/react-router";
 import { SiteShell } from "@/components/int/site-shell";
 import { EventDetailContent } from "@/components/int/event-detail";
 import { getEventById } from "@/lib/api";
 
 export const Route = createFileRoute("/event/$eventId")({
-  loader: async ({ params }) => {
+  loader: async ({ params, location }) => {
     let realEvent;
     try {
       realEvent = await getEventById(params.eventId);
     } catch {}
 
     if (realEvent) {
-      if (params.eventId !== realEvent.id) {
+      const isDirectEventPath =
+        location.pathname.replace(/\/+$/, "") === `/event/${params.eventId}`;
+      if (isDirectEventPath && params.eventId !== realEvent.id) {
         throw redirect({
           to: "/event/$eventId",
           params: { eventId: realEvent.id },
@@ -43,6 +45,11 @@ export const Route = createFileRoute("/event/$eventId")({
 });
 
 function PublicEventDetail() {
+  const childMatches = useChildMatches();
+  if (childMatches && childMatches.length > 0) {
+    return <Outlet />;
+  }
+
   const { event } = Route.useLoaderData();
   const { eventId } = Route.useParams();
 

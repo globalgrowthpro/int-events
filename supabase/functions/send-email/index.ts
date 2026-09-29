@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
           ? "pass"
           : payload.kind === "confirmation"
             ? "confirmation"
-            : payload.kind === "thankyou"
+            : payload.kind === "thankyou" || payload.is_thankyou || payload.type === "thankyou"
               ? "thankyou"
               : "invitation";
 
@@ -161,7 +161,57 @@ Deno.serve(async (req: Request) => {
 
       const registerUrl = template.buttonUrl || `${baseDomain}/events/${encodeURIComponent(eventId)}?token=${encodeURIComponent(token)}&email=${encodeURIComponent(to)}&name=${encodeURIComponent(recipientName)}#register`;
 
-      subject = `Official VIP Invitation: ${eventTitle}`;
+      const isThankYouGuard = Boolean(payload.is_thankyou || payload.kind === "thankyou" || payload.type === "thankyou" || String(payload.template_config?.bodyText || "").toLowerCase().includes("thank you"));
+
+      subject = isThankYouGuard 
+        ? (template.subject ? template.subject.replace(/{recipientName}/g, recipientName).replace(/{eventTitle}/g, eventTitle) : `Thank You for Being Part of ${eventTitle}`)
+        : `Official VIP Invitation: ${eventTitle}`;
+
+      const invitationBadge = isThankYouGuard ? "✦ THANK YOU" : "✦ VIP INVITATION";
+
+      const eventDetailsBoxHtml = !isThankYouGuard ? `
+          <!-- Event Details Summary Box -->
+          <tr>
+            <td style="padding: 8px 36px 20px 36px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: ${bgColor}; border: 1px solid ${primaryColor}40; border-radius: 16px; padding: 16px 20px;">
+                <tr>
+                  <td style="color: #cbd5e1; font-size: 13px;">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td><strong style="color: #ffffff; font-size: 15px;">${eventTitle}</strong></td>
+                      </tr>
+                      <tr>
+                        <td style="padding-top: 10px; color: #94a3b8; font-size: 12px;">
+                          <table width="100%" cellspacing="0" cellpadding="0">
+                            <tr>
+                              <td>📅 ${eventDate}</td>
+                              <td align="right">📍 ${eventLocation}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>` : '';
+
+      const actionButtonHtml = (!isThankYouGuard && buttonText) ? `
+          <!-- DIRECT REGISTRATION BUTTON -->
+          <tr>
+            <td style="padding: 10px 36px 32px 36px;" align="center">
+              <table cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" style="border-radius: 14px;">
+                    <a href="${registerUrl}" style="display: inline-block; padding: 16px 36px; background: ${primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ${primaryColor}80;">
+                      ${buttonText}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>` : '';
 
       html = `<!DOCTYPE html>
 <html lang="en">
@@ -188,7 +238,7 @@ Deno.serve(async (req: Request) => {
                   </td>
                   <td style="padding-left: 16px; vertical-align: middle;">
                     <div style="display: inline-block; padding: 4px 12px; background: ${primaryColor}29; border: 1px solid ${primaryColor}66; border-radius: 100px; color: ${primaryColor}; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
-                      ✦ VIP INVITATION
+                      ${invitationBadge}
                     </div>
                     <h1 style="margin: 8px 0 2px 0; color: #ffffff; font-size: 22px; font-weight: 900; line-height: 1.2; letter-spacing: -0.5px;">
                       ${headerText}
@@ -204,7 +254,7 @@ Deno.serve(async (req: Request) => {
 
           <!-- Salutation & Welcome Note -->
           <tr>
-            <td style="padding: 28px 36px 16px 36px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
+            <td style="padding: 28px 36px 24px 36px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
               <p style="margin: 0 0 10px 0; font-size: 16px; color: #ffffff;">Dear <strong>${recipientName}</strong>,</p>
               <div style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">
                 ${cleanBodyText}
@@ -212,48 +262,9 @@ Deno.serve(async (req: Request) => {
             </td>
           </tr>
 
-          <!-- Event Details Summary Box -->
-          <tr>
-            <td style="padding: 8px 36px 20px 36px;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: ${bgColor}; border: 1px solid ${primaryColor}40; border-radius: 16px; padding: 16px 20px;">
-                <tr>
-                  <td style="color: #cbd5e1; font-size: 13px;">
-                    <table width="100%" cellspacing="0" cellpadding="0">
-                      <tr>
-                        <td><strong style="color: #ffffff; font-size: 15px;">${eventTitle}</strong></td>
-                      </tr>
-                      <tr>
-                        <td style="padding-top: 10px; color: #94a3b8; font-size: 12px;">
-                          <table width="100%" cellspacing="0" cellpadding="0">
-                            <tr>
-                              <td>📅 ${eventDate}</td>
-                              <td align="right">📍 ${eventLocation}</td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+          ${eventDetailsBoxHtml}
 
-          <!-- DIRECT REGISTRATION BUTTON -->
-          ${buttonText ? `
-          <tr>
-            <td style="padding: 10px 36px 32px 36px;" align="center">
-              <table cellspacing="0" cellpadding="0">
-                <tr>
-                  <td align="center" style="border-radius: 14px;">
-                    <a href="${registerUrl}" style="display: inline-block; padding: 16px 36px; background: ${primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ${primaryColor}80;">
-                      ${buttonText}
-                    </a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>` : ''}
+          ${actionButtonHtml}
 
           <!-- Template Footer -->
           <tr>
@@ -512,7 +523,9 @@ Deno.serve(async (req: Request) => {
         .trim()
         .replace(/\n/g, '<br />');
 
-      subject = `Thank You for Being Part of ${eventTitle}`;
+      subject = template.subject
+        ? template.subject.replace(/{recipientName}/g, recipientName).replace(/{eventTitle}/g, eventTitle)
+        : `Thank You for Being Part of ${eventTitle}`;
       html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -554,20 +567,10 @@ Deno.serve(async (req: Request) => {
 
           <!-- Salutation & Body Content -->
           <tr>
-            <td style="padding: 28px 36px 16px 36px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
+            <td style="padding: 28px 36px 24px 36px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
               <p style="margin: 0 0 10px 0; font-size: 16px; color: #ffffff;">Dear <strong>${recipientName}</strong>,</p>
-              <div style="margin: 0 0 18px 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">
+              <div style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">
                 ${cleanBodyText}
-              </div>
-
-              <div style="margin: 20px 0 16px; padding: 18px 20px; background-color: ${bgColor}; border: 1px solid ${primaryColor}40; border-radius: 14px; border-left: 4px solid ${primaryColor};">
-                <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: ${primaryColor};">Stay Connected:</p>
-                <p style="margin: 0 0 6px 0; font-size: 13px; color: #ffffff; font-weight: 600;">
-                  📞 <span style="color: #ffffff; text-decoration: none;">+201212777570</span>
-                </p>
-                <p style="margin: 0; font-size: 13px; color: ${primaryColor}; font-weight: 600;">
-                  ✉️ <a href="mailto:Event@integratedtechnics.com" style="color: ${primaryColor}; text-decoration: none;">Event@integratedtechnics.com</a>
-                </p>
               </div>
             </td>
           </tr>

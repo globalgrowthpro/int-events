@@ -57,6 +57,7 @@ const nav = [
   { to: "/admin/email-templates", label: "Email Templates", icon: Mail },
   { to: "/admin/bulk-mail", label: "Accommodation Mail", icon: Mail },
   { to: "/admin/survey", label: "Survey", icon: ClipboardList },
+  { to: "/admin/feedback", label: "Feedback", icon: MessageSquare },
 
   /*
    * =========================================================================

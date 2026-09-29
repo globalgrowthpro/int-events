@@ -724,7 +724,7 @@ function smtpServerPlugin(): Plugin {
           return;
         }
 
-        if (req.method === "POST" && req.url === "/api/send-confirmation") {
+        if (req.method === "POST" && (req.url === "/api/send-confirmation" || req.url === "/api/send-thankyou")) {
           let body = "";
           req.on("data", (chunk) => (body += chunk));
           req.on("end", async () => {
@@ -754,6 +754,7 @@ function smtpServerPlugin(): Plugin {
                 return;
               }
 
+              const isThankYou = data.kind === "thankyou" || data.type === "thankyou" || req.url === "/api/send-thankyou" || Boolean(data.is_thankyou);
               const template = (data.template_config || {}) as any;
               const primaryColor = template.primaryColor || '#ea580c';
               const secondaryColor = template.secondaryColor || '#1e293b';
@@ -761,12 +762,14 @@ function smtpServerPlugin(): Plugin {
               const textColor = template.textColor || '#f8fafc';
               const headerText = template.headerText || 'Integrated Technics';
               const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Events Gateway';
-              const footerText = template.footerText || 'Integrated Technics Events &bull; Official Registration Confirmation';
+              const footerText = template.footerText || (isThankYou ? 'Integrated Technics Events' : 'Integrated Technics Events &bull; Official Registration Confirmation');
               const buttonText = (template.buttonText || '').trim();
               const baseDomain = data.domain || "https://events.integratedtechnics.com";
               const buttonUrl = template.buttonUrl || `${baseDomain.replace(/\/+$/, "")}/#events`;
 
-              let rawBody = template.bodyText || 'Thank you for registering for {eventTitle}, {recipientName}. Your registration is confirmed. We look forward to seeing you at the event.';
+              let rawBody = template.bodyText || (isThankYou
+                ? 'Dear {recipientName}, thank you for being part of {eventTitle}. It was a pleasure having you with us, and we truly appreciate your time and participation. We look forward to welcoming you to our upcoming events.'
+                : 'Thank you for registering for {eventTitle}, {recipientName}. Your registration is confirmed. We look forward to seeing you at the event.');
               const cleanBodyText = rawBody
                 .replace(/{recipientName}/g, recipientName)
                 .replace(/{eventTitle}/g, eventTitle)
@@ -801,12 +804,18 @@ function smtpServerPlugin(): Plugin {
                 });
               }
 
+              const emailSubject = template.subject
+                ? template.subject.replace(/{recipientName}/g, recipientName).replace(/{eventTitle}/g, eventTitle)
+                : (isThankYou
+                    ? `Thank You for Being Part of ${eventTitle}`
+                    : `Registration Received — ${eventTitle}`);
+
               const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registration Received — ${eventTitle}</title>
+  <title>${emailSubject}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: ${bgColor}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: ${textColor};">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: ${bgColor}; padding: 32px 12px;">
@@ -826,7 +835,7 @@ function smtpServerPlugin(): Plugin {
                   </td>
                   <td style="padding-left: 16px; vertical-align: middle;">
                     <div style="display: inline-block; padding: 4px 12px; background: ${primaryColor}29; border: 1px solid ${primaryColor}66; border-radius: 100px; color: ${primaryColor}; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
-                      ✦ REGISTRATION CONFIRMED
+                      ${isThankYou ? "✦ THANK YOU" : "✦ REGISTRATION CONFIRMED"}
                     </div>
                     <h1 style="margin: 8px 0 2px 0; color: #ffffff; font-size: 22px; font-weight: 900; line-height: 1.2; letter-spacing: -0.5px;">
                       ${headerText}
@@ -848,6 +857,7 @@ function smtpServerPlugin(): Plugin {
                 ${cleanBodyText}
               </div>
 
+              ${!isThankYou ? `
               <div style="margin: 20px 0 16px; padding: 18px 20px; background-color: ${bgColor}; border: 1px solid ${primaryColor}40; border-radius: 14px; border-left: 4px solid ${primaryColor};">
                 <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: ${primaryColor};">For Inquiries & Support:</p>
                 <p style="margin: 0 0 6px 0; font-size: 13px; color: #ffffff; font-weight: 600;">
@@ -856,7 +866,7 @@ function smtpServerPlugin(): Plugin {
                 <p style="margin: 0; font-size: 13px; color: ${primaryColor}; font-weight: 600;">
                   ✉️ <a href="mailto:Event@integratedtechnics.com" style="color: ${primaryColor}; text-decoration: none;">Event@integratedtechnics.com</a>
                 </p>
-              </div>
+              </div>` : ''}
             </td>
           </tr>
 
@@ -896,8 +906,8 @@ function smtpServerPlugin(): Plugin {
               const info = await transporter.sendMail({
                 from: `"${fromName}" <${fromEmail}>`,
                 to: recipientEmail,
-                subject: `Registration Received — ${eventTitle}`,
-                text: `Dear ${recipientName},\n\nYour registration for ${eventTitle} has been successfully sent, and kindly request to wait for your Badge.\n\nFor more info:\n+201212777570\nEvent@integratedtechnics.com\n\nWarm regards,\nIntegrated Technics Events Team`,
+                subject: emailSubject,
+                text: `Dear ${recipientName},\n\n${rawBody.replace(/{recipientName}/g, recipientName).replace(/{eventTitle}/g, eventTitle)}\n\nFor more info:\n+201212777570\nEvent@integratedtechnics.com\n\nWarm regards,\nIntegrated Technics Events Team`,
                 html,
                 attachments,
               });

@@ -14,17 +14,26 @@ import {
   CheckCircle2,
   FileText,
   Images,
+  MessageSquare,
 } from "lucide-react";
 import { RegistrationDialog } from "@/components/int/registration-dialog";
 import { StatusBadge } from "@/components/int/status-badge";
 import { Countdown, parseEventStart } from "@/components/int/countdown";
 import { type IntEvent } from "@/lib/int-data";
-import { getEventById, checkUserRegistration, getGalleriesByEvent, type EventGallery } from "@/lib/api";
+import {
+  getEventById,
+  checkUserRegistration,
+  getGalleriesByEvent,
+  getSurveyForEvent,
+  type EventGallery,
+  type EventSurvey,
+} from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { toDdMmYyyy } from "@/lib/format";
 import { toast } from "sonner";
 import { RichTextView } from "@/components/int/rich-text-editor";
 import { AgendaTimeline } from "@/components/int/agenda-timeline";
+import { EventFeedbackSurvey } from "@/components/int/event-feedback-survey";
 
 export function EventDetailContent({
   event: initialEvent,
@@ -43,6 +52,8 @@ export function EventDetailContent({
   const [isRegistered, setIsRegistered] = useState(false);
   const [galleries, setGalleries] = useState<EventGallery[]>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [survey, setSurvey] = useState<EventSurvey | null>(null);
+  const [activeTab, setActiveTab] = useState<"details" | "feedback">("details");
 
   // Load published post-event galleries
   useEffect(() => {
@@ -56,6 +67,20 @@ export function EventDetailContent({
       active = false;
     };
   }, [eventId]);
+
+  // Load event survey if questions configured
+  useEffect(() => {
+    let active = true;
+    const targetId = event.id || eventId;
+    getSurveyForEvent(targetId)
+      .then((s) => {
+        if (active) setSurvey(s);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [eventId, event.id]);
 
   // Check if current user is already registered
   useEffect(() => {
@@ -85,7 +110,20 @@ export function EventDetailContent({
   const seatsLeft = Math.max(0, event.capacity - event.registered);
   const pct = Math.min(100, Math.round((event.registered / event.capacity) * 100)) || 0;
   const target = parseEventStart(event.date, event.startTime);
-  const isUpcoming = event.status !== "completed" && event.status !== "cancelled";
+  const isPast = (() => {
+    if (event.status === "completed" || event.status === "cancelled") return true;
+    try {
+      const dateToCheck = (event.endDate || event.date || "").trim();
+      if (!dateToCheck) return false;
+      const targetTime = event.endTime
+        ? parseEventStart(dateToCheck, event.endTime)
+        : new Date(`${dateToCheck}T23:59:59`).getTime();
+      return !isNaN(targetTime) && targetTime < Date.now();
+    } catch {
+      return false;
+    }
+  })();
+  const isUpcoming = !isPast && event.status !== "completed" && event.status !== "cancelled";
 
   const handleShare = () => {
     if (navigator.share) {
@@ -189,6 +227,16 @@ export function EventDetailContent({
                 <CheckCircle2 className="h-4 w-4" />
                 Already Registered · View My Pass
               </Link>
+            ) : isPast ? (
+              <button
+                type="button"
+                disabled
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-muted/80 px-7 text-sm font-semibold text-muted-foreground shadow-sm cursor-not-allowed border border-border opacity-70"
+                title="Registration closed: Event is in the past"
+              >
+                <Clock className="h-4 w-4" />
+                Registration Closed (Past Event)
+              </button>
             ) : (
               <button
                 type="button"
@@ -213,6 +261,25 @@ export function EventDetailContent({
               </a>
             )}
 
+            {survey && survey.questions && survey.questions.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("feedback");
+                  const el = document.getElementById("event-content-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }}
+                className={`inline-flex h-11 items-center gap-2 rounded-xl border px-5 text-sm font-semibold transition-all ${
+                  activeTab === "feedback"
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+                }`}
+              >
+                <MessageSquare className="h-4 w-4" />
+                Give Feedback
+              </button>
+            )}
+
             <Link
               to={backTo}
               className="inline-flex h-11 items-center rounded-xl border border-border px-5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
@@ -223,7 +290,53 @@ export function EventDetailContent({
         </div>
       </div>
 
-      {/* Main Content Grid: Summary & Objectives (Moved down), Agenda, Speakers, Partners */}
+      {/* Tabs navigation: shown when survey questions exist for this event */}
+      {survey && survey.questions && survey.questions.length > 0 && (
+        <div id="event-content-section" className="mt-8 flex items-center gap-2 border-b border-border pb-3 scroll-mt-24">
+          <button
+            type="button"
+            onClick={() => setActiveTab("details")}
+            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all ${
+              activeTab === "details"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+            }`}
+          >
+            <FileText className="h-4 w-4" />
+            Event Details & Agenda
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("feedback")}
+            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all ${
+              activeTab === "feedback"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+            }`}
+          >
+            <MessageSquare className="h-4 w-4" />
+            Feedback
+            <span
+              className={`ml-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                activeTab === "feedback"
+                  ? "bg-white/20 text-white"
+                  : "bg-primary/20 text-primary"
+              }`}
+            >
+              {survey.questions.length}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Feedback Tab View */}
+      {activeTab === "feedback" && survey && survey.questions && survey.questions.length > 0 ? (
+        <div className="mt-6">
+          <EventFeedbackSurvey event={event} survey={survey} />
+        </div>
+      ) : (
+      /* Main Content Grid: Summary & Objectives (Moved down), Agenda, Speakers, Partners */
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           {/* Summary & Objectives Panel (Rich Text Formatted) */}
@@ -398,6 +511,7 @@ export function EventDetailContent({
           </Panel>
         </div>
       </div>
+      )}
 
       {lightbox && (
         <div

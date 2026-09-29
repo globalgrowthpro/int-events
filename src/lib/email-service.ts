@@ -45,8 +45,8 @@ type SendResult = {
  * to the `send-email` Supabase Edge Function which runs in production.
  */
 async function dispatch(
-  endpoint: "/api/test-smtp" | "/api/send-invitation" | "/api/send-pass" | "/api/send-confirmation",
-  kind: "test" | "invitation" | "pass" | "confirmation",
+  endpoint: "/api/test-smtp" | "/api/send-invitation" | "/api/send-pass" | "/api/send-confirmation" | "/api/send-thankyou",
+  kind: "test" | "invitation" | "pass" | "confirmation" | "thankyou" | "message",
   payload: Record<string, unknown>,
 ): Promise<SendResult> {
   const recipient = (payload["recipient_email"] as string) || (payload["to"] as string) || "Unknown recipient";
@@ -357,8 +357,11 @@ export async function sendThankYouEmail(payload: ThankYouEmailPayload): Promise<
     /* ignore */
   }
 
-  return dispatch("/api/send-confirmation", "thankyou" as any, {
+  return dispatch("/api/send-thankyou", "thankyou", {
     ...payload,
+    kind: "thankyou",
+    type: "thankyou",
+    is_thankyou: true,
     template_config: payload.template_config || templateConfig,
     domain: typeof window !== "undefined" ? window.location.origin : undefined,
     host: smtpConfig?.host,

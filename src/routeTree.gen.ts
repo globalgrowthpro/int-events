@@ -28,6 +28,7 @@ import { Route as AdminChatRouteImport } from './routes/admin.chat'
 import { Route as AdminClientsRouteImport } from './routes/admin.clients'
 import { Route as AdminEmailTemplatesRouteImport } from './routes/admin.email-templates'
 import { Route as AdminEventsRouteImport } from './routes/admin.events'
+import { Route as AdminFeedbackRouteImport } from './routes/admin.feedback'
 import { Route as AdminGalleryRouteImport } from './routes/admin.gallery'
 import { Route as AdminInvitationsRouteImport } from './routes/admin.invitations'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
@@ -42,6 +43,8 @@ import { Route as AdminVendorsRouteImport } from './routes/admin.vendors'
 import { Route as EventEventIdRouteImport } from './routes/event.$eventId'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
+import { Route as EventEventIdSurveyIdRouteImport } from './routes/event.$eventId.$surveyId'
+import { Route as EventsEventIdSurveyIdRouteImport } from './routes/events.$eventId.$surveyId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -138,6 +141,11 @@ const AdminEventsRoute = AdminEventsRouteImport.update({
   path: '/events',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminGalleryRoute = AdminGalleryRouteImport.update({
   id: '/gallery',
   path: '/gallery',
@@ -208,6 +216,16 @@ const EventsEventIdRoute = EventsEventIdRouteImport.update({
   path: '/events/$eventId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventEventIdSurveyIdRoute = EventEventIdSurveyIdRouteImport.update({
+  id: '/$surveyId',
+  path: '/$surveyId',
+  getParentRoute: () => EventEventIdRoute,
+} as any)
+const EventsEventIdSurveyIdRoute = EventsEventIdSurveyIdRouteImport.update({
+  id: '/$surveyId',
+  path: '/$surveyId',
+  getParentRoute: () => EventsEventIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -228,6 +246,7 @@ export interface FileRoutesByFullPath {
   '/admin/clients': typeof AdminClientsRoute
   '/admin/email-templates': typeof AdminEmailTemplatesRoute
   '/admin/events': typeof AdminEventsRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -239,10 +258,12 @@ export interface FileRoutesByFullPath {
   '/admin/sliders': typeof AdminSlidersRoute
   '/admin/survey': typeof AdminSurveyRoute
   '/admin/vendors': typeof AdminVendorsRoute
-  '/event/$eventId': typeof EventEventIdRoute
-  '/events/$eventId': typeof EventsEventIdRoute
+  '/event/$eventId': typeof EventEventIdRouteWithChildren
+  '/events/$eventId': typeof EventsEventIdRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/events/': typeof EventsIndexRoute
+  '/event/$eventId/$surveyId': typeof EventEventIdSurveyIdRoute
+  '/events/$eventId/$surveyId': typeof EventsEventIdSurveyIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -262,6 +283,7 @@ export interface FileRoutesByTo {
   '/admin/clients': typeof AdminClientsRoute
   '/admin/email-templates': typeof AdminEmailTemplatesRoute
   '/admin/events': typeof AdminEventsRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -273,10 +295,12 @@ export interface FileRoutesByTo {
   '/admin/sliders': typeof AdminSlidersRoute
   '/admin/survey': typeof AdminSurveyRoute
   '/admin/vendors': typeof AdminVendorsRoute
-  '/event/$eventId': typeof EventEventIdRoute
-  '/events/$eventId': typeof EventsEventIdRoute
+  '/event/$eventId': typeof EventEventIdRouteWithChildren
+  '/events/$eventId': typeof EventsEventIdRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/events': typeof EventsIndexRoute
+  '/event/$eventId/$surveyId': typeof EventEventIdSurveyIdRoute
+  '/events/$eventId/$surveyId': typeof EventsEventIdSurveyIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -298,6 +322,7 @@ export interface FileRoutesById {
   '/admin/clients': typeof AdminClientsRoute
   '/admin/email-templates': typeof AdminEmailTemplatesRoute
   '/admin/events': typeof AdminEventsRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/invitations': typeof AdminInvitationsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -309,10 +334,12 @@ export interface FileRoutesById {
   '/admin/sliders': typeof AdminSlidersRoute
   '/admin/survey': typeof AdminSurveyRoute
   '/admin/vendors': typeof AdminVendorsRoute
-  '/event/$eventId': typeof EventEventIdRoute
-  '/events/$eventId': typeof EventsEventIdRoute
+  '/event/$eventId': typeof EventEventIdRouteWithChildren
+  '/events/$eventId': typeof EventsEventIdRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/events/': typeof EventsIndexRoute
+  '/event/$eventId/$surveyId': typeof EventEventIdSurveyIdRoute
+  '/events/$eventId/$surveyId': typeof EventsEventIdSurveyIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -335,6 +362,7 @@ export interface FileRouteTypes {
     | '/admin/clients'
     | '/admin/email-templates'
     | '/admin/events'
+    | '/admin/feedback'
     | '/admin/gallery'
     | '/admin/invitations'
     | '/admin/notifications'
@@ -350,6 +378,8 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/admin/'
     | '/events/'
+    | '/event/$eventId/$surveyId'
+    | '/events/$eventId/$surveyId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -369,6 +399,7 @@ export interface FileRouteTypes {
     | '/admin/clients'
     | '/admin/email-templates'
     | '/admin/events'
+    | '/admin/feedback'
     | '/admin/gallery'
     | '/admin/invitations'
     | '/admin/notifications'
@@ -384,6 +415,8 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/admin'
     | '/events'
+    | '/event/$eventId/$surveyId'
+    | '/events/$eventId/$surveyId'
   id:
     | '__root__'
     | '/'
@@ -404,6 +437,7 @@ export interface FileRouteTypes {
     | '/admin/clients'
     | '/admin/email-templates'
     | '/admin/events'
+    | '/admin/feedback'
     | '/admin/gallery'
     | '/admin/invitations'
     | '/admin/notifications'
@@ -419,6 +453,8 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/admin/'
     | '/events/'
+    | '/event/$eventId/$surveyId'
+    | '/events/$eventId/$surveyId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -432,8 +468,8 @@ export interface RootRouteChildren {
   PassesRoute: typeof PassesRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
-  EventEventIdRoute: typeof EventEventIdRoute
-  EventsEventIdRoute: typeof EventsEventIdRoute
+  EventEventIdRoute: typeof EventEventIdRouteWithChildren
+  EventsEventIdRoute: typeof EventsEventIdRouteWithChildren
   EventsIndexRoute: typeof EventsIndexRoute
 }
 
@@ -572,6 +608,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/feedback': {
+      id: '/admin/feedback'
+      path: '/feedback'
+      fullPath: '/admin/feedback'
+      preLoaderRoute: typeof AdminFeedbackRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/gallery': {
       id: '/admin/gallery'
       path: '/gallery'
@@ -670,6 +713,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsEventIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/event/$eventId/$surveyId': {
+      id: '/event/$eventId/$surveyId'
+      path: '/$surveyId'
+      fullPath: '/event/$eventId/$surveyId'
+      preLoaderRoute: typeof EventEventIdSurveyIdRouteImport
+      parentRoute: typeof EventEventIdRoute
+    }
+    '/events/$eventId/$surveyId': {
+      id: '/events/$eventId/$surveyId'
+      path: '/$surveyId'
+      fullPath: '/events/$eventId/$surveyId'
+      preLoaderRoute: typeof EventsEventIdSurveyIdRouteImport
+      parentRoute: typeof EventsEventIdRoute
+    }
   }
 }
 
@@ -682,6 +739,7 @@ interface AdminRouteChildren {
   AdminClientsRoute: typeof AdminClientsRoute
   AdminEmailTemplatesRoute: typeof AdminEmailTemplatesRoute
   AdminEventsRoute: typeof AdminEventsRoute
+  AdminFeedbackRoute: typeof AdminFeedbackRoute
   AdminGalleryRoute: typeof AdminGalleryRoute
   AdminInvitationsRoute: typeof AdminInvitationsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
@@ -705,6 +763,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminClientsRoute: AdminClientsRoute,
   AdminEmailTemplatesRoute: AdminEmailTemplatesRoute,
   AdminEventsRoute: AdminEventsRoute,
+  AdminFeedbackRoute: AdminFeedbackRoute,
   AdminGalleryRoute: AdminGalleryRoute,
   AdminInvitationsRoute: AdminInvitationsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
@@ -721,6 +780,30 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface EventEventIdRouteChildren {
+  EventEventIdSurveyIdRoute: typeof EventEventIdSurveyIdRoute
+}
+
+const EventEventIdRouteChildren: EventEventIdRouteChildren = {
+  EventEventIdSurveyIdRoute: EventEventIdSurveyIdRoute,
+}
+
+const EventEventIdRouteWithChildren = EventEventIdRoute._addFileChildren(
+  EventEventIdRouteChildren,
+)
+
+interface EventsEventIdRouteChildren {
+  EventsEventIdSurveyIdRoute: typeof EventsEventIdSurveyIdRoute
+}
+
+const EventsEventIdRouteChildren: EventsEventIdRouteChildren = {
+  EventsEventIdSurveyIdRoute: EventsEventIdSurveyIdRoute,
+}
+
+const EventsEventIdRouteWithChildren = EventsEventIdRoute._addFileChildren(
+  EventsEventIdRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -732,8 +815,8 @@ const rootRouteChildren: RootRouteChildren = {
   PassesRoute: PassesRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
-  EventEventIdRoute: EventEventIdRoute,
-  EventsEventIdRoute: EventsEventIdRoute,
+  EventEventIdRoute: EventEventIdRouteWithChildren,
+  EventsEventIdRoute: EventsEventIdRouteWithChildren,
   EventsIndexRoute: EventsIndexRoute,
 }
 export const routeTree = rootRouteImport
