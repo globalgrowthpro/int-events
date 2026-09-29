@@ -740,7 +740,7 @@ export function AdminFeedbackDashboard() {
 
       {/* Interactive Filter Toolbar */}
       <div className="rounded-2xl border border-border bg-card p-4 shadow-card space-y-3">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 flex-1">
             {/* Event Filter */}
             <div className="relative">
@@ -748,7 +748,7 @@ export function AdminFeedbackDashboard() {
                 Filter Event
               </label>
               <select
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
                 value={selectedEventId}
                 onChange={(e) => {
                   setSelectedEventId(e.target.value);
@@ -770,7 +770,7 @@ export function AdminFeedbackDashboard() {
                 Filter Survey
               </label>
               <select
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
                 value={selectedSurveyId}
                 onChange={(e) => setSelectedSurveyId(e.target.value)}
               >
@@ -788,13 +788,13 @@ export function AdminFeedbackDashboard() {
               <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
                 Time Window
               </label>
-              <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
+              <div className="flex h-9 items-center rounded-lg border border-border bg-muted/40 p-0.5">
                 {(["all", "30d", "7d", "today"] as const).map((rng) => (
                   <button
                     key={rng}
                     type="button"
                     onClick={() => setDateRange(rng)}
-                    className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-all ${
+                    className={`flex-1 h-full rounded-md text-xs font-semibold transition-all ${
                       dateRange === rng
                         ? "bg-background text-foreground shadow-xs"
                         : "text-muted-foreground hover:text-foreground"
@@ -808,36 +808,46 @@ export function AdminFeedbackDashboard() {
           </div>
 
           {/* Search & View Mode */}
-          <div className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-wrap items-end gap-2.5">
             <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                className="w-full rounded-lg border border-border bg-background pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
-                placeholder="Search attendee, email, answer…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
+                Search
+              </label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  className="w-full h-9 rounded-lg border border-border bg-background pl-8 pr-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="Search attendee, email, answer…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
 
-            <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                  viewMode === "table" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground"
-                }`}
-              >
-                Table View
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("cards")}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                  viewMode === "cards" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground"
-                }`}
-              >
-                Cards View
-              </button>
+            <div className="relative">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
+                View Mode
+              </label>
+              <div className="flex h-9 items-center rounded-lg border border-border bg-muted/40 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("table")}
+                  className={`h-full rounded-md px-3 text-xs font-medium transition-all ${
+                    viewMode === "table" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Table View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("cards")}
+                  className={`h-full rounded-md px-3 text-xs font-medium transition-all ${
+                    viewMode === "cards" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Cards View
+                </button>
+              </div>
             </div>
           </div>
         </div>
