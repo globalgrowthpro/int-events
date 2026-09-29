@@ -869,13 +869,13 @@ export function AdminInvitationsPage() {
   return (
     <div className="space-y-8 pb-12">
       {/* Header & Quick Action */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 flex-1 pr-4">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               Event Invitations & SMTP Dispatch
             </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary shrink-0">
               <Sparkles className="h-3 w-3" /> 15s Paced SMTP
             </span>
           </div>
@@ -884,11 +884,11 @@ export function AdminInvitationsPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0 flex-nowrap overflow-x-auto pb-1 sm:pb-0">
           <button
             onClick={() => loadData(true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors disabled:opacity-50 whitespace-nowrap shrink-0"
             title="Refresh database"
           >
             <RefreshCw className={`h-3.5 w-3.5 text-primary ${refreshing ? "animate-spin" : ""}`} />
@@ -896,7 +896,7 @@ export function AdminInvitationsPage() {
           </button>
           <button
             onClick={handleExportExcel}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors whitespace-nowrap shrink-0"
           >
             <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Export Excel
           </button>
@@ -913,13 +913,13 @@ export function AdminInvitationsPage() {
               });
               setIsSingleCreateOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-secondary transition-colors whitespace-nowrap shrink-0"
           >
             <Plus className="h-3.5 w-3.5 text-primary" /> Single Invite
           </button>
           <button
             onClick={() => setIsWizardOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-md hover:bg-tech transition-all"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-md hover:bg-tech transition-all whitespace-nowrap shrink-0"
           >
             <Send className="h-3.5 w-3.5" /> Send New Invitations
           </button>
