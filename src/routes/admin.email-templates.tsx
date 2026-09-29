@@ -4,7 +4,7 @@ import { Save, RefreshCw, Type, Palette, Layout, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { sendRegistrationConfirmationEmail, sendLiveInvitationEmail, sendPassCardEmail } from "@/lib/email-service";
+import { sendRegistrationConfirmationEmail, sendLiveInvitationEmail, sendPassCardEmail, sendThankYouEmail } from "@/lib/email-service";
 import { generatePassCardPng } from "@/lib/pass-card-renderer";
 import { generateA4PassCardPdf } from "@/lib/pass-card-pdf";
 import { uploadPassCardPdf } from "@/lib/pass-storage";
@@ -82,10 +82,27 @@ export const defaultBadgeTemplate: EmailTemplateConfig = {
   designMode: "color",
 };
 
+export const defaultThankYouTemplate: EmailTemplateConfig = {
+  logoUrl: "/logo.png",
+  primaryColor: "#ea580c", // orange-600
+  secondaryColor: "#1e293b", // slate-800
+  backgroundColor: "#070b14", // very dark blue
+  textColor: "#f8fafc",
+  headerText: "Integrated Technics",
+  headerSubtext: "التقنيات المتكاملة • Events Gateway",
+  bodyText: "Dear {recipientName}, thank you for being part of {eventTitle}. It was a pleasure having you with us, and we truly appreciate your time and participation. We look forward to welcoming you to our upcoming events.",
+  footerText: "Integrated Technics Events",
+  buttonText: "",
+  buttonUrl: "",
+  backgroundImageUrl: "",
+  designMode: "color",
+};
+
 export function getEmailTemplate(id: string = "default"): EmailTemplateConfig {
   const getDefaults = () => {
     if (id === "registration") return defaultRegistrationTemplate;
     if (id === "badge") return defaultBadgeTemplate;
+    if (id === "thankyou") return defaultThankYouTemplate;
     return defaultEmailTemplate;
   };
 
@@ -107,7 +124,7 @@ export function saveEmailTemplate(id: string, config: EmailTemplateConfig) {
 }
 
 function EmailTemplatesPage() {
-  const [activeTemplateId, setActiveTemplateId] = useState<"default" | "registration" | "badge">("default");
+  const [activeTemplateId, setActiveTemplateId] = useState<"default" | "registration" | "badge" | "thankyou">("default");
   const [config, setConfig] = useState<EmailTemplateConfig>(defaultEmailTemplate);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -148,7 +165,7 @@ function EmailTemplatesPage() {
 
       if (error) throw error;
 
-      const typeName = activeTemplateId === "default" ? "Invitation" : activeTemplateId === "registration" ? "Registration" : "Badge";
+      const typeName = activeTemplateId === "default" ? "Invitation" : activeTemplateId === "registration" ? "Registration" : activeTemplateId === "thankyou" ? "Thank You" : "Badge";
       toast.success(`${typeName} template saved successfully.`);
     } catch (e) {
       console.error(e);
@@ -160,7 +177,7 @@ function EmailTemplatesPage() {
 
   const handleReset = async () => {
     if (window.confirm("Are you sure you want to reset to the default template?")) {
-      const defaultConf = activeTemplateId === "default" ? defaultEmailTemplate : activeTemplateId === "registration" ? defaultRegistrationTemplate : defaultBadgeTemplate;
+      const defaultConf = activeTemplateId === "default" ? defaultEmailTemplate : activeTemplateId === "registration" ? defaultRegistrationTemplate : activeTemplateId === "thankyou" ? defaultThankYouTemplate : defaultBadgeTemplate;
       setConfig(defaultConf);
       saveEmailTemplate(activeTemplateId, defaultConf);
 
@@ -188,6 +205,13 @@ function EmailTemplatesPage() {
       let res;
       if (activeTemplateId === "registration") {
         res = await sendRegistrationConfirmationEmail({
+          recipient_name: "Valued Guest (Test)",
+          recipient_email: testEmail.trim(),
+          event_title: "Integrated Technics Showcase Event 2026",
+          template_config: config as any,
+        });
+      } else if (activeTemplateId === "thankyou") {
+        res = await sendThankYouEmail({
           recipient_name: "Valued Guest (Test)",
           recipient_email: testEmail.trim(),
           event_title: "Integrated Technics Showcase Event 2026",
@@ -302,6 +326,7 @@ function EmailTemplatesPage() {
           <TabsTrigger value="default">Invitation Template</TabsTrigger>
           <TabsTrigger value="registration">Registration Template</TabsTrigger>
           <TabsTrigger value="badge">Badge Template</TabsTrigger>
+          <TabsTrigger value="thankyou">Thank You Template</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTemplateId} className="m-0 focus-visible:outline-none focus-visible:ring-0">
@@ -606,7 +631,7 @@ function EmailTemplatesPage() {
 
                       <div style={{ padding: '28px', fontSize: '14px', lineHeight: 1.6 }}>
                         <p style={{ margin: '0 0 8px', color: config.primaryColor, fontSize: '12px', fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase' }}>
-                          {activeTemplateId === "default" ? "Official Invitation" : activeTemplateId === "registration" ? "Registration Confirmation" : "Event Badge"}
+                          {activeTemplateId === "default" ? "Official Invitation" : activeTemplateId === "registration" ? "Registration Confirmation" : activeTemplateId === "thankyou" ? "Thank You" : "Event Badge"}
                         </p>
                         <h1 style={{ margin: '0 0 12px', color: '#fff', fontSize: '22px' }}>Event Title Here</h1>
 
@@ -621,6 +646,8 @@ function EmailTemplatesPage() {
                             <p style={{ margin: 0 }}><strong>Invitation code:</strong> EVT-INV-XXXXXX</p>
                           ) : activeTemplateId === "registration" ? (
                             <p style={{ margin: 0 }}><strong>Ticket ID:</strong> TKT-REG-XXXXXX</p>
+                          ) : activeTemplateId === "thankyou" ? (
+                            <p style={{ margin: 0 }}><strong>With appreciation:</strong> Integrated Technics Team</p>
                           ) : (
                             <p style={{ margin: 0 }}><strong>Badge ID:</strong> BDG-XXXXXX</p>
                           )}

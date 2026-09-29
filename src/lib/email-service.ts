@@ -317,6 +317,58 @@ export async function sendRegistrationConfirmationEmail(
   );
 }
 
+export interface ThankYouEmailPayload {
+  recipient_name: string;
+  recipient_email: string;
+  event_title: string;
+  template_config?: Record<string, string> | undefined;
+}
+
+export async function sendThankYouEmail(payload: ThankYouEmailPayload): Promise<SendResult> {
+  let templateConfig;
+  try {
+    const { data } = await supabase
+      .from("email_templates")
+      .select("config")
+      .eq("id", "thankyou")
+      .maybeSingle();
+
+    if (data?.config) {
+      templateConfig = data.config;
+    } else {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("int_email_template_thankyou") : null;
+      if (saved) templateConfig = JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error("Error parsing thank-you template config", e);
+  }
+
+  let smtpConfig: any = null;
+  try {
+    const { data } = await supabase
+      .from("smtp_settings")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+    if (data) {
+      smtpConfig = data;
+    }
+  } catch {
+    /* ignore */
+  }
+
+  return dispatch("/api/send-confirmation", "thankyou" as any, {
+    ...payload,
+    template_config: payload.template_config || templateConfig,
+    domain: typeof window !== "undefined" ? window.location.origin : undefined,
+    host: smtpConfig?.host,
+    port: smtpConfig?.port,
+    username: smtpConfig?.username,
+    password: smtpConfig?.password_encrypted || smtpConfig?.password,
+    from_name: smtpConfig?.from_name,
+    from_email: smtpConfig?.from_email,
+  } as unknown as Record<string, unknown>);
+}
 
 export interface AccommodationEmailPayload {
   recipient_name: string;
