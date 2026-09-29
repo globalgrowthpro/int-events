@@ -71,7 +71,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const payload = await req.json();
-    const kind: "test" | "invitation" | "pass" | "confirmation" | "message" =
+    const kind: "test" | "invitation" | "pass" | "confirmation" | "message" | "thankyou" =
       payload.kind === "test"
         ? "test"
         : payload.kind === "message"
@@ -80,7 +80,9 @@ Deno.serve(async (req: Request) => {
           ? "pass"
           : payload.kind === "confirmation"
             ? "confirmation"
-            : "invitation";
+            : payload.kind === "thankyou"
+              ? "thankyou"
+              : "invitation";
 
     const host = payload.host || Deno.env.get("SMTP_HOST") || "";
     const port = Number(payload.port || Deno.env.get("SMTP_PORT") || 465);
