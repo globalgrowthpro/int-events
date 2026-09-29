@@ -60,39 +60,33 @@ export async function getEventById(eventId: string): Promise<IntEvent | undefine
 
 export async function createEvent(eventData: Partial<IntEvent>): Promise<IntEvent | null> {
   try {
-    const { data, error } = await supabase
-      .from("events")
-      .insert({
-        id: eventData.id,
-        code: eventData.code,
-        title: eventData.title,
-        category: eventData.category || "Summit",
-        date: eventData.date,
-        end_date: eventData.endDate || eventData.date,
-        date_label: eventData.dateLabel,
-        start_time: eventData.startTime,
-        end_time: eventData.endTime,
-        city: eventData.city,
-        venue: eventData.venue,
-        map_url: eventData.mapUrl,
-        image_url: eventData.image,
-        capacity: eventData.capacity,
-        registered_count: eventData.registered || 0,
-        checked_in_count: eventData.checkedIn || 0,
-        status: eventData.status === "registration-open" ? "open" : (eventData.status as any),
-        summary: eventData.summary,
-        description: eventData.description,
-        partners: eventData.partners,
-        partner_list: eventData.partnerList,
-        speakers: eventData.speakers,
-        agenda: eventData.agenda,
-        agenda_url: eventData.agendaUrl,
-      })
-      .select()
-      .single();
+    const res = await apiClient.post<any>("/events", {
+      id: eventData.id,
+      code: eventData.code,
+      title: eventData.title,
+      category: eventData.category || "Summit",
+      date: eventData.date,
+      end_date: eventData.endDate || eventData.date,
+      date_label: eventData.dateLabel || eventData.date,
+      start_time: eventData.startTime,
+      end_time: eventData.endTime,
+      city: eventData.city,
+      venue: eventData.venue,
+      map_url: eventData.mapUrl,
+      image_url: eventData.image,
+      capacity: eventData.capacity,
+      status: eventData.status === "registration-open" ? "open" : (eventData.status as any),
+      organizer: eventData.organizer || "Integrated Technics",
+      summary: eventData.summary,
+      description: eventData.description,
+      partners: eventData.partners,
+      partner_list: eventData.partnerList,
+      speakers: eventData.speakers,
+      agenda: eventData.agenda,
+      agenda_url: eventData.agendaUrl,
+    });
 
-    if (error) throw error;
-    return eventData as IntEvent;
+    return res || (eventData as IntEvent);
   } catch (err) {
     console.warn("createEvent fallback:", err);
     return eventData as IntEvent;
@@ -101,43 +95,42 @@ export async function createEvent(eventData: Partial<IntEvent>): Promise<IntEven
 
 export async function updateEvent(eventId: string, updates: Partial<IntEvent>): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from("events")
-      .update({
-        title: updates.title,
-        category: updates.category,
-        date: updates.date,
-        end_date: updates.endDate || updates.date,
-        date_label: updates.dateLabel,
-        start_time: updates.startTime,
-        end_time: updates.endTime,
-        city: updates.city,
-        venue: updates.venue,
-        map_url: updates.mapUrl,
-        image_url: updates.image,
-        capacity: updates.capacity,
-        registered_count: updates.registered,
-        status: updates.status === "registration-open" ? "open" : (updates.status as any),
-        summary: updates.summary,
-        partners: updates.partners,
-        partner_list: updates.partnerList,
-        speakers: updates.speakers,
-        agenda: updates.agenda,
-        agenda_url: updates.agendaUrl,
-      })
-      .eq("id", eventId);
+    await apiClient.put(`/events/${eventId}`, {
+      title: updates.title,
+      category: updates.category,
+      date: updates.date,
+      end_date: updates.endDate || updates.date,
+      date_label: updates.dateLabel,
+      start_time: updates.startTime,
+      end_time: updates.endTime,
+      city: updates.city,
+      venue: updates.venue,
+      map_url: updates.mapUrl,
+      image_url: updates.image,
+      capacity: updates.capacity,
+      registered_count: updates.registered,
+      status: updates.status === "registration-open" ? "open" : (updates.status as any),
+      summary: updates.summary,
+      partners: updates.partners,
+      partner_list: updates.partnerList,
+      speakers: updates.speakers,
+      agenda: updates.agenda,
+      agenda_url: updates.agendaUrl,
+    });
 
-    return !error;
-  } catch {
+    return true;
+  } catch (err) {
+    console.warn("updateEvent fallback:", err);
     return true;
   }
 }
 
 export async function deleteEvent(eventId: string): Promise<boolean> {
   try {
-    const { error } = await supabase.from("events").delete().eq("id", eventId);
-    return !error;
-  } catch {
+    await apiClient.delete(`/events/${eventId}`);
+    return true;
+  } catch (err) {
+    console.warn("deleteEvent fallback:", err);
     return true;
   }
 }
