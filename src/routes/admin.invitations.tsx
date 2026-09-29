@@ -560,7 +560,7 @@ export function AdminInvitationsPage() {
       try {
         // Dispatch real email via Bluehost SMTP backend
         const evObj = eventsList.find((e) => e.id === eventId);
-        await sendLiveInvitationEmail({
+        const sendResult = await sendLiveInvitationEmail({
           recipient_name: recipient.fullName,
           recipient_email: recipient.email,
           event_id: eventId,
@@ -579,6 +579,13 @@ export function AdminInvitationsPage() {
           from_email: smtpFullConfig?.from_email,
         });
 
+        const emailStatus = sendResult.success ? "sent" : "failed";
+        const emailError = sendResult.success ? null : (sendResult.error || "SMTP transmission error");
+
+        if (!sendResult.success) {
+          console.error(`[Invitations] Email failed for ${recipient.email}:`, emailError);
+        }
+
         // Record in invitations table
         const invRow: InvitationRow = {
           id: invId,
@@ -590,10 +597,11 @@ export function AdminInvitationsPage() {
           job_title: recipient.jobTitle,
           phone: recipient.phone,
           source: recipient.source,
-          status: "sent",
-          sent_at: new Date().toISOString(),
+          status: emailStatus,
+          sent_at: sendResult.success ? new Date().toISOString() : null,
           token: invToken,
           created_at: new Date().toISOString(),
+          error_message: emailError,
         };
 
         await supabase.from("invitations").insert(invRow);
@@ -603,7 +611,7 @@ export function AdminInvitationsPage() {
           recipient_email: recipient.email,
           template_name: "event_invitation",
           subject: emailSubject.replace("{{event_title}}", eventTitle),
-          status: "sent",
+          status: emailStatus,
         });
 
         // Update local table
@@ -613,8 +621,10 @@ export function AdminInvitationsPage() {
           {
             id: String(Date.now()),
             time: new Date().toLocaleTimeString(),
-            text: `[${i + 1}/${finalRecipientsList.length}] Email sent via SMTP to ${recipient.fullName} <${recipient.email}> (${invId})`,
-            status: "success",
+            text: sendResult.success
+              ? `[${i + 1}/${finalRecipientsList.length}] ✅ Email sent via SMTP to ${recipient.fullName} <${recipient.email}> (${invId})`
+              : `[${i + 1}/${finalRecipientsList.length}] ❌ SMTP failed for ${recipient.fullName} <${recipient.email}>: ${emailError}`,
+            status: sendResult.success ? "success" : "error",
           },
           ...prev,
         ]);
@@ -624,7 +634,7 @@ export function AdminInvitationsPage() {
           {
             id: String(Date.now()),
             time: new Date().toLocaleTimeString(),
-            text: `[${i + 1}/${finalRecipientsList.length}] Failed sending to ${recipient.fullName}: ${err?.message || "SMTP error"}`,
+            text: `[${i + 1}/${finalRecipientsList.length}] ❌ Exception sending to ${recipient.fullName}: ${err?.message || "SMTP error"}`,
             status: "error",
           },
           ...prev,
@@ -725,9 +735,10 @@ export function AdminInvitationsPage() {
     };
 
     try {
+      let emailSent = false;
       if (singleFormData.send_immediately) {
         const evObj = eventsList.find((e) => e.id === eventId);
-        await sendLiveInvitationEmail({
+        const sendResult = await sendLiveInvitationEmail({
           recipient_name: newInv.recipient_name,
           recipient_email: newInv.recipient_email,
           event_id: eventId,
@@ -746,17 +757,30 @@ export function AdminInvitationsPage() {
           from_email: smtpFullConfig?.from_email,
         });
 
+        emailSent = sendResult.success;
+        if (!sendResult.success) {
+          console.error(`[Invitations] Single invite email failed:`, sendResult.error);
+          toast.error(`SMTP error: ${sendResult.error || "Email delivery failed"}`);
+        }
+
         await supabase.from("email_logs").insert({
           recipient_email: newInv.recipient_email,
           template_name: "event_invitation",
           subject: `Official Invitation: ${eventTitle}`,
-          status: "sent",
+          status: sendResult.success ? "sent" : "failed",
         });
+
+        // Update status based on actual send result
+        newInv.status = sendResult.success ? "sent" : "failed";
+        newInv.sent_at = sendResult.success ? new Date().toISOString() : null;
+        newInv.error_message = sendResult.success ? null : (sendResult.error || "SMTP error");
       }
 
       await supabase.from("invitations").insert(newInv);
       setInvitations((prev) => [newInv, ...prev]);
-      toast.success(`Invitation created and dispatched via SMTP to ${newInv.recipient_name}!`);
+      if (emailSent || !singleFormData.send_immediately) {
+        toast.success(`Invitation ${emailSent ? "sent to" : "created for"} ${newInv.recipient_name}!`);
+      }
       setIsSingleCreateOpen(false);
       setSingleFormData({
         event_id: "",
@@ -767,9 +791,9 @@ export function AdminInvitationsPage() {
         phone: "",
         send_immediately: true,
       });
-    } catch {
+    } catch (err: any) {
       setInvitations((prev) => [newInv, ...prev]);
-      toast.success(`Invitation created for ${newInv.recipient_name}!`);
+      toast.error(`Send error: ${err?.message || "SMTP error"}`);
       setIsSingleCreateOpen(false);
     }
   };
@@ -812,7 +836,7 @@ export function AdminInvitationsPage() {
       const now = new Date().toISOString();
       const evObj = eventsList.find((e) => e.id === inv.event_id);
 
-      await sendLiveInvitationEmail({
+      const sendResult = await sendLiveInvitationEmail({
         recipient_name: inv.recipient_name,
         recipient_email: inv.recipient_email,
         event_id: inv.event_id,
@@ -830,6 +854,11 @@ export function AdminInvitationsPage() {
         from_name: smtpFullConfig?.from_name,
         from_email: smtpFullConfig?.from_email,
       });
+
+      if (!sendResult.success) {
+        toast.error(`SMTP failed: ${sendResult.error || "Email delivery error"}`);
+        return;
+      }
 
       await supabase
         .from("invitations")

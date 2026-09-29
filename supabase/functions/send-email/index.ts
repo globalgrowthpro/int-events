@@ -76,13 +76,13 @@ Deno.serve(async (req: Request) => {
         ? "test"
         : payload.kind === "message"
           ? "message"
-        : payload.kind === "pass"
-          ? "pass"
-          : payload.kind === "confirmation"
-            ? "confirmation"
-            : payload.kind === "thankyou" || payload.is_thankyou || payload.type === "thankyou"
-              ? "thankyou"
-              : "invitation";
+          : payload.kind === "pass"
+            ? "pass"
+            : payload.kind === "confirmation"
+              ? "confirmation"
+              : payload.kind === "thankyou" || payload.is_thankyou || payload.type === "thankyou"
+                ? "thankyou"
+                : "invitation";
 
     const host = payload.host || Deno.env.get("SMTP_HOST") || "";
     const port = Number(payload.port || Deno.env.get("SMTP_PORT") || 465);
@@ -163,7 +163,7 @@ Deno.serve(async (req: Request) => {
 
       const isThankYouGuard = Boolean(payload.is_thankyou || payload.kind === "thankyou" || payload.type === "thankyou" || String(payload.template_config?.bodyText || "").toLowerCase().includes("thank you"));
 
-      subject = isThankYouGuard 
+      subject = isThankYouGuard
         ? (template.subject ? template.subject.replace(/{recipientName}/g, recipientName).replace(/{eventTitle}/g, eventTitle) : `Thank You for Being Part of ${eventTitle}`)
         : `Official VIP Invitation: ${eventTitle}`;
 
@@ -323,7 +323,7 @@ Deno.serve(async (req: Request) => {
         const base64Data = payload.pass_pdf_base64.includes("base64,")
           ? payload.pass_pdf_base64.split("base64,")[1]
           : payload.pass_pdf_base64;
-        
+
         const binaryStr = atob(base64Data);
         const len = binaryStr.length;
         const bytes = new Uint8Array(len);
@@ -341,7 +341,7 @@ Deno.serve(async (req: Request) => {
         const base64Data = payload.pass_image_base64.includes("base64,")
           ? payload.pass_image_base64.split("base64,")[1]
           : payload.pass_image_base64;
-        
+
         const binaryStr = atob(base64Data);
         const len = binaryStr.length;
         const bytes = new Uint8Array(len);
@@ -760,8 +760,19 @@ Deno.serve(async (req: Request) => {
       port === 465 ? { port: 587, tls: false } : { port: 465, tls: true },
     ];
 
+    // Wrap each SMTP attempt with a 25-second timeout so the function fails
+    // fast rather than hanging until Supabase's wall-time limit.
+    const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T> =>
+      Promise.race([
+        p,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error(`SMTP timeout after ${ms}ms`)), ms)
+        ),
+      ]);
+
     let lastError = "";
     for (const attempt of attempts) {
+      console.log(`[send-email] Attempting SMTP: ${host}:${attempt.port} tls=${attempt.tls} kind=${kind} to=${to}`);
       try {
         const client = new SMTPClient({
           connection: {
@@ -771,14 +782,18 @@ Deno.serve(async (req: Request) => {
             auth: { username, password },
           },
         });
-        await client.send(message);
+        await withTimeout(client.send(message), 25000);
         await client.close();
-        return json({ success: true, messageId: `INT-${Date.now()}`, port: attempt.port });
+        const msgId = `INT-${Date.now()}`;
+        console.log(`[send-email] ✅ Sent OK via port ${attempt.port}. messageId=${msgId}`);
+        return json({ success: true, messageId: msgId, port: attempt.port });
       } catch (err) {
         lastError = (err as Error)?.message || "SMTP transmission error";
+        console.error(`[send-email] ❌ Attempt port=${attempt.port} failed:`, lastError);
       }
     }
 
+    console.error(`[send-email] All SMTP attempts failed. Last error:`, lastError);
     return json({ success: false, error: lastError || "SMTP transmission error" }, 500);
   } catch (err) {
     return json({ success: false, error: (err as Error)?.message || "SMTP transmission error" }, 500);
