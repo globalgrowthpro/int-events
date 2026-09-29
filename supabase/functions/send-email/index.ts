@@ -481,6 +481,130 @@ Deno.serve(async (req: Request) => {
     }
 
 
+    // ---- Thank-you email (post-event appreciation) ----
+    if (kind === "thankyou") {
+      const recipientName = payload.recipient_name || "Valued Guest";
+      const eventTitle = payload.event_title || "our event";
+      const baseDomain = (payload.domain || "https://events.integratedtechnics.com").replace(/\/+$/, "");
+      const template = (payload.template_config || {}) as any;
+      const primaryColor = template.primaryColor || '#ea580c';
+      const secondaryColor = template.secondaryColor || '#1e293b';
+      const bgColor = template.backgroundColor || '#070b14';
+      const textColor = template.textColor || '#f8fafc';
+      const headerText = template.headerText || 'Integrated Technics';
+      const headerSubtext = template.headerSubtext || 'التقنيات المتكاملة &bull; Events Gateway';
+      const footerText = template.footerText || 'Integrated Technics Events';
+      const buttonText = (template.buttonText || '').trim();
+      const buttonUrl = template.buttonUrl || `${baseDomain}/#events`;
+
+      let logoUrl = template.logoUrl;
+      if (!logoUrl || logoUrl === "/logo.png") {
+        logoUrl = `${baseDomain}/logo.png`;
+      } else if (logoUrl.startsWith("/")) {
+        logoUrl = `${baseDomain}${logoUrl}`;
+      }
+
+      let rawBody = template.bodyText || 'Dear {recipientName}, thank you for being part of {eventTitle}. It was a pleasure having you with us, and we truly appreciate your time and participation. We look forward to welcoming you to our upcoming events.';
+      const cleanBodyText = rawBody
+        .replace(/{recipientName}/g, recipientName)
+        .replace(/{eventTitle}/g, eventTitle)
+        .replace(/^\s*Dear\s+[^,\n]+,\s*/i, '')
+        .trim()
+        .replace(/\n/g, '<br />');
+
+      subject = `Thank You for Being Part of ${eventTitle}`;
+      html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: ${bgColor}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: ${textColor};">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: ${bgColor}; padding: 32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 640px; background: ${secondaryColor}; border: 1px solid ${secondaryColor}; border-radius: 28px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);">
+
+          <!-- Top Brand Banner with Logo -->
+          <tr>
+            <td style="padding: 32px 36px 26px 36px; background: linear-gradient(135deg, ${secondaryColor} 0%, ${secondaryColor} 50%, ${primaryColor} 120%); border-bottom: 1px solid ${secondaryColor};">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td width="64" style="vertical-align: middle;">
+                    <div style="background: #ffffff; padding: 4px; border-radius: 14px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); display: inline-block;">
+                      <img src="${logoUrl}" alt="INT Logo" width="56" height="56" style="display: block; border-radius: 10px; object-fit: contain; width: 56px; height: 56px;" />
+                    </div>
+                  </td>
+                  <td style="padding-left: 16px; vertical-align: middle;">
+                    <div style="display: inline-block; padding: 4px 12px; background: ${primaryColor}29; border: 1px solid ${primaryColor}66; border-radius: 100px; color: ${primaryColor}; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+                      ✦ THANK YOU
+                    </div>
+                    <h1 style="margin: 8px 0 2px 0; color: #ffffff; font-size: 22px; font-weight: 900; line-height: 1.2; letter-spacing: -0.5px;">
+                      ${headerText}
+                    </h1>
+                    <p style="margin: 0; color: ${primaryColor}; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">
+                      ${headerSubtext}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Salutation & Body Content -->
+          <tr>
+            <td style="padding: 28px 36px 16px 36px; color: #e2e8f0; font-size: 15px; line-height: 1.6;">
+              <p style="margin: 0 0 10px 0; font-size: 16px; color: #ffffff;">Dear <strong>${recipientName}</strong>,</p>
+              <div style="margin: 0 0 18px 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">
+                ${cleanBodyText}
+              </div>
+
+              <div style="margin: 20px 0 16px; padding: 18px 20px; background-color: ${bgColor}; border: 1px solid ${primaryColor}40; border-radius: 14px; border-left: 4px solid ${primaryColor};">
+                <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: ${primaryColor};">Stay Connected:</p>
+                <p style="margin: 0 0 6px 0; font-size: 13px; color: #ffffff; font-weight: 600;">
+                  📞 <span style="color: #ffffff; text-decoration: none;">+201212777570</span>
+                </p>
+                <p style="margin: 0; font-size: 13px; color: ${primaryColor}; font-weight: 600;">
+                  ✉️ <a href="mailto:Event@integratedtechnics.com" style="color: ${primaryColor}; text-decoration: none;">Event@integratedtechnics.com</a>
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- ACTION BUTTON -->
+          ${buttonText ? `
+          <tr>
+            <td style="padding: 6px 36px 32px 36px;" align="center">
+              <table cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" style="border-radius: 14px;">
+                    <a href="${buttonUrl}" style="display: inline-block; padding: 16px 36px; background: ${primaryColor}; color: #ffffff; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px -5px ${primaryColor}80;">
+                      ${buttonText}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>` : ''}
+
+          <!-- Template Footer -->
+          <tr>
+            <td style="padding: 20px 36px 24px 36px; background-color: #080c16; border-top: 1px solid #1e293b; color: #94a3b8; font-size: 13px; font-weight: 600; text-align: center;">
+              <p style="margin: 0; color: #94a3b8; font-size: 13px;">
+                ${footerText}
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+    }
+
     // ---- Registration confirmation email ----
     if (kind === "confirmation") {
       const recipientName = payload.recipient_name || "Valued Guest";
