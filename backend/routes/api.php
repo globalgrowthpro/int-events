@@ -39,10 +39,26 @@ Route::get('/notifications', [NotificationController::class, 'index']);
 Route::post('/notifications', [NotificationController::class, 'store']);
 Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
 
-// 6. File Uploads (replaces Supabase storage)
+// 6. Invitations CRUD
+use App\Http\Controllers\Api\InvitationController;
+use App\Http\Controllers\Api\SettingsController;
+
+Route::get('/invitations', [InvitationController::class, 'index']);
+Route::get('/invitations/{id}', [InvitationController::class, 'show']);
+Route::post('/invitations', [InvitationController::class, 'store']);
+Route::put('/invitations/{id}', [InvitationController::class, 'update']);
+Route::delete('/invitations/{id}', [InvitationController::class, 'destroy']);
+
+// 7. Settings & Directory
+Route::get('/settings/smtp', [SettingsController::class, 'getSmtp']);
+Route::get('/settings/template/{id}', [SettingsController::class, 'getTemplate']);
+Route::get('/accounts', [SettingsController::class, 'getAccounts']);
+Route::post('/email-logs', [SettingsController::class, 'logEmail']);
+
+// 8. File Uploads (replaces Supabase storage)
 Route::post('/upload', [UploadController::class, 'upload']);
 
-// 7. Authenticated User Endpoints
+// 9. Authenticated User Endpoints
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);

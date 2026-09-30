@@ -34,7 +34,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { PaginationControl, usePagination } from "@/components/int/pagination-control";
-import { supabase } from "@/lib/supabase";
+import { apiClient } from "@/lib/api-client";
 import { formatEventDateRange } from "@/lib/int-data";
 import { toast } from "sonner";
 import { exportToExcel } from "@/lib/excel-export";
@@ -198,21 +198,25 @@ export function AdminInvitationsPage() {
   const pausedRef = useRef(false);
   const abortRef = useRef(false);
 
-  // Load initial data concurrently with Promise.all
+  // Load data efficiently from local backend API (invitations & events first for instant render)
   const loadData = async (showToast = false) => {
     if (showToast) setRefreshing(true);
     try {
-      const [evRes, accRes, smtpRes, tplRes, invRes] = await Promise.all([
-        supabase.from("events").select("*").order("date", { ascending: true }),
-        supabase.from("profiles").select("*").order("full_name", { ascending: true }),
-        supabase.from("smtp_settings").select("*").limit(1).maybeSingle(),
-        supabase.from("email_templates").select("config").eq("id", "default").maybeSingle(),
-        supabase.from("invitations").select("*").order("created_at", { ascending: false }),
+      const [invData, evData] = await Promise.all([
+        apiClient.get<any[]>("/invitations").catch(() => []),
+        apiClient.get<any[]>("/events").catch(() => []),
       ]);
 
-      // 1. Events
-      const evData = evRes.data;
-      if (evData && evData.length > 0) {
+      // 1. Invitations (Primary view data)
+      if (Array.isArray(invData)) {
+        setInvitations(invData as InvitationRow[]);
+        try {
+          localStorage.setItem("int_invitations_list", JSON.stringify(invData));
+        } catch {}
+      }
+
+      // 2. Events (Dropdown and badge data)
+      if (Array.isArray(evData) && evData.length > 0) {
         const formattedEvents = evData.map((e: any) => ({
           id: e.id,
           title: e.title,
@@ -229,43 +233,32 @@ export function AdminInvitationsPage() {
         if (!targetEventId && evData[0]?.id) setTargetEventId(evData[0].id);
       }
 
-      // 2. Accounts
-      const accData = accRes.data;
-      if (accData && accData.length > 0) {
-        setAccountsList(accData as AccountItem[]);
-        try {
-          localStorage.setItem("int_invitations_accounts", JSON.stringify(accData));
-        } catch {}
-      }
+      if (showToast) toast.success("Invitations synchronized!");
 
-      // 3. SMTP Config
-      const smtpData = smtpRes.data;
-      if (smtpData) {
-        setSmtpFullConfig(smtpData);
-        setSmtpSender({
-          from_name: smtpData.from_name || "Integrated Technics Events",
-          from_email: smtpData.from_email || "events@integratedtechnics.com",
-          host: smtpData.host || "mail.integratedtechnics.com",
-        });
-      }
-
-      // Template
-      const tplData = tplRes.data;
-      if (tplData?.config) {
-        setTemplateConfig(tplData.config);
-      }
-
-      // 4. Invitations
-      const invData = invRes.data;
-      const invError = invRes.error;
-      if (!invError && invData && invData.length > 0) {
-        setInvitations(invData as InvitationRow[]);
-        try {
-          localStorage.setItem("int_invitations_list", JSON.stringify(invData));
-        } catch {}
-      }
-
-      if (showToast) toast.success("Invitations and accounts synchronized!");
+      // 3. Load Wizard background configs without blocking the main table
+      Promise.all([
+        apiClient.get<any[]>("/accounts").catch(() => []),
+        apiClient.get<any>("/settings/smtp").catch(() => null),
+        apiClient.get<any>("/settings/template/default").catch(() => null),
+      ]).then(([accData, smtpData, tplData]) => {
+        if (Array.isArray(accData) && accData.length > 0) {
+          setAccountsList(accData as AccountItem[]);
+          try {
+            localStorage.setItem("int_invitations_accounts", JSON.stringify(accData));
+          } catch {}
+        }
+        if (smtpData) {
+          setSmtpFullConfig(smtpData);
+          setSmtpSender({
+            from_name: smtpData.from_name || "Integrated Technics Events",
+            from_email: smtpData.from_email || "events@integratedtechnics.com",
+            host: smtpData.host || "mail.integratedtechnics.com",
+          });
+        }
+        if (tplData?.config) {
+          setTemplateConfig(tplData.config);
+        }
+      }).catch(() => {});
     } catch {
       console.warn("Using local state for invitations");
     } finally {
@@ -276,21 +269,28 @@ export function AdminInvitationsPage() {
 
   useEffect(() => {
     loadData();
-    // Relaxed auto-sync interval to prevent connection pile-up
+    // Auto-sync interval
     const interval = setInterval(() => {
       loadData(false);
     }, 45_000);
     return () => clearInterval(interval);
   }, []);
 
-  // Filtered invitations list
+  // Filtered invitations list with full null-safety
   const filteredInvitations = useMemo(() => {
     return invitations.filter((inv) => {
+      const name = (inv.recipient_name || "").toLowerCase();
+      const email = (inv.recipient_email || "").toLowerCase();
+      const company = (inv.company || "").toLowerCase();
+      const id = (inv.id || "").toLowerCase();
+      const q = search.toLowerCase().trim();
+
       const matchesSearch =
-        inv.recipient_name.toLowerCase().includes(search.toLowerCase()) ||
-        inv.recipient_email.toLowerCase().includes(search.toLowerCase()) ||
-        (inv.company && inv.company.toLowerCase().includes(search.toLowerCase())) ||
-        inv.id.toLowerCase().includes(search.toLowerCase());
+        !q ||
+        name.includes(q) ||
+        email.includes(q) ||
+        company.includes(q) ||
+        id.includes(q);
 
       const matchesEvent = selectedEventFilter === "all" || inv.event_id === selectedEventFilter;
       const matchesStatus = selectedStatusFilter === "all" || inv.status === selectedStatusFilter;
@@ -604,15 +604,17 @@ export function AdminInvitationsPage() {
           error_message: emailError,
         };
 
-        await supabase.from("invitations").insert(invRow);
+        try {
+          await apiClient.post("/invitations", invRow);
+        } catch {}
 
         // Record in email_logs
-        await supabase.from("email_logs").insert({
+        await apiClient.post("/email-logs", {
           recipient_email: recipient.email,
           template_name: "event_invitation",
           subject: emailSubject.replace("{{event_title}}", eventTitle),
           status: emailStatus,
-        });
+        }).catch(() => {});
 
         // Update local table
         setInvitations((prev) => [invRow, ...prev]);
@@ -763,12 +765,13 @@ export function AdminInvitationsPage() {
           toast.error(`SMTP error: ${sendResult.error || "Email delivery failed"}`);
         }
 
-        await supabase.from("email_logs").insert({
+        await apiClient.post("/email-logs", {
           recipient_email: newInv.recipient_email,
           template_name: "event_invitation",
           subject: `Official Invitation: ${eventTitle}`,
           status: sendResult.success ? "sent" : "failed",
-        });
+          error_message: sendResult.success ? null : (sendResult.error || "SMTP error"),
+        }).catch(() => {});
 
         // Update status based on actual send result
         newInv.status = sendResult.success ? "sent" : "failed";
@@ -776,7 +779,9 @@ export function AdminInvitationsPage() {
         newInv.error_message = sendResult.success ? null : (sendResult.error || "SMTP error");
       }
 
-      await supabase.from("invitations").insert(newInv);
+      try {
+        await apiClient.post("/invitations", newInv);
+      } catch {}
       setInvitations((prev) => [newInv, ...prev]);
       if (emailSent || !singleFormData.send_immediately) {
         toast.success(`Invitation ${emailSent ? "sent to" : "created for"} ${newInv.recipient_name}!`);
@@ -803,19 +808,15 @@ export function AdminInvitationsPage() {
     if (!editingInvitation) return;
 
     try {
-      await supabase
-        .from("invitations")
-        .update({
-          recipient_name: editingInvitation.recipient_name,
-          recipient_email: editingInvitation.recipient_email,
-          company: editingInvitation.company,
-          job_title: editingInvitation.job_title,
-          phone: editingInvitation.phone,
-          status: editingInvitation.status,
-          event_id: editingInvitation.event_id,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", editingInvitation.id);
+      await apiClient.put(`/invitations/${editingInvitation.id}`, {
+        recipient_name: editingInvitation.recipient_name,
+        recipient_email: editingInvitation.recipient_email,
+        company: editingInvitation.company,
+        job_title: editingInvitation.job_title,
+        phone: editingInvitation.phone,
+        status: editingInvitation.status,
+        event_id: editingInvitation.event_id,
+      });
 
       setInvitations((prev) =>
         prev.map((i) => (i.id === editingInvitation.id ? { ...editingInvitation } : i))
@@ -860,19 +861,8 @@ export function AdminInvitationsPage() {
         return;
       }
 
-      await supabase
-        .from("invitations")
-        .update({
-          sent_at: now,
-          status: "sent",
-          updated_at: now,
-        })
-        .eq("id", inv.id);
-
-      await supabase.from("email_logs").insert({
-        recipient_email: inv.recipient_email,
-        template_name: "event_invitation_resend",
-        subject: `Official Invitation: ${inv.event_title || "INT Event"}`,
+      await apiClient.put(`/invitations/${inv.id}`, {
+        sent_at: now,
         status: "sent",
       });
 
@@ -888,7 +878,7 @@ export function AdminInvitationsPage() {
   const handleConfirmDelete = async () => {
     if (!deletingInvitation) return;
     try {
-      await supabase.from("invitations").delete().eq("id", deletingInvitation.id);
+      await apiClient.delete(`/invitations/${deletingInvitation.id}`);
     } catch { }
     setInvitations((prev) => prev.filter((i) => i.id !== deletingInvitation.id));
     toast.success(`Removed invitation ${deletingInvitation.id}`);
@@ -1050,6 +1040,7 @@ export function AdminInvitationsPage() {
               <option value="all">All Sources</option>
               <option value="accounts">Accounts Directory</option>
               <option value="excel">Excel Upload</option>
+              <option value="manual">Manual Entry</option>
             </select>
 
             <select

@@ -10,7 +10,11 @@ class EventController extends Controller
 {
     public function index()
     {
-        $events = Event::withCount([
+        $events = Event::select([
+            'id', 'code', 'title', 'category', 'date', 'end_date', 'date_label',
+            'start_time', 'end_time', 'city', 'venue', 'map_url', 'capacity',
+            'status', 'organizer', 'summary', 'image_url', 'created_at', 'updated_at'
+        ])->withCount([
             'registrations as registered_count' => function ($q) {
                 $q->where('state', '!=', 'cancelled');
             },
