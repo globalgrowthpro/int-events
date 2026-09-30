@@ -52,7 +52,30 @@ export function EventDetailContent({
   const [isRegistered, setIsRegistered] = useState(false);
   const [galleries, setGalleries] = useState<EventGallery[]>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
-  const [survey, setSurvey] = useState<EventSurvey | null>(null);
+  const [survey, setSurvey] = useState<EventSurvey | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const local = JSON.parse(localStorage.getItem("int_surveys") || "[]");
+      if (Array.isArray(local)) {
+        const targetIds = [
+          (initialEvent?.id || "").toLowerCase(),
+          (initialEvent?.code || "").toLowerCase(),
+          (eventId || "").toLowerCase(),
+        ].filter(Boolean);
+        return (
+          local.find((s: any) => {
+            const sid = String(s.event_id || s.eventId || "").trim().toLowerCase();
+            return (
+              targetIds.includes(sid) &&
+              Array.isArray(s.questions) &&
+              s.questions.length > 0
+            );
+          }) || null
+        );
+      }
+    } catch {}
+    return null;
+  });
   const [activeTab, setActiveTab] = useState<"details" | "feedback">("details");
 
   // Load published post-event galleries
@@ -68,13 +91,13 @@ export function EventDetailContent({
     };
   }, [eventId]);
 
-  // Load event survey if questions configured
+  // Load event survey if questions configured (revalidates with Supabase)
   useEffect(() => {
     let active = true;
     const targetId = event.id || eventId;
-    getSurveyForEvent(targetId)
+    getSurveyForEvent(targetId, event)
       .then((s) => {
-        if (active) setSurvey(s);
+        if (active && s) setSurvey(s);
       })
       .catch(() => {});
     return () => {

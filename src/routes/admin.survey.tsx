@@ -52,7 +52,7 @@ export const Route = createFileRoute("/admin/survey")({
 });
 
 type QType = "choice" | "yesno" | "open";
-type Question = { id: string; text: string; type: QType; options: string[] };
+type Question = { id: string; text: string; type: QType; options: string[]; required?: boolean };
 export type SurveyReceiver = {
   id: string;
   name: string;
@@ -354,7 +354,16 @@ function AdminSurveyPage() {
   }
 
   function addQuestion(type: QType) {
-    setQuestions((q) => [...q, { id: uid(), text: "", type, options: type === "choice" ? ["", ""] : [] }]);
+    setQuestions((q) => [
+      ...q,
+      {
+        id: uid(),
+        text: "",
+        type,
+        options: type === "choice" ? ["", ""] : [],
+        required: true,
+      },
+    ]);
   }
   const updateQ = (id: string, patch: Partial<Question>) =>
     setQuestions((qs) => qs.map((q) => (q.id === id ? { ...q, ...patch } : q)));
@@ -1126,9 +1135,20 @@ function AdminSurveyPage() {
           {questions.map((q, i) => (
             <div key={q.id} className="rounded-lg border border-border bg-background p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Q{i + 1} · {TYPE_LABEL[q.type]}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Q{i + 1} · {TYPE_LABEL[q.type]}
+                  </span>
+                  <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none ml-2">
+                    <input
+                      type="checkbox"
+                      checked={q.required !== false}
+                      onChange={(e) => updateQ(q.id, { required: e.target.checked })}
+                      className="rounded border-border h-3.5 w-3.5 text-primary focus:ring-primary/20"
+                    />
+                    <span className={q.required !== false ? "font-semibold text-foreground" : ""}>Required</span>
+                  </label>
+                </div>
                 <div className="flex items-center gap-2">
                   <select
                     className="rounded-md border border-border bg-card px-2 py-1 text-xs"

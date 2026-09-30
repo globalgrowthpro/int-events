@@ -124,8 +124,24 @@ export function AdminFeedbackDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [events, setEvents] = useState<IntEvent[]>([]);
-  const [surveys, setSurveys] = useState<SurveyDef[]>([]);
-  const [responses, setResponses] = useState<FeedbackResponse[]>([]);
+  const [surveys, setSurveys] = useState<SurveyDef[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(LOCAL_SURVEY_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [responses, setResponses] = useState<FeedbackResponse[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(LOCAL_RESPONSES_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Filter States
   const [selectedEventId, setSelectedEventId] = useState<string>("all");
@@ -144,30 +160,45 @@ export function AdminFeedbackDashboard() {
     else setLoading(true);
 
     try {
-      // 1. Fetch events
-      const evList = await getEvents();
+      // Execute all 3 queries in parallel instead of sequentially
+      const [evList, surveysRes, responsesRes] = await Promise.all([
+        getEvents(isManualRefresh),
+        (async () => {
+          try {
+            return await supabase
+              .from("surveys")
+              .select("*")
+              .order("created_at", { ascending: false });
+          } catch (e: any) {
+            return { data: null, error: e };
+          }
+        })(),
+        (async () => {
+          try {
+            return await supabase
+              .from("survey_responses")
+              .select("*")
+              .order("submitted_at", { ascending: false });
+          } catch (e: any) {
+            return { data: null, error: e };
+          }
+        })(),
+      ]);
+
       setEvents(evList);
 
-      // 2. Fetch surveys from Supabase or localStorage
+      // Process surveys
       let loadedSurveys: SurveyDef[] = [];
-      try {
-        const { data, error } = await supabase
-          .from("surveys")
-          .select("*")
-          .order("created_at", { ascending: false });
-        if (!error && data && data.length > 0) {
-          loadedSurveys = data.map((s: any) => ({
-            id: s.id,
-            event_id: s.event_id,
-            event_name: s.event_name || "",
-            title: s.title,
-            questions: Array.isArray(s.questions) ? s.questions : [],
-            receivers: Array.isArray(s.receivers) ? s.receivers : [],
-            created_at: s.created_at || new Date().toISOString(),
-          }));
-        }
-      } catch (e) {
-        console.warn("Could not query Supabase surveys:", e);
+      if (!surveysRes.error && surveysRes.data && surveysRes.data.length > 0) {
+        loadedSurveys = surveysRes.data.map((s: any) => ({
+          id: s.id,
+          event_id: s.event_id,
+          event_name: s.event_name || "",
+          title: s.title,
+          questions: Array.isArray(s.questions) ? s.questions : [],
+          receivers: Array.isArray(s.receivers) ? s.receivers : [],
+          created_at: s.created_at || new Date().toISOString(),
+        }));
       }
 
       if (loadedSurveys.length === 0 && typeof window !== "undefined") {
@@ -178,26 +209,18 @@ export function AdminFeedbackDashboard() {
       }
       setSurveys(loadedSurveys);
 
-      // 3. Fetch survey responses from Supabase or localStorage
+      // Process survey responses
       let loadedResponses: FeedbackResponse[] = [];
-      try {
-        const { data, error } = await supabase
-          .from("survey_responses")
-          .select("*")
-          .order("submitted_at", { ascending: false });
-        if (!error && data && data.length > 0) {
-          loadedResponses = data.map((r: any) => ({
-            id: r.id,
-            survey_id: r.survey_id,
-            event_id: r.event_id,
-            respondent_name: r.respondent_name || "Guest",
-            respondent_email: r.respondent_email || "",
-            answers: Array.isArray(r.answers) ? r.answers : [],
-            submitted_at: r.submitted_at || new Date().toISOString(),
-          }));
-        }
-      } catch (e) {
-        console.warn("Could not query Supabase survey_responses:", e);
+      if (!responsesRes.error && responsesRes.data && responsesRes.data.length > 0) {
+        loadedResponses = responsesRes.data.map((r: any) => ({
+          id: r.id,
+          survey_id: r.survey_id,
+          event_id: r.event_id,
+          respondent_name: r.respondent_name || "Guest",
+          respondent_email: r.respondent_email || "",
+          answers: Array.isArray(r.answers) ? r.answers : [],
+          submitted_at: r.submitted_at || new Date().toISOString(),
+        }));
       }
 
       // Merge with local responses if any missing

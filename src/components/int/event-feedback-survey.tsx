@@ -4,6 +4,7 @@ import {
   MessageSquare,
   Send,
   CheckCircle2,
+  AlertCircle,
   User,
   Mail,
   HelpCircle,
@@ -49,6 +50,7 @@ export function EventFeedbackSurvey({
   const [name, setName] = useState(defaultName);
   const [email, setEmail] = useState(defaultEmail);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submittedName, setSubmittedName] = useState("");
@@ -84,9 +86,24 @@ export function EventFeedbackSurvey({
       return;
     }
 
-    // Check if at least one question is answered
-    if (answeredCount === 0) {
-      toast.error("Please answer at least one survey question");
+    // Check if any required question is missing an answer
+    const unansweredQuestion = questions.find((q) => {
+      const isReq = q.required !== false;
+      return isReq && !answers[q.id]?.trim();
+    });
+
+    if (unansweredQuestion) {
+      setAttemptedSubmit(true);
+      const qIndex = questions.findIndex((q) => q.id === unansweredQuestion.id) + 1;
+      toast.error(
+        `Please answer Question ${qIndex} to complete the survey`
+      );
+
+      // Smooth scroll to the unanswered question
+      const targetElem = document.getElementById(`survey-question-${unansweredQuestion.id}`);
+      if (targetElem) {
+        targetElem.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       return;
     }
 
@@ -108,6 +125,7 @@ export function EventFeedbackSurvey({
 
       setSubmittedName(trimmedName);
       setSubmitted(true);
+      setAttemptedSubmit(false);
       toast.success("Thank you! Your feedback has been submitted.");
     } catch (err) {
       console.error("Survey submission error:", err);
@@ -209,6 +227,7 @@ export function EventFeedbackSurvey({
               onClick={() => {
                 setSubmitted(false);
                 setAnswers({});
+                setAttemptedSubmit(false);
               }}
               className="h-10 px-4 text-xs sm:text-sm gap-2 rounded-xl border-border hover:bg-muted/80"
             >
@@ -311,12 +330,17 @@ export function EventFeedbackSurvey({
             {questions.map((q, index) => {
               const currentAnswer = answers[q.id] || "";
               const isAnswered = Boolean(currentAnswer.trim());
+              const isRequired = q.required !== false;
+              const hasError = attemptedSubmit && isRequired && !isAnswered;
 
               return (
                 <div
                   key={q.id}
+                  id={`survey-question-${q.id}`}
                   className={`rounded-xl border transition-all p-5 space-y-3.5 ${
-                    isAnswered
+                    hasError
+                      ? "border-destructive/70 bg-destructive/5 ring-2 ring-destructive/30 shadow-xs"
+                      : isAnswered
                       ? "border-primary/40 bg-card shadow-2xs"
                       : "border-border bg-background/60"
                   }`}
@@ -327,6 +351,9 @@ export function EventFeedbackSurvey({
                         <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
                           Question {index + 1}
                         </span>
+                        {isRequired && (
+                          <span className="text-destructive font-bold text-xs" title="Required">*</span>
+                        )}
                         {isAnswered && (
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-500">
                             <CheckCircle2 className="h-3.5 w-3.5" /> Answered
@@ -334,8 +361,14 @@ export function EventFeedbackSurvey({
                         )}
                       </div>
                       <p className="text-sm sm:text-base font-semibold text-foreground">
-                        {q.text}
+                        {q.text} {isRequired && <span className="text-destructive font-bold">*</span>}
                       </p>
+                      {hasError && (
+                        <p className="text-xs text-destructive font-semibold flex items-center gap-1.5 pt-0.5">
+                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                          <span>Please select or write an answer for this question.</span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -352,6 +385,8 @@ export function EventFeedbackSurvey({
                             className={`flex items-center justify-between gap-2 rounded-xl border px-3.5 py-3 text-left text-xs sm:text-sm font-medium transition-all ${
                               selected
                                 ? "border-primary bg-primary/10 text-primary shadow-sm ring-1 ring-primary/30"
+                                : hasError
+                                ? "border-destructive/40 bg-background hover:bg-muted/60 text-foreground"
                                 : "border-border bg-background hover:bg-muted/60 text-foreground"
                             }`}
                           >
@@ -360,6 +395,8 @@ export function EventFeedbackSurvey({
                               className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${
                                 selected
                                   ? "border-primary bg-primary text-primary-foreground"
+                                  : hasError
+                                  ? "border-destructive/60"
                                   : "border-muted-foreground/50"
                               }`}
                             >
@@ -380,6 +417,8 @@ export function EventFeedbackSurvey({
                         className={`inline-flex items-center gap-2 rounded-xl border px-6 py-2.5 text-sm font-semibold transition-all ${
                           currentAnswer === "Yes"
                             ? "border-emerald-500 bg-emerald-500/10 text-emerald-500 shadow-sm"
+                            : hasError
+                            ? "border-destructive/40 bg-background hover:bg-muted/60 text-foreground"
                             : "border-border bg-background hover:bg-muted/60 text-foreground"
                         }`}
                       >
@@ -392,6 +431,8 @@ export function EventFeedbackSurvey({
                         className={`inline-flex items-center gap-2 rounded-xl border px-6 py-2.5 text-sm font-semibold transition-all ${
                           currentAnswer === "No"
                             ? "border-destructive bg-destructive/10 text-destructive shadow-sm"
+                            : hasError
+                            ? "border-destructive/40 bg-background hover:bg-muted/60 text-foreground"
                             : "border-border bg-background hover:bg-muted/60 text-foreground"
                         }`}
                       >
@@ -406,10 +447,15 @@ export function EventFeedbackSurvey({
                       <textarea
                         rows={3}
                         maxLength={1000}
+                        required={isRequired}
                         placeholder="Write your answer or thoughts here…"
                         value={currentAnswer}
                         onChange={(e) => handleTextChange(q.id, e.target.value)}
-                        className="w-full rounded-xl border border-border bg-background p-3 text-sm leading-relaxed transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className={`w-full rounded-xl border bg-background p-3 text-sm leading-relaxed transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+                          hasError
+                            ? "border-destructive focus:border-destructive focus:ring-destructive/20"
+                            : "border-border"
+                        }`}
                       />
                     </div>
                   )}

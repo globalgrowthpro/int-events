@@ -11,46 +11,21 @@ export const Route = createFileRoute("/event/$eventId/$surveyId")({
     email: typeof search["email"] === "string" ? search["email"] : undefined,
   }),
   loader: async ({ params }) => {
-    let realEvent: IntEvent | undefined = undefined;
-    try {
-      realEvent = await getEventById(params.eventId);
-    } catch {}
+    const isDirectSurveyId = Boolean(params.surveyId && params.surveyId !== "survey");
 
-    if (!realEvent) {
-      try {
-        const all = await getEvents();
-        const decoded = decodeURIComponent(params.eventId || "").toLowerCase().trim();
-        realEvent = all.find(
-          (e: any) =>
-            e.id.toLowerCase() === decoded ||
-            e.code.toLowerCase() === decoded ||
-            e.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") === decoded
-        );
-      } catch {}
-    }
+    // Parallelize event and direct survey resolution
+    const [realEvent, directSurvey] = await Promise.all([
+      getEventById(params.eventId),
+      isDirectSurveyId ? getSurveyById(params.surveyId) : Promise.resolve(null),
+    ]);
 
     if (!realEvent) {
       throw notFound();
     }
 
-    // Try finding survey by ID first
-    let survey: EventSurvey | null = null;
-    if (params.surveyId && params.surveyId !== "survey") {
-      try {
-        survey = await getSurveyById(params.surveyId);
-      } catch {}
-    }
-
-    // Fallback: If survey wasn't found by direct ID (or if param was "survey"), fetch the event's survey
+    let survey = directSurvey;
     if (!survey) {
-      try {
-        survey = await getSurveyForEvent(realEvent.id);
-      } catch {}
-    }
-    if (!survey && params.eventId !== realEvent.id) {
-      try {
-        survey = await getSurveyForEvent(params.eventId);
-      } catch {}
+      survey = await getSurveyForEvent(realEvent.id, realEvent);
     }
 
     return { event: realEvent, survey };

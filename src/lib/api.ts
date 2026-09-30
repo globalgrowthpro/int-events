@@ -2,10 +2,21 @@ import { supabase } from "./supabase";
 import { type IntEvent, type Registration } from "./int-data";
 import { getCompanyLogo, getUserAvatar } from "./logos";
 
+let cachedEvents: { timestamp: number; data: IntEvent[] } | null = null;
+const EVENTS_CACHE_TTL = 15000; // 15 seconds fast in-memory cache
+
+export function invalidateEventsCache() {
+  cachedEvents = null;
+}
+
 /**
  * Event Services
  */
-export async function getEvents(): Promise<IntEvent[]> {
+export async function getEvents(forceRefresh = false): Promise<IntEvent[]> {
+  if (!forceRefresh && cachedEvents && Date.now() - cachedEvents.timestamp < EVENTS_CACHE_TTL) {
+    return cachedEvents.data;
+  }
+
   try {
     const [eventsRes, regsRes] = await Promise.all([
       supabase.from("events").select("*").order("date", { ascending: true }),
@@ -17,7 +28,7 @@ export async function getEvents(): Promise<IntEvent[]> {
     const regsData = regsRes.data;
 
     if (evError || !eventsData || eventsData.length === 0) {
-      return [];
+      return cachedEvents?.data || [];
     }
 
     const countsMap: Record<string, { registered: number; checkedIn: number }> = {};
@@ -30,7 +41,7 @@ export async function getEvents(): Promise<IntEvent[]> {
       });
     }
 
-    return eventsData.map((ev) => {
+    const result: IntEvent[] = eventsData.map((ev) => {
       const liveReg = countsMap[ev.id]?.registered ?? ev.registered_count ?? 0;
       const liveCheck = countsMap[ev.id]?.checkedIn ?? ev.checked_in_count ?? 0;
 
@@ -62,8 +73,11 @@ export async function getEvents(): Promise<IntEvent[]> {
         partnerList: ev.partner_list || [],
       };
     });
+
+    cachedEvents = { timestamp: Date.now(), data: result };
+    return result;
   } catch {
-    return [];
+    return cachedEvents?.data || [];
   }
 }
 
@@ -79,6 +93,7 @@ export async function getEventById(eventId: string): Promise<IntEvent | undefine
 }
 
 export async function createEvent(eventData: Partial<IntEvent>): Promise<IntEvent | null> {
+  invalidateEventsCache();
   try {
     const { data, error } = await supabase
       .from("events")
@@ -120,6 +135,7 @@ export async function createEvent(eventData: Partial<IntEvent>): Promise<IntEven
 }
 
 export async function updateEvent(eventId: string, updates: Partial<IntEvent>): Promise<boolean> {
+  invalidateEventsCache();
   try {
     const { error } = await supabase
       .from("events")
@@ -154,6 +170,7 @@ export async function updateEvent(eventId: string, updates: Partial<IntEvent>): 
 }
 
 export async function deleteEvent(eventId: string): Promise<boolean> {
+  invalidateEventsCache();
   try {
     const { error } = await supabase.from("events").delete().eq("id", eventId);
     return !error;
@@ -1640,6 +1657,7 @@ export interface EventSurveyQuestion {
   text: string;
   type: "choice" | "yesno" | "open";
   options: string[];
+  required?: boolean;
 }
 
 export interface EventSurvey {
@@ -1652,29 +1670,87 @@ export interface EventSurvey {
   created_at?: string;
 }
 
-export async function getSurveyForEvent(eventId: string): Promise<EventSurvey | null> {
+export async function getSurveyForEvent(
+  eventId: string,
+  knownEvent?: IntEvent
+): Promise<EventSurvey | null> {
   const norm = (eventId || "").trim();
   if (!norm) return null;
 
   // Resolve candidate event identifiers
   const candidateIds = new Set<string>([norm, norm.toLowerCase()]);
+  if (knownEvent) {
+    if (knownEvent.id) {
+      candidateIds.add(knownEvent.id);
+      candidateIds.add(knownEvent.id.toLowerCase());
+    }
+    if (knownEvent.code) {
+      candidateIds.add(knownEvent.code);
+      candidateIds.add(knownEvent.code.toLowerCase());
+    }
+  } else if (cachedEvents?.data) {
+    const matched = cachedEvents.data.find(
+      (e) =>
+        e.id.toLowerCase() === norm.toLowerCase() ||
+        e.code?.toLowerCase() === norm.toLowerCase()
+    );
+    if (matched) {
+      if (matched.id) candidateIds.add(matched.id.toLowerCase());
+      if (matched.code) candidateIds.add(matched.code.toLowerCase());
+    }
+  }
+
+  const idsArray = Array.from(candidateIds);
+
+  // 1. FAST PATH (0ms): Check local storage first to display feedback instantly
+  let localSurvey: EventSurvey | null = null;
   try {
-    const ev = await getEventById(norm);
-    if (ev) {
-      if (ev.id) {
-        candidateIds.add(ev.id);
-        candidateIds.add(ev.id.toLowerCase());
-      }
-      if (ev.code) {
-        candidateIds.add(ev.code);
-        candidateIds.add(ev.code.toLowerCase());
+    if (typeof window !== "undefined") {
+      const local = JSON.parse(localStorage.getItem("int_surveys") || "[]");
+      if (Array.isArray(local)) {
+        localSurvey =
+          local.find((s: any) => {
+            const sid = String(s.event_id || s.eventId || "").trim().toLowerCase();
+            return (
+              idsArray.some((id) => id.toLowerCase() === sid) &&
+              Array.isArray(s.questions) &&
+              s.questions.length > 0
+            );
+          }) || null;
       }
     }
   } catch {}
 
-  const idsArray = Array.from(candidateIds);
+  if (localSurvey) {
+    // Return immediately for 0ms page load; quietly revalidate from Supabase in background
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("surveys")
+          .select("*")
+          .in("event_id", idsArray)
+          .limit(1)
+          .maybeSingle();
 
-  // 1. Try Supabase first
+        if (
+          !error &&
+          data &&
+          Array.isArray(data.questions) &&
+          data.questions.length > 0 &&
+          typeof window !== "undefined"
+        ) {
+          const current = JSON.parse(localStorage.getItem("int_surveys") || "[]");
+          const next = Array.isArray(current)
+            ? [...current.filter((x: any) => x.id !== data.id), data]
+            : [data];
+          localStorage.setItem("int_surveys", JSON.stringify(next));
+        }
+      } catch {}
+    })();
+    return localSurvey;
+  }
+
+  // 2. Fallback to Supabase network fetch if not in local cache
   try {
     const { data, error } = await supabase
       .from("surveys")
@@ -1684,32 +1760,19 @@ export async function getSurveyForEvent(eventId: string): Promise<EventSurvey | 
       .maybeSingle();
 
     if (!error && data && Array.isArray(data.questions) && data.questions.length > 0) {
+      try {
+        if (typeof window !== "undefined") {
+          const current = JSON.parse(localStorage.getItem("int_surveys") || "[]");
+          const next = Array.isArray(current)
+            ? [...current.filter((x: any) => x.id !== data.id), data]
+            : [data];
+          localStorage.setItem("int_surveys", JSON.stringify(next));
+        }
+      } catch {}
       return data as EventSurvey;
     }
   } catch (err) {
     console.warn("Supabase getSurveyForEvent error:", err);
-  }
-
-  // 2. Fallback to localStorage
-  try {
-    if (typeof window !== "undefined") {
-      const local = JSON.parse(localStorage.getItem("int_surveys") || "[]");
-      if (Array.isArray(local)) {
-        const found = local.find(
-          (s: any) => {
-            const sid = String(s.event_id || s.eventId || "").trim();
-            return (
-              (idsArray.includes(sid) || idsArray.includes(sid.toLowerCase())) &&
-              Array.isArray(s.questions) &&
-              s.questions.length > 0
-            );
-          }
-        );
-        if (found) return found as EventSurvey;
-      }
-    }
-  } catch (err) {
-    console.warn("LocalStorage getSurveyForEvent error:", err);
   }
 
   return null;
@@ -1719,7 +1782,55 @@ export async function getSurveyById(surveyId: string): Promise<EventSurvey | nul
   const norm = (surveyId || "").trim();
   if (!norm) return null;
 
-  // 1. Try Supabase first (exact and lowercase)
+  // 1. FAST PATH (0ms): Check local storage first
+  let localSurvey: EventSurvey | null = null;
+  try {
+    if (typeof window !== "undefined") {
+      const local = JSON.parse(localStorage.getItem("int_surveys") || "[]");
+      if (Array.isArray(local)) {
+        localSurvey =
+          local.find((s: any) => {
+            const sid = String(s.id || s._id || "").trim().toLowerCase();
+            return (
+              sid === norm.toLowerCase() &&
+              Array.isArray(s.questions) &&
+              s.questions.length > 0
+            );
+          }) || null;
+      }
+    }
+  } catch {}
+
+  if (localSurvey) {
+    // Return immediately, revalidate in background
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("surveys")
+          .select("*")
+          .or(`id.eq.${norm},id.eq.${norm.toLowerCase()}`)
+          .limit(1)
+          .maybeSingle();
+
+        if (
+          !error &&
+          data &&
+          Array.isArray(data.questions) &&
+          data.questions.length > 0 &&
+          typeof window !== "undefined"
+        ) {
+          const current = JSON.parse(localStorage.getItem("int_surveys") || "[]");
+          const next = Array.isArray(current)
+            ? [...current.filter((x: any) => x.id !== data.id), data]
+            : [data];
+          localStorage.setItem("int_surveys", JSON.stringify(next));
+        }
+      } catch {}
+    })();
+    return localSurvey;
+  }
+
+  // 2. Fetch from Supabase
   try {
     const { data, error } = await supabase
       .from("surveys")
@@ -1729,32 +1840,19 @@ export async function getSurveyById(surveyId: string): Promise<EventSurvey | nul
       .maybeSingle();
 
     if (!error && data && Array.isArray(data.questions) && data.questions.length > 0) {
+      try {
+        if (typeof window !== "undefined") {
+          const current = JSON.parse(localStorage.getItem("int_surveys") || "[]");
+          const next = Array.isArray(current)
+            ? [...current.filter((x: any) => x.id !== data.id), data]
+            : [data];
+          localStorage.setItem("int_surveys", JSON.stringify(next));
+        }
+      } catch {}
       return data as EventSurvey;
     }
   } catch (err) {
     console.warn("Supabase getSurveyById error:", err);
-  }
-
-  // 2. Fallback to localStorage
-  try {
-    if (typeof window !== "undefined") {
-      const local = JSON.parse(localStorage.getItem("int_surveys") || "[]");
-      if (Array.isArray(local)) {
-        const found = local.find(
-          (s: any) => {
-            const sid = String(s.id || s._id || "").trim();
-            return (
-              (sid === norm || sid.toLowerCase() === norm.toLowerCase()) &&
-              Array.isArray(s.questions) &&
-              s.questions.length > 0
-            );
-          }
-        );
-        if (found) return found as EventSurvey;
-      }
-    }
-  } catch (err) {
-    console.warn("LocalStorage getSurveyById error:", err);
   }
 
   return null;
